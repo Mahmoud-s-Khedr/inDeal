@@ -51,7 +51,7 @@ services:
     profiles: ["test"]
 
   db:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: indeal_postgres
     restart: always
     environment:
@@ -69,7 +69,7 @@ services:
       retries: 5
 
   valkey:
-    image: valkey/valkey:7.2
+    image: valkey/valkey:alpine
     container_name: indeal_valkey
     restart: always
     ports:
