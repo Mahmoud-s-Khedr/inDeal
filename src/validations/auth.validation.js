@@ -5,6 +5,12 @@ const contactSchema = z.object({
     value: z.string().min(1),
 });
 
+const documentSchema = z.object({
+    fileId: z.coerce.number().int().positive(),
+    docType: z.string().max(100).optional(),
+    description: z.string().max(255).optional(),
+});
+
 const registerSchema = z.object({
     body: z.object({
         user: z.object({
@@ -26,6 +32,7 @@ const registerSchema = z.object({
             manufacturingStrategy: z.string().optional(),
             contacts: z.array(contactSchema).optional(),
             locations: z.array(z.string().min(1)).optional(),
+            documents: z.array(documentSchema).min(1, 'At least one document must be provided').optional(),
         }),
     }),
 });

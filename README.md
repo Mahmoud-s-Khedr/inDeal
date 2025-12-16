@@ -69,8 +69,7 @@ inDeal/
 5.  **Initialize Database**
     Run the schema script to create tables:
     ```bash
-    # (Assuming you have a script or access to psql)
-    psql -h localhost -U postgres -d indeal -f AI_DOCS/schema.sql
+    npm run db:schema
     ```
 
 6.  **Run the Server (Optional, outside Docker)**
@@ -85,7 +84,7 @@ inDeal/
 - Controllers respond through `src/utils/response.js` to keep payloads consistent.
 
 ## 🔐 Authentication API
-- `POST /api/v1/auth/register` — accepts `{ user, company }` payloads to create an agent user and pending company profile in a single transaction.
+- `POST /api/v1/auth/register` — accepts `{ user, company }` payloads to create an agent user and pending company profile in a single transaction; `company.documents` must reference uploaded file IDs (via `/files/upload-url`) so admins can review supporting paperwork.
 - `POST /api/v1/auth/login` — verifies email/password and returns a JWT plus the associated company record.
 - Requests are validated with Zod schemas (`src/validations/auth.validation.js`) and responses include `{ token, user, company }`.
 
@@ -95,6 +94,9 @@ inDeal/
 - `POST /api/v1/companies/me/gallery` — add gallery entries by referencing existing file IDs.
 - `GET /api/v1/companies/:id` — public profile with gallery + reviews; dedicated `/:id/gallery` and `/:id/reviews` endpoints are also available.
 - `POST /api/v1/companies/:id/reviews` — authenticated reviewers can rate other companies (1–5 stars) with optional review text.
+
+## 📤 File Uploads (Cloudflare R2)
+- `POST /api/v1/files/upload-url` — authenticated agents request a signed `PUT` URL, upload directly to Cloudflare R2, and receive the created `files` row (with its `id`) to reference in subsequent APIs (gallery, avatars, ads, etc.). The signed URL TTL (`R2_SIGNED_URL_TTL_SECONDS`) and max file size cap (`R2_MAX_FILE_SIZE_BYTES`) are configurable via environment variables (defaults: 5 minutes, 20 MB).
 
 ## 🐳 Docker Development & Testing
 - `docker compose up --build -d` starts the API plus its Postgres and Valkey dependencies.

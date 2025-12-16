@@ -2,6 +2,7 @@ const AppError = require('../utils/AppError');
 const companyRepository = require('../repositories/company.repository');
 const galleryRepository = require('../repositories/companyGallery.repository');
 const reviewRepository = require('../repositories/companyReview.repository');
+const companyDocumentRepository = require('../repositories/companyDocument.repository');
 
 const sanitizeCompany = (company) => {
     if (!company) return null;
@@ -43,21 +44,37 @@ const sanitizeReview = (review) => ({
     createdAt: review.created_at,
 });
 
-const enrichProfile = (company, gallery = [], reviews = []) => {
+const sanitizeDocument = (doc) => ({
+    id: doc.id,
+    companyId: doc.company_id,
+    fileId: doc.file_id,
+    docType: doc.doc_type,
+    description: doc.description,
+    uploadedAt: doc.uploaded_at,
+});
+
+const enrichProfile = (company, gallery = [], reviews = [], documents) => {
     const sanitizedCompany = sanitizeCompany(company);
     const sanitizedGallery = gallery.map(sanitizeGalleryItem);
     const sanitizedReviews = reviews.map(sanitizeReview);
+    const sanitizedDocuments = Array.isArray(documents) ? documents.map(sanitizeDocument) : undefined;
     const averageRating =
         sanitizedReviews.length > 0
             ? sanitizedReviews.reduce((sum, item) => sum + item.rating, 0) / sanitizedReviews.length
             : null;
 
-    return {
+    const profile = {
         company: sanitizedCompany,
         gallery: sanitizedGallery,
         reviews: sanitizedReviews,
         averageRating,
     };
+
+    if (sanitizedDocuments !== undefined) {
+        profile.documents = sanitizedDocuments;
+    }
+
+    return profile;
 };
 
 const getCompanyOrThrowByAgent = async (agentId) => {
@@ -87,11 +104,12 @@ const getCompanyOrThrowById = async (companyId) => {
 
 const getMyProfile = async (agentId) => {
     const company = await getCompanyOrThrowByAgent(agentId);
-    const [gallery, reviews] = await Promise.all([
+    const [gallery, reviews, documents] = await Promise.all([
         galleryRepository.listByCompanyId(company.id),
         reviewRepository.listByCompanyId(company.id),
+        companyDocumentRepository.listByCompanyId(company.id),
     ]);
-    return enrichProfile(company, gallery, reviews);
+    return enrichProfile(company, gallery, reviews, documents);
 };
 
 const updateMyProfile = async (agentId, payload) => {

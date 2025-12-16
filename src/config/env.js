@@ -27,6 +27,8 @@ const envSchema = z.object({
     R2_ENDPOINT: z.string().optional(),
     R2_REGION: z.string().default('auto'),
     R2_PUBLIC_URL: z.string().optional(),
+    R2_SIGNED_URL_TTL_SECONDS: z.coerce.number().int().positive().default(60 * 5),
+    R2_MAX_FILE_SIZE_BYTES: z.coerce.number().int().positive().default(20 * 1024 * 1024),
 
     FIREBASE_PROJECT_ID: z.string().optional(),
     FIREBASE_CLIENT_EMAIL: z.string().optional(),
@@ -84,6 +86,8 @@ module.exports = {
         endpoint: env.R2_ENDPOINT,
         region: env.R2_REGION,
         publicUrl: env.R2_PUBLIC_URL,
+        signedUrlTtlSeconds: env.R2_SIGNED_URL_TTL_SECONDS,
+        maxUploadBytes: env.R2_MAX_FILE_SIZE_BYTES,
     },
     firebase: {
         projectId: env.FIREBASE_PROJECT_ID,

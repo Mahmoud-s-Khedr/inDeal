@@ -15,28 +15,34 @@ const handleDuplicateFieldsDB = err => {
 };
 
 const sendErrorDev = (err, res) => {
-    res.status(err.statusCode).json({
+    const payload = {
         status: err.status,
         error: err,
         message: err.message,
         stack: err.stack
-    });
+    };
+    res.locals.responseData = payload;
+    res.status(err.statusCode).json(payload);
 };
 
 const sendErrorProd = (err, res) => {
     // Operational, trusted error: send message to client
     if (err.isOperational) {
-        res.status(err.statusCode).json({
+        const payload = {
             status: err.status,
             message: err.message
-        });
+        };
+        res.locals.responseData = payload;
+        res.status(err.statusCode).json(payload);
     } else {
         // Programming or other unknown error: don't leak details
         logger.error('Unexpected error', err);
-        res.status(500).json({
+        const payload = {
             status: 'error',
             message: 'Something went very wrong!'
-        });
+        };
+        res.locals.responseData = payload;
+        res.status(500).json(payload);
     }
 };
 

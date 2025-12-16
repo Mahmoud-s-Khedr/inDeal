@@ -50,6 +50,30 @@ const findById = async (companyId) => {
     return result.rows[0];
 };
 
+const listByStatus = async (status) => {
+    const result = await pool.query(
+        `
+        SELECT *
+        FROM companies
+        WHERE status = $1
+        ORDER BY created_at ASC
+        `,
+        [status]
+    );
+    return result.rows;
+};
+
+const listAll = async () => {
+    const result = await pool.query(
+        `
+        SELECT *
+        FROM companies
+        ORDER BY created_at DESC
+        `
+    );
+    return result.rows;
+};
+
 const updateCompanyByAgent = async (agentId, updates) => {
     const fields = [];
     const values = [];
@@ -83,9 +107,41 @@ const updateCompanyByAgent = async (agentId, updates) => {
     return result.rows[0];
 };
 
+const updateCompanyStatus = async (companyId, status) => {
+    const result = await pool.query(
+        `
+        UPDATE companies
+        SET status = $1,
+            updated_at = NOW()
+        WHERE id = $2
+        RETURNING *
+        `,
+        [status, companyId]
+    );
+    return result.rows[0];
+};
+
+const updateCompanyAgent = async (companyId, agentId) => {
+    const result = await pool.query(
+        `
+        UPDATE companies
+        SET agent_id = $1,
+            updated_at = NOW()
+        WHERE id = $2
+        RETURNING *
+        `,
+        [agentId, companyId]
+    );
+    return result.rows[0];
+};
+
 module.exports = {
     createCompany,
     findByAgentId,
     findById,
+    listByStatus,
+    listAll,
     updateCompanyByAgent,
+    updateCompanyStatus,
+    updateCompanyAgent,
 };

@@ -32,6 +32,9 @@
 - [x] Containerize development & testing (Dockerfile, docker-compose stack with Postgres/Valkey/test profile)
 - [x] Implement initial authentication (register/login controllers, Zod validation, repositories, JWT issuance)
 - [x] Build Company Portfolio Management APIs (profiles, gallery, reviews)
+- [x] Implement direct-to-R2 file upload flow (signed PUT URLs + files table integration)
+- [x] Capture company registration documents (stored as `company_documents` linked to uploaded files)
+- [x] Instrument detailed HTTP logging (request/response metadata, bodies, auth context) + Postman collection for regression testing
 - [ ] **Next Step**: Implement Deals module (list/create, bids, reviews linkage)
 
 ## 5. Critical Decisions Log

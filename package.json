@@ -6,13 +6,15 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:schema": "node scripts/run-schema.js"
   },
   "author": "Mahmoud Khedr",
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.948.0",
     "@aws-sdk/lib-storage": "^3.948.0",
+    "@aws-sdk/s3-request-presigner": "^3.948.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.66.0",

@@ -4,8 +4,9 @@ const { log: logConfig } = require('../config/env');
 const levelPriority = {
     error: 0,
     warn: 1,
-    info: 2,
-    debug: 3,
+    http: 2,
+    info: 3,
+    debug: 4,
 };
 
 const currentLevel = levelPriority[logConfig.level] ?? levelPriority.info;
@@ -42,6 +43,7 @@ module.exports = {
     log: write,
     error: (message, meta) => write('error', message, meta),
     warn: (message, meta) => write('warn', message, meta),
+    http: (message, meta) => write('http', message, meta),
     info: (message, meta) => write('info', message, meta),
     debug: (message, meta) => write('debug', message, meta),
 };

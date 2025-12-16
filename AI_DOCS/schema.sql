@@ -70,6 +70,15 @@ create table company_reviews (
     created_at timestamp default current_timestamp
 );
 
+create table company_documents (
+    id serial primary key,
+    company_id int references companies(id),
+    file_id int references files(id),
+    doc_type varchar(100),
+    description text,
+    uploaded_at timestamp default current_timestamp
+);
+
 -- 4. Deals (The Core Transaction)
 create table deals (
     id serial primary key,
@@ -166,6 +175,8 @@ CREATE INDEX idx_companies_agent_id ON companies(agent_id);
 CREATE INDEX idx_companies_logo ON companies(logo);
 CREATE INDEX idx_company_gallery_company_id ON company_gallery(company_id);
 CREATE INDEX idx_company_gallery_image_file_id ON company_gallery(image_file_id);
+CREATE INDEX idx_company_documents_company_id ON company_documents(company_id);
+CREATE INDEX idx_company_documents_file_id ON company_documents(file_id);
 CREATE INDEX idx_company_reviews_company_id ON company_reviews(company_id);
 CREATE INDEX idx_company_reviews_reviewer_company_id ON company_reviews(reviewer_company_id);
 CREATE INDEX idx_deals_company_id ON deals(company_id);
@@ -183,3 +194,16 @@ CREATE INDEX idx_ad_click_events_user_id ON ad_click_events(user_id);
 CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_company_id ON audit_logs(company_id);
 CREATE INDEX idx_audit_logs_details ON audit_logs USING GIN (details);
+
+-- 9. Seed initial admin user
+INSERT INTO users (username, email, password_hash, first_name, last_name, job_title, role)
+VALUES (
+    'indeal_admin',
+    'admin@indeal.local',
+    '$2b$12$YIiONAQGRy4W9ioADE4yCuEQFU6B7Lv5AFUl.PhTAuYEr1y8IvuZq',
+    'System',
+    'Admin',
+    'Operations Lead',
+    'admin'
+)
+ON CONFLICT (email) DO NOTHING;

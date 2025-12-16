@@ -4,6 +4,10 @@ const { pool } = require('../config/db');
 const { signToken } = require('../utils/jwt');
 const userRepository = require('../repositories/user.repository');
 const companyRepository = require('../repositories/company.repository');
+const companyDocumentRepository = require('../repositories/companyDocument.repository');
+const fileRepository = require('../repositories/file.repository');
+
+const fileService = require('./file.service');
 
 const sanitizeUser = (user) => {
     if (!user) return null;
@@ -43,9 +47,32 @@ const sanitizeCompany = (company) => {
     };
 };
 
+const sanitizeDocument = (doc) => {
+    if (!doc) return null;
+
+    return {
+        id: doc.id,
+        companyId: doc.company_id,
+        fileId: doc.file_id,
+        docType: doc.doc_type,
+        description: doc.description,
+        uploadedAt: doc.uploaded_at,
+    };
+};
+
+const createRegistrationUploadUrl = async ({ fileName, fileType, fileSize }) => {
+    return fileService.createUploadUrl({
+        fileName,
+        fileType,
+        fileSize,
+        uploaderId: null,
+    });
+};
+
 const register = async (payload) => {
     const email = payload.user.email.toLowerCase();
     const username = payload.user.username.trim();
+    const documentsPayload = payload.company.documents || [];
 
     const existingByEmail = await userRepository.findByEmail(email);
     if (existingByEmail) {
@@ -55,6 +82,14 @@ const register = async (payload) => {
     const existingByUsername = await userRepository.findByUsername(username);
     if (existingByUsername) {
         throw new AppError('Username already taken', 400);
+    }
+
+    if (documentsPayload.length) {
+        const documentFileIds = documentsPayload.map((doc) => doc.fileId);
+        const existingFiles = await fileRepository.findByIds(documentFileIds);
+        if (existingFiles.length !== documentFileIds.length) {
+            throw new AppError('One or more company document files are invalid', 400);
+        }
     }
 
     const client = await pool.connect();
@@ -86,14 +121,31 @@ const register = async (payload) => {
             locations: payload.company.locations,
         });
 
+        let createdDocuments = [];
+        if (documentsPayload.length) {
+            createdDocuments = await companyDocumentRepository.bulkCreateDocuments(
+                client,
+                documentsPayload.map((doc) => ({
+                    companyId: newCompany.id,
+                    fileId: doc.fileId,
+                    docType: doc.docType,
+                    description: doc.description,
+                }))
+            );
+        }
+
         await client.query('COMMIT');
 
         const token = signToken(newUser.id);
+        const companyPayload = sanitizeCompany(newCompany);
+        if (createdDocuments.length) {
+            companyPayload.documents = createdDocuments.map(sanitizeDocument);
+        }
 
         return {
             token,
             user: sanitizeUser(newUser),
-            company: sanitizeCompany(newCompany),
+            company: companyPayload,
         };
     } catch (error) {
         await client.query('ROLLBACK');
@@ -126,7 +178,30 @@ const login = async (payload) => {
     };
 };
 
+const adminLogin = async (payload) => {
+    const email = payload.email.toLowerCase();
+    const user = await userRepository.findByEmail(email);
+
+    if (!user || user.role !== 'admin') {
+        throw new AppError('Invalid credentials', 401);
+    }
+
+    const isPasswordValid = await bcrypt.compare(payload.password, user.password_hash);
+    if (!isPasswordValid) {
+        throw new AppError('Invalid credentials', 401);
+    }
+
+    const token = signToken(user.id);
+
+    return {
+        token,
+        user: sanitizeUser(user),
+    };
+};
+
 module.exports = {
+    createRegistrationUploadUrl,
     register,
     login,
+    adminLogin,
 };
