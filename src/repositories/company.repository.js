@@ -41,7 +41,16 @@ const createCompany = async (client, company) => {
 };
 
 const findByAgentId = async (agentId) => {
-    const result = await pool.query('SELECT * FROM companies WHERE agent_id = $1 LIMIT 1', [agentId]);
+    const result = await pool.query(
+        `
+        SELECT c.*, 
+               u.first_name, u.last_name, u.email, u.job_title, u.username
+        FROM companies c
+        JOIN users u ON c.agent_id = u.id
+        WHERE c.agent_id = $1 LIMIT 1
+        `,
+        [agentId]
+    );
     return result.rows[0];
 };
 
@@ -100,11 +109,15 @@ const updateCompanyByAgent = async (agentId, updates) => {
     fields.push(`updated_at = NOW()`);
 
     const result = await pool.query(
-        `UPDATE companies SET ${fields.join(', ')} WHERE agent_id = $${index} RETURNING *`,
+        `UPDATE companies SET ${fields.join(', ')} WHERE agent_id = $${index}`,
         [...values, agentId]
     );
 
-    return result.rows[0];
+    if (result.rowCount === 0) {
+        return null;
+    }
+
+    return await findByAgentId(agentId);
 };
 
 const updateCompanyStatus = async (companyId, status) => {

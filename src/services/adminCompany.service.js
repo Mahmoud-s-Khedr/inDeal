@@ -80,7 +80,7 @@ const populateDocumentsWithFiles = async (documents) => {
 };
 
 const listPendingCompanies = async () => {
-    const pendingCompanies = await companyRepository.listByStatus('pending');
+    const pendingCompanies = await companyRepository.listByStatus('underReview');
     const documentsByCompany = await Promise.all(
         pendingCompanies.map((company) => companyDocumentRepository.listByCompanyId(company.id))
     );
@@ -130,6 +130,16 @@ const reviewCompanyStatus = async (companyId, status) => {
     const existing = await companyRepository.findById(numericId);
     if (!existing) {
         throw new AppError('Company not found', 404);
+    }
+
+    if (status === 'active') {
+        const agent = await userRepository.findById(existing.agent_id);
+        if (!agent) {
+            throw new AppError('Associated agent not found', 400);
+        }
+        if (agent.status !== 'verified') {
+            throw new AppError('Agent must verify their email before their company can be approved', 400);
+        }
     }
 
     if (existing.status === status) {

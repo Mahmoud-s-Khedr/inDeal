@@ -5,6 +5,40 @@ const contactSchema = z.object({
     value: z.string().min(1),
 });
 
+const companyTypeEnumValues = [
+    'supplier',
+    'manufacturer',
+    'distributor',
+    'retailer',
+    'serviceProvider',
+    'wholesaler',
+    'eCommerce',
+    'franchise',
+    'cooperative',
+    'holdingCompany',
+    'consultancy',
+    'logistics',
+    'other',
+];
+
+const industryEnumValues = [
+    'agriculture',
+    'automotive',
+    'banking',
+    'construction',
+    'education',
+    'healthcare',
+    'hospitality',
+    'manufacturing',
+    'retail',
+    'technology',
+    'telecommunications',
+    'transportation',
+    'other',
+];
+
+const manufacturingStrategyEnumValues = ['makeToStock', 'makeToOrder', 'assembleToOrder', 'engineerToOrder'];
+
 const companyIdParam = z.object({
     id: z
         .string()
@@ -14,13 +48,14 @@ const companyIdParam = z.object({
 const updateCompanySchema = z.object({
     body: z
         .object({
+            name: z.string().min(1).max(100).optional(),
             description: z.string().optional(),
             address: z.string().optional(),
-            phone: z.string().optional(),
-            website: z.string().url().optional(),
-            companyType: z.string().optional(),
-            companyIndustry: z.string().optional(),
-            manufacturingStrategy: z.string().optional(),
+            phone: z.string().max(20).optional(),
+            website: z.string().url().max(100).optional(),
+            companyType: z.enum(companyTypeEnumValues).optional(),
+            companyIndustry: z.enum(industryEnumValues).optional(),
+            manufacturingStrategy: z.enum(manufacturingStrategyEnumValues).optional(),
             contacts: z.array(contactSchema).optional(),
             locations: z.array(z.string().min(1)).optional(),
         })

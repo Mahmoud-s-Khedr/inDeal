@@ -45,9 +45,39 @@ const findById = async (id) => {
     return result.rows[0];
 };
 
+const updatePasswordHash = async (userId, passwordHash) => {
+    const result = await pool.query(
+        `
+        UPDATE users
+        SET password_hash = $2,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+        `,
+        [userId, passwordHash]
+    );
+    return result.rows[0];
+};
+
+const updateStatus = async (userId, status) => {
+    const result = await pool.query(
+        `
+        UPDATE users
+        SET status = $2,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+        `,
+        [userId, status]
+    );
+    return result.rows[0];
+};
+
 module.exports = {
     createUser,
     findByEmail,
     findByUsername,
     findById,
+    updatePasswordHash,
+    updateStatus,
 };

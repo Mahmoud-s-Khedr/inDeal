@@ -11,7 +11,7 @@ const companyParamsSchema = z.object({
 const reviewCompanyStatusSchema = z.object({
     params: companyIdSchema,
     body: z.object({
-        status: z.enum(['active', 'rejected', 'suspended']),
+        status: z.enum(['active', 'underReview', 'rejected', 'suspended']),
     }),
 });
 

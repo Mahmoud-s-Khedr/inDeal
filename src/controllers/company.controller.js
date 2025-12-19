@@ -4,7 +4,7 @@ const companyService = require('../services/company.service');
 
 const getMyProfile = catchAsync(async (req, res) => {
     const profile = await companyService.getMyProfile(req.user.id);
-    sendResponse(res, 200, profile, 'Company profile fetched');
+    sendResponse(res, 200, profile.company, 'Company profile fetched');
 });
 
 const updateMyProfile = catchAsync(async (req, res) => {

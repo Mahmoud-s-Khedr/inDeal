@@ -1,6 +1,7 @@
 -- 0. Enums
 CREATE TYPE user_role_enum AS ENUM ('agent', 'admin', 'support');
-CREATE TYPE company_status_enum AS ENUM ('pending', 'active', 'suspended', 'rejected');
+CREATE TYPE user_status_enum AS ENUM ('pending', 'verified', 'suspended');
+CREATE TYPE company_state_enum AS ENUM ('active', 'underReview', 'rejected', 'suspended');
 CREATE TYPE deal_status_enum AS ENUM ('open', 'closed', 'negotiating', 'archived');
 CREATE TYPE deal_type_enum AS ENUM ('auction', 'rfq');
 CREATE TYPE deal_request_status_enum AS ENUM ('pending', 'accepted', 'rejected', 'withdrawn');
@@ -8,6 +9,12 @@ CREATE TYPE chat_room_status_enum AS ENUM ('active', 'archived');
 CREATE TYPE ad_status_enum AS ENUM ('pending', 'active', 'rejected', 'paused', 'completed');
 CREATE TYPE ad_location_enum AS ENUM ('homepage_banner', 'sidebar', 'search_result');
 CREATE TYPE ad_type_enum AS ENUM ('banner', 'video', 'sponsored_listing');
+
+CREATE TYPE company_type_enum AS ENUM ('supplier', 'manufacturer', 'distributor', 'retailer', 'serviceProvider', 'wholesaler', 'eCommerce', 'franchise', 'cooperative', 'holdingCompany', 'consultancy', 'logistics', 'other');
+
+CREATE TYPE industry_enum AS ENUM ('agriculture', 'automotive', 'banking', 'construction', 'education', 'healthcare', 'hospitality', 'manufacturing', 'retail', 'technology', 'telecommunications', 'transportation', 'other');
+
+CREATE TYPE manufacturing_strategy_enum AS ENUM ('makeToStock', 'makeToOrder', 'assembleToOrder', 'engineerToOrder');
 
 -- 1. Files & Users (Standard)
 create table files (
@@ -27,6 +34,7 @@ create table users (
     last_name varchar(50) not null,
     job_title varchar(100),
     role user_role_enum default 'agent',
+    status user_status_enum default 'pending' not null,
     profile_image int references files(id),
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp
@@ -41,11 +49,11 @@ create table companies (
     address varchar(255),
     phone varchar(20),
     website varchar(100),
-    company_type varchar(100),
-    company_industry varchar(100),
-    manufacturing_strategy text,
+    company_type company_type_enum,
+    company_industry industry_enum,
+    manufacturing_strategy manufacturing_strategy_enum,
     logo int references files(id),
-    status company_status_enum default 'pending',
+    status company_state_enum default 'underReview',
     contacts jsonb,
     locations jsonb,
     created_at timestamp default current_timestamp,

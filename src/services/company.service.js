@@ -7,7 +7,7 @@ const companyDocumentRepository = require('../repositories/companyDocument.repos
 const sanitizeCompany = (company) => {
     if (!company) return null;
 
-    return {
+    const result = {
         id: company.id,
         agentId: company.agent_id,
         name: company.name,
@@ -24,6 +24,18 @@ const sanitizeCompany = (company) => {
         createdAt: company.created_at,
         updatedAt: company.updated_at,
     };
+
+    if (company.first_name) {
+        result.agent = {
+            firstName: company.first_name,
+            lastName: company.last_name,
+            email: company.email,
+            jobTitle: company.job_title,
+            username: company.username,
+        };
+    }
+
+    return result;
 };
 
 const sanitizeGalleryItem = (item) => ({
@@ -114,6 +126,7 @@ const getMyProfile = async (agentId) => {
 
 const updateMyProfile = async (agentId, payload) => {
     const dbUpdates = {
+        name: payload.name,
         description: payload.description,
         address: payload.address,
         phone: payload.phone,

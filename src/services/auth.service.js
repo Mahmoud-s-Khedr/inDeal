@@ -1,7 +1,12 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const AppError = require('../utils/AppError');
 const { pool } = require('../config/db');
 const { signToken } = require('../utils/jwt');
+const config = require('../config/env');
+const redis = require('../config/redis');
+const { sendMail } = require('../config/mailer');
+const logger = require('../utils/logger');
 const userRepository = require('../repositories/user.repository');
 const companyRepository = require('../repositories/company.repository');
 const companyDocumentRepository = require('../repositories/companyDocument.repository');
@@ -20,6 +25,7 @@ const sanitizeUser = (user) => {
         lastName: user.last_name,
         jobTitle: user.job_title,
         role: user.role,
+        status: user.status,
         createdAt: user.created_at,
         updatedAt: user.updated_at,
     };
@@ -58,6 +64,253 @@ const sanitizeDocument = (doc) => {
         description: doc.description,
         uploadedAt: doc.uploaded_at,
     };
+};
+
+const OTP_KEY_PREFIX = 'fp:otp:';
+const RATE_LIMIT_PREFIX = 'fp:rate:';
+const otpSettings = config.forgotPassword;
+const emailVerificationSettings = config.emailVerification;
+const EMAIL_VERIFICATION_KEY_PREFIX = 'email:verification:';
+
+const requireForgotPasswordEnabled = () => {
+    if (!otpSettings.enabled) {
+        throw new AppError('Password reset is temporarily unavailable', 503);
+    }
+};
+
+const normalizeEmail = (email) => email.trim().toLowerCase();
+
+const buildOtpKey = (email) => `${OTP_KEY_PREFIX}${email}`;
+const buildRateKey = (type, scope, value) => `${RATE_LIMIT_PREFIX}${type}:${scope}:${value}`;
+
+const redisFailure = (error) => {
+    logger.error('Valkey operation failed', error);
+    throw new AppError('Password reset is temporarily unavailable. Please try again later.', 503);
+};
+
+const incrementAndCheckLimit = async (key, limit, windowSeconds) => {
+    if (!limit || limit <= 0) return;
+    let current = 0;
+    try {
+        current = await redis.incr(key);
+        if (current === 1) {
+            await redis.expire(key, windowSeconds);
+        }
+    } catch (error) {
+        redisFailure(error);
+    }
+
+    if (current > limit) {
+        throw new AppError('Too many requests. Please try again later.', 429);
+    }
+};
+
+const applyRateLimits = async (type, email, ipAddress) => {
+    const windowSeconds = otpSettings.rateLimits.windowSeconds;
+    const limiterPromises = [];
+
+    if (type === 'forgot') {
+        limiterPromises.push(
+            incrementAndCheckLimit(buildRateKey(type, 'email', email), otpSettings.rateLimits.forgotPerEmail, windowSeconds)
+        );
+        if (ipAddress) {
+            limiterPromises.push(
+                incrementAndCheckLimit(buildRateKey(type, 'ip', ipAddress), otpSettings.rateLimits.forgotPerIp, windowSeconds)
+            );
+        }
+    } else if (type === 'reset') {
+        limiterPromises.push(
+            incrementAndCheckLimit(buildRateKey(type, 'email', email), otpSettings.rateLimits.resetPerEmail, windowSeconds)
+        );
+        if (ipAddress) {
+            limiterPromises.push(
+                incrementAndCheckLimit(buildRateKey(type, 'ip', ipAddress), otpSettings.rateLimits.resetPerIp, windowSeconds)
+            );
+        }
+    }
+
+    await Promise.all(limiterPromises);
+};
+
+const generateOtp = () => crypto.randomInt(0, 1_000_000).toString().padStart(6, '0');
+
+const storeOtpPayload = async (email, payload) => {
+    const ttlSeconds = otpSettings.otpTtlMinutes * 60;
+    try {
+        await redis.set(buildOtpKey(email), JSON.stringify(payload), 'EX', ttlSeconds);
+    } catch (error) {
+        redisFailure(error);
+    }
+};
+
+const getOtpPayload = async (email) => {
+    try {
+        const raw = await redis.get(buildOtpKey(email));
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch (error) {
+        redisFailure(error);
+    }
+};
+
+const deleteOtpPayload = async (email) => {
+    try {
+        await redis.del(buildOtpKey(email));
+    } catch (error) {
+        redisFailure(error);
+    }
+};
+
+const buildEmailVerificationKey = (email) => `${EMAIL_VERIFICATION_KEY_PREFIX}${email}`;
+
+const storeEmailVerificationPayload = async (email, payload) => {
+    const ttlSeconds = emailVerificationSettings.tokenTtlMinutes * 60;
+    try {
+        await redis.set(buildEmailVerificationKey(email), JSON.stringify(payload), 'EX', ttlSeconds);
+    } catch (error) {
+        redisFailure(error);
+    }
+};
+
+const getEmailVerificationPayload = async (email) => {
+    try {
+        const raw = await redis.get(buildEmailVerificationKey(email));
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch (error) {
+        redisFailure(error);
+    }
+};
+
+const deleteEmailVerificationPayload = async (email) => {
+    try {
+        await redis.del(buildEmailVerificationKey(email));
+    } catch (error) {
+        redisFailure(error);
+    }
+};
+
+const updateOtpAttempts = async (email, payload, attempts) => {
+    try {
+        const ttl = await redis.ttl(buildOtpKey(email));
+        const nextPayload = { ...payload, attempts };
+        if (ttl > 0) {
+            await redis.set(buildOtpKey(email), JSON.stringify(nextPayload), 'EX', ttl);
+        } else {
+            await redis.set(buildOtpKey(email), JSON.stringify(nextPayload));
+        }
+    } catch (error) {
+        redisFailure(error);
+    }
+};
+
+const sendOtpEmail = async ({ to, otp, ttlMinutes, userAgent, ipAddress }) => {
+    const subject = 'Reset your inDeal password';
+    const lines = [
+        'Use the one-time code below to reset your password.',
+        `Code: ${otp}`,
+        `Expires in: ${ttlMinutes} minutes`,
+    ];
+    if (ipAddress) {
+        lines.push(`Request IP: ${ipAddress}`);
+    }
+    if (userAgent) {
+        lines.push(`Device: ${userAgent}`);
+    }
+    lines.push('');
+    lines.push('If you did not request this, you can ignore this email.');
+
+    const text = lines.join('\n');
+    const html = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #333;">Password Reset Request</h2>
+            <p>Use the one-time code below to reset your password. It is valid for <strong>${ttlMinutes} minutes</strong>.</p>
+            <div style="background: #f4f4f4; padding: 20px; text-align: center; border-radius: 5px;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #007bff;">${otp}</span>
+            </div>
+            <p style="margin-top: 20px; color: #666; font-size: 14px;">
+                ${ipAddress ? `<strong>Request IP:</strong> ${ipAddress}<br>` : ''}
+                ${userAgent ? `<strong>Device:</strong> ${userAgent}<br>` : ''}
+            </p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="color: #999; font-size: 12px;">If you did not request this, you can safely ignore this email.</p>
+            <p style="font-size: 12px;"><a href="${config.forgotPassword.frontendUrl}" style="color: #007bff;">Visit inDeal</a></p>
+        </div>
+    `;
+
+    try {
+        await sendMail({
+            to,
+            subject,
+            text,
+            html,
+        });
+        logger.info(`Forgot password OTP sent to ${to}`);
+    } catch (error) {
+        logger.error('Failed to dispatch forgot password email', error);
+        throw new AppError('Unable to send password reset email. Please try again later.', 503);
+    }
+};
+
+const createEmailVerificationToken = async (email, userId) => {
+    const token = crypto.randomBytes(32).toString('hex');
+    await storeEmailVerificationPayload(email, {
+        userId,
+        token,
+        issuedAt: new Date().toISOString(),
+    });
+    return token;
+};
+
+const buildEmailVerificationLink = (email, token) => {
+    const baseUrl = (emailVerificationSettings.baseUrl || `http://localhost:${config.app.port || 3000}`)
+        .replace(/\/$/, '');
+    const rawRoute = emailVerificationSettings.route || '/api/v1/auth/verify-email';
+    const sanitizedRoute = rawRoute.startsWith('/') ? rawRoute.replace(/\/+$/, '') : `/${rawRoute.replace(/\/+$/, '')}`;
+    const route = `${baseUrl}${sanitizedRoute}`;
+    const params = new URLSearchParams({ token, email });
+    return `${route}?${params.toString()}`;
+};
+
+const sendVerificationEmail = async (user) => {
+    const normalizedEmail = normalizeEmail(user.email);
+    const token = await createEmailVerificationToken(normalizedEmail, user.id);
+    const verificationLink = buildEmailVerificationLink(normalizedEmail, token);
+    const expiresMinutes = emailVerificationSettings.tokenTtlMinutes;
+    const subject = 'Verify your inDeal email';
+    const lines = [
+        'Welcome to inDeal!',
+        'Click the link below to verify your email and unlock your dashboard:',
+        verificationLink,
+        `Link expires in ${expiresMinutes} minutes.`,
+        '',
+        'If you did not register, you can safely ignore this email.',
+    ];
+    const text = lines.join('\n');
+    const html = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #333;">Verify your email</h2>
+            <p>Thanks for joining inDeal! Verify your email to access your account and get your company reviewed.</p>
+            <a href="${verificationLink}" style="display: inline-block; margin: 20px 0; padding: 12px 24px; background: #007bff; color: #fff; text-decoration: none; border-radius: 6px;">Verify email</a>
+            <p style="color: #666; font-size: 14px;">Link expires in ${expiresMinutes} minutes.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="color: #999; font-size: 12px;">If you did not register for inDeal, you can ignore this message.</p>
+            <p style="font-size: 12px;"><a href="${config.forgotPassword.frontendUrl}" style="color: #007bff;">Visit inDeal</a></p>
+        </div>
+    `;
+
+    try {
+        await sendMail({
+            to: normalizedEmail,
+            subject,
+            text,
+            html,
+        });
+        logger.info(`Email verification link sent to ${normalizedEmail}`);
+    } catch (error) {
+        logger.error('Failed to dispatch verification email', error);
+        throw new AppError('Unable to send verification email. Please try again later.', 503);
+    }
 };
 
 const createRegistrationUploadUrl = async ({ fileName, fileType, fileSize }) => {
@@ -134,6 +387,7 @@ const register = async (payload) => {
             );
         }
 
+        await sendVerificationEmail(newUser);
         await client.query('COMMIT');
 
         const token = signToken(newUser.id);
@@ -149,6 +403,7 @@ const register = async (payload) => {
         };
     } catch (error) {
         await client.query('ROLLBACK');
+        await deleteEmailVerificationPayload(email);
         throw error;
     } finally {
         client.release();
@@ -166,6 +421,10 @@ const login = async (payload) => {
     const isPasswordValid = await bcrypt.compare(payload.password, user.password_hash);
     if (!isPasswordValid) {
         throw new AppError('Invalid credentials', 401);
+    }
+
+    if (user.status !== 'verified') {
+        throw new AppError('Please verify your email before logging in', 403);
     }
 
     const company = await companyRepository.findByAgentId(user.id);
@@ -191,6 +450,10 @@ const adminLogin = async (payload) => {
         throw new AppError('Invalid credentials', 401);
     }
 
+    if (user.status !== 'verified') {
+        throw new AppError('Please verify your email before logging in', 403);
+    }
+
     const token = signToken(user.id);
 
     return {
@@ -199,9 +462,115 @@ const adminLogin = async (payload) => {
     };
 };
 
+const forgotPassword = async ({ email, ipAddress, userAgent }) => {
+    requireForgotPasswordEnabled();
+    const normalizedEmail = normalizeEmail(email);
+
+    await applyRateLimits('forgot', normalizedEmail, ipAddress);
+
+    const user = await userRepository.findByEmail(normalizedEmail);
+    if (!user) {
+        return;
+    }
+
+    const otp = generateOtp();
+    await storeOtpPayload(normalizedEmail, {
+        userId: user.id,
+        otp,
+        attempts: 0,
+        issuedAt: new Date().toISOString(),
+    });
+
+    await sendOtpEmail({
+        to: normalizedEmail,
+        otp,
+        ttlMinutes: otpSettings.otpTtlMinutes,
+        userAgent,
+        ipAddress,
+    });
+};
+
+const resetPassword = async ({ email, otp, password, ipAddress }) => {
+    requireForgotPasswordEnabled();
+    const normalizedEmail = normalizeEmail(email);
+
+    await applyRateLimits('reset', normalizedEmail, ipAddress);
+
+    const storedPayload = await getOtpPayload(normalizedEmail);
+    if (!storedPayload) {
+        throw new AppError('Invalid or expired code', 400);
+    }
+
+    if (storedPayload.otp !== otp) {
+        const nextAttempts = (storedPayload.attempts || 0) + 1;
+        await updateOtpAttempts(normalizedEmail, storedPayload, nextAttempts);
+        throw new AppError('Invalid or expired code', 400);
+    }
+
+    const user = await userRepository.findByEmail(normalizedEmail);
+    if (!user || user.id !== storedPayload.userId) {
+        throw new AppError('Invalid or expired code', 400);
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    await userRepository.updatePasswordHash(user.id, passwordHash);
+    await deleteOtpPayload(normalizedEmail);
+};
+
+const verifyOtp = async ({ email, otp, ipAddress }) => {
+    requireForgotPasswordEnabled();
+    const normalizedEmail = normalizeEmail(email);
+
+    await applyRateLimits('reset', normalizedEmail, ipAddress);
+
+    const storedPayload = await getOtpPayload(normalizedEmail);
+    if (!storedPayload) {
+        throw new AppError('Invalid or expired code', 400);
+    }
+
+    if (storedPayload.otp !== otp) {
+        const nextAttempts = (storedPayload.attempts || 0) + 1;
+        await updateOtpAttempts(normalizedEmail, storedPayload, nextAttempts);
+        throw new AppError('Invalid or expired code', 400);
+    }
+
+    return { message: 'OTP verified successfully' };
+};
+
+const verifyEmail = async ({ email, token }) => {
+    if (!emailVerificationSettings.baseUrl) {
+        throw new AppError('Email verification is not configured', 503);
+    }
+
+    const normalizedEmail = normalizeEmail(email);
+    const user = await userRepository.findByEmail(normalizedEmail);
+    if (!user) {
+        throw new AppError('Invalid or expired verification link', 400);
+    }
+
+    if (user.status === 'verified') {
+        await deleteEmailVerificationPayload(normalizedEmail);
+        return { message: 'Email already verified' };
+    }
+
+    const storedPayload = await getEmailVerificationPayload(normalizedEmail);
+    if (!storedPayload || storedPayload.token !== token || storedPayload.userId !== user.id) {
+        throw new AppError('Invalid or expired verification link', 400);
+    }
+
+    await userRepository.updateStatus(user.id, 'verified');
+    await deleteEmailVerificationPayload(normalizedEmail);
+
+    return { message: 'Email verified successfully' };
+};
+
 module.exports = {
     createRegistrationUploadUrl,
     register,
     login,
     adminLogin,
+    forgotPassword,
+    verifyOtp,
+    resetPassword,
+    verifyEmail,
 };

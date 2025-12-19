@@ -38,9 +38,22 @@ const envSchema = z.object({
     SMTP_PORT: z.coerce.number().default(587),
     SMTP_USER: z.string().optional(),
     SMTP_PASSWORD: z.string().optional(),
-    SMTP_SECURE: z.coerce.boolean().default(false),
+    SMTP_SECURE: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
     SUPPORT_EMAIL_FROM: z.string().default('no-reply@indeal.local'),
     SUPPORT_EMAIL_NAME: z.string().default('inDeal Support'),
+
+    FRONTEND_BASE_URL: z.string().url().default('https://app.indeal.local'),
+    FORGOT_PASSWORD_ENABLED: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
+    FORGOT_PASSWORD_OTP_TTL_MINUTES: z.coerce.number().int().positive().default(30),
+    FORGOT_PASSWORD_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
+    FORGOT_PASSWORD_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60 * 60),
+    FORGOT_PASSWORD_RATE_LIMIT_FORGOT_PER_EMAIL: z.coerce.number().int().positive().default(5),
+    FORGOT_PASSWORD_RATE_LIMIT_FORGOT_PER_IP: z.coerce.number().int().positive().default(10),
+    FORGOT_PASSWORD_RATE_LIMIT_RESET_PER_EMAIL: z.coerce.number().int().positive().default(10),
+    FORGOT_PASSWORD_RATE_LIMIT_RESET_PER_IP: z.coerce.number().int().positive().default(15),
+    EMAIL_VERIFICATION_TOKEN_TTL_MINUTES: z.coerce.number().int().positive().default(60 * 24),
+    EMAIL_VERIFICATION_API_BASE_URL: z.string().url().default('http://localhost:3000'),
+    EMAIL_VERIFICATION_PATH: z.string().default('/api/v1/auth/verify-email'),
 });
 
 const parsed = envSchema.safeParse({
@@ -105,5 +118,23 @@ module.exports = {
     },
     log: {
         level: env.LOG_LEVEL,
+    },
+    forgotPassword: {
+        enabled: env.FORGOT_PASSWORD_ENABLED,
+        frontendUrl: env.FRONTEND_BASE_URL,
+        otpTtlMinutes: env.FORGOT_PASSWORD_OTP_TTL_MINUTES,
+        maxAttempts: env.FORGOT_PASSWORD_MAX_ATTEMPTS,
+        rateLimits: {
+            windowSeconds: env.FORGOT_PASSWORD_RATE_LIMIT_WINDOW_SECONDS,
+            forgotPerEmail: env.FORGOT_PASSWORD_RATE_LIMIT_FORGOT_PER_EMAIL,
+            forgotPerIp: env.FORGOT_PASSWORD_RATE_LIMIT_FORGOT_PER_IP,
+            resetPerEmail: env.FORGOT_PASSWORD_RATE_LIMIT_RESET_PER_EMAIL,
+            resetPerIp: env.FORGOT_PASSWORD_RATE_LIMIT_RESET_PER_IP,
+        },
+    },
+    emailVerification: {
+        tokenTtlMinutes: env.EMAIL_VERIFICATION_TOKEN_TTL_MINUTES,
+        baseUrl: env.EMAIL_VERIFICATION_API_BASE_URL,
+        route: env.EMAIL_VERIFICATION_PATH,
     },
 };
