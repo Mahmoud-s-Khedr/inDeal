@@ -1,4 +1,5 @@
 # Forgot Password & Reset Flow — Implementation Plan
+Testing backend base URL: https://api-test.indealeg.com
 
 ## 1. Objective
 Ship a password recovery flow that relies on one-time passcodes (OTPs) only, keeps the database untouched, and guarantees that no information about account existence leaks to clients.
@@ -41,7 +42,7 @@ Ship a password recovery flow that relies on one-time passcodes (OTPs) only, kee
   - `issueResetOtp(email)`: fetch user, generate OTP, store in Valkey, enqueue mail job payload.
   - `resetPasswordWithOtp(email, otp, password)`: verify OTP + attempts, hash password with `bcryptjs`, persist, delete OTP key.
 - **Queue Worker (BullMQ)**
-  - `sendForgotPasswordOtp` job renders Nodemailer template with OTP + instructions.
+  - `sendForgotPasswordOtp` job sends OTP via Resend with the same HTML/text payload.
 - **Valkey Utilities**
   - Helpers for storing OTP payloads, incrementing attempts, and purging keys.
 
@@ -56,14 +57,14 @@ Ship a password recovery flow that relies on one-time passcodes (OTPs) only, kee
 | 6 | Email Template | ✅ Done | Inline text/HTML template sent via `sendMail` (see `sendOtpEmail` helper). |
 | 7 | BullMQ Job | ⚠ Pending | Email currently dispatched inline; once a worker exists, move to BullMQ processor per original plan. |
 | 8 | Monitoring & Alerts | ⚠ Pending | Needs metrics/alerts once observability stack is ready. |
-| 9 | Tests | ⚠ Pending | No automated coverage yet; add unit/integration tests with mocked Valkey + Nodemailer. |
+| 9 | Tests | ⚠ Pending | No automated coverage yet; add unit/integration tests with mocked Valkey + Resend. |
 
 ## 8. Testing & Verification
-- **Automated:** run Jest integration suite backed by test Postgres and Valkey containers; mock Nodemailer transport to capture OTP emails.
+- **Automated:** run Jest integration suite backed by test Postgres and Valkey containers; mock Resend client to capture OTP emails.
 - **Manual Smoke:** simulate forgot/reset via Postman, confirm OTP stored in Valkey, verify password updates and old credentials fail.
 - **Security Review:** ensure OTP reuse is blocked, rate limits enforced, logs contain no PII, and audit entries are generated for compliance.
 
 ## 9. Next Steps
 1. Offload the OTP email dispatch to BullMQ once the worker infrastructure is live, keeping the API response path fast and resilient.
 2. Instrument request/reset counters plus Valkey error alerts to surface abuse or outages quickly.
-3. Add automated tests (unit + integration) mocking Nodemailer and Valkey to guard against regressions.
+3. Add automated tests (unit + integration) mocking Resend and Valkey to guard against regressions.

@@ -34,13 +34,9 @@ const envSchema = z.object({
     FIREBASE_CLIENT_EMAIL: z.string().optional(),
     FIREBASE_PRIVATE_KEY: z.string().optional(),
 
-    SMTP_HOST: z.string().optional(),
-    SMTP_PORT: z.coerce.number().default(587),
-    SMTP_USER: z.string().optional(),
-    SMTP_PASSWORD: z.string().optional(),
-    SMTP_SECURE: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
-    SUPPORT_EMAIL_FROM: z.string().default('no-reply@indeal.local'),
-    SUPPORT_EMAIL_NAME: z.string().default('inDeal Support'),
+    RESEND_API_KEY: z.string().optional(),
+    RESEND_FROM_EMAIL: z.string().default('no-reply@indeal.local'),
+    RESEND_FROM_NAME: z.string().default('inDeal Support'),
 
     FRONTEND_BASE_URL: z.string().url().default('https://app.indeal.local'),
     FORGOT_PASSWORD_ENABLED: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
@@ -107,14 +103,10 @@ module.exports = {
         clientEmail: env.FIREBASE_CLIENT_EMAIL,
         privateKey: env.FIREBASE_PRIVATE_KEY,
     },
-    mail: {
-        host: env.SMTP_HOST,
-        port: env.SMTP_PORT,
-        user: env.SMTP_USER,
-        password: env.SMTP_PASSWORD,
-        secure: env.SMTP_SECURE,
-        from: env.SUPPORT_EMAIL_FROM,
-        fromName: env.SUPPORT_EMAIL_NAME,
+    resend: {
+        apiKey: env.RESEND_API_KEY,
+        fromEmail: env.RESEND_FROM_EMAIL,
+        fromName: env.RESEND_FROM_NAME,
     },
     log: {
         level: env.LOG_LEVEL,

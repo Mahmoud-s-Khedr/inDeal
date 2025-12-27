@@ -1,4 +1,5 @@
 # inDeal: Project Memory
+Testing backend base URL: https://api-test.indealeg.com
 
 ## 1. Project Overview
 **inDeal** is a B2B marketplace platform connecting companies for deals (Auctions/RFQs), facilitating messaging, and allowing advertising.
@@ -11,7 +12,7 @@
 - **Async/Queue**: Valkey (Redis alternative) + BullMQ
 - **Real-time**: Socket.io (with `@socket.io/redis-adapter` via Valkey)
 - **Storage**: Cloudflare R2
-- **Notifications**: Firebase (FCM/System) + Nodemailer
+- **Notifications**: Firebase (FCM/System) + Resend
 
 ## 3. Database Status (`schema.sql`)
 - **State**: **Finalized** (Refactored with best practices).
@@ -27,7 +28,7 @@
 - [x] Refactor Schema (ENUMs, Indexes, Reviews)
 - [x] Create Implementation Plan (`plan.md`)
 - [x] Initialize Node.js Project & Infrastructure (Docker, Express, DB Config)
-- [x] Harden project initialization (typed env loader, logger, Valkey/S3/Firebase/Nodemailer clients, graceful server bootstrap)
+- [x] Harden project initialization (typed env loader, logger, Valkey/S3/Firebase/Resend clients, graceful server bootstrap)
 - [x] Establish API routing skeleton (`/api/v1` with health & system endpoints)
 - [x] Containerize development & testing (Dockerfile, docker-compose stack with Postgres/Valkey/test profile)
 - [x] Implement initial authentication (register/login controllers, Zod validation, repositories, JWT issuance)

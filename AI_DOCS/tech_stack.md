@@ -1,3 +1,5 @@
+Testing backend base URL: https://api-test.indealeg.com
+
 Here is the definitive, final list of technologies for your project. I have updated this list to reflect your specific engineering choices: **Valkey** (instead of Redis), **Raw SQL**, and **Firebase (FCM)** (to support the Mobile App).
 
 ### **1. Core Backend & API**
@@ -35,7 +37,7 @@ Here is the definitive, final list of technologies for your project. I have upda
 | Technology | The Job | Why this choice? |
 | :--- | :--- | :--- |
 | **Firebase Admin SDK** | **Push Gateway** | The bridge for cross-platform notifications. It automatically handles **APNs** (iOS), **FCM** (Android), and **Web Push** (Browsers) with a single code call. |
-| **Nodemailer** | **Email Client** | Connects to SMTP servers to send transactional emails (Welcome, Password Reset). |
+| **Resend** | **Email Service** | API-based transactional email with deliverability tooling and analytics. |
 
 ### **7. Security & Validation**
 | Technology | The Job | Why this choice? |

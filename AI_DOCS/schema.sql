@@ -204,7 +204,7 @@ CREATE INDEX idx_audit_logs_company_id ON audit_logs(company_id);
 CREATE INDEX idx_audit_logs_details ON audit_logs USING GIN (details);
 
 -- 9. Seed initial admin user
-INSERT INTO users (username, email, password_hash, first_name, last_name, job_title, role)
+INSERT INTO users (username, email, password_hash, first_name, last_name, job_title, role, status)
 VALUES (
     'indeal_admin',
     'admin@indeal.local',
@@ -212,6 +212,7 @@ VALUES (
     'System',
     'Admin',
     'Operations Lead',
-    'admin'
+    'admin',
+    'verified'
 )
 ON CONFLICT (email) DO NOTHING;

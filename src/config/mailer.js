@@ -1,38 +1,44 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const config = require('./env');
 const logger = require('../utils/logger');
 
-let transporter = null;
+let resend = null;
 
-const hasSmtpConfig = config.mail.host && config.mail.port && config.mail.user && config.mail.password;
-
-if (hasSmtpConfig) {
-    transporter = nodemailer.createTransport({
-        host: config.mail.host,
-        port: config.mail.port,
-        secure: config.mail.secure,
-        auth: {
-            user: config.mail.user,
-            pass: config.mail.password,
-        },
-    });
-    logger.info('SMTP transporter configured');
+if (config.resend.apiKey) {
+    resend = new Resend(config.resend.apiKey);
+    logger.info('Resend client configured');
 } else {
-    logger.warn('SMTP credentials missing. Emails will not be sent until configured.');
+    logger.warn('RESEND_API_KEY is missing. Emails will not be sent until configured.');
 }
 
-const sendMail = (options) => {
-    if (!transporter) {
-        const error = new Error('Mail transporter is not configured');
+const sendMail = async (options) => {
+    if (!resend) {
+        const error = new Error('Resend client is not configured');
         error.code = 'MAILER_NOT_CONFIGURED';
         throw error;
     }
 
-    const from = options.from || `${config.mail.fromName} <${config.mail.from}>`;
-    return transporter.sendMail({ ...options, from });
+    const from = options.from || `${config.resend.fromName} <${config.resend.fromEmail}>`;
+    const { data, error } = await resend.emails.send({
+        from,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+        replyTo: options.replyTo,
+    });
+
+    if (error) {
+        logger.error('Resend send failed', { error, to: options.to });
+        const err = new Error('Email delivery failed');
+        err.code = 'RESEND_SEND_FAILED';
+        throw err;
+    }
+
+    logger.info('Email sent successfully', { id: data?.id, to: options.to });
+    return { id: data?.id };
 };
 
 module.exports = {
-    transporter,
     sendMail,
 };

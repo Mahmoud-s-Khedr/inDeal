@@ -1,3 +1,5 @@
+Testing backend base URL: https://api-test.indealeg.com
+
 ### **Phase 1: Foundation & Identity**
 **Total Duration:** ~3 Weeks | **Total Cost:** ~4,000 EGP
 
