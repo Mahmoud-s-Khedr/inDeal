@@ -4,7 +4,7 @@
   "description": "B2B",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "npm run db:schema && node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:schema": "node scripts/run-schema.js"

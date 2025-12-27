@@ -36,6 +36,7 @@ Testing backend base URL: https://api-test.indealeg.com
 - [x] Implement direct-to-R2 file upload flow (signed PUT URLs + files table integration)
 - [x] Capture company registration documents (stored as `company_documents` linked to uploaded files)
 - [x] Instrument detailed HTTP logging (request/response metadata, bodies, auth context) + Postman collection for regression testing
+- [x] Replace Nodemailer with Resend (env + mailer config + docs)
 - [ ] **Next Step**: Implement Deals module (list/create, bids, reviews linkage)
 
 ## 5. Critical Decisions Log

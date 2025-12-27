@@ -390,6 +390,7 @@ Once Resend is working, remove or ignore the SMTP variables in `.env` and `src/c
 - `SUPPORT_EMAIL_NAME`
 
 You can keep them temporarily for backward compatibility, but the end goal is to delete them and use `RESEND_*` only.
+Status: removed from `.env` and `.env.example` in this repo; `src/config/env.js` now uses `RESEND_*`.
 
 ---
 
