@@ -32,6 +32,15 @@ const forgotPassword = catchAsync(async (req, res) => {
     sendResponse(res, 200, payload, payload.message);
 });
 
+const resendForgotPasswordOtp = catchAsync(async (req, res) => {
+    const result = await authService.resendForgotPasswordOtp({
+        email: req.body.email,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+    });
+    sendResponse(res, 200, result, result.message);
+});
+
 const resetPassword = catchAsync(async (req, res) => {
     await authService.resetPassword({
         email: req.body.email,
@@ -163,13 +172,22 @@ const verifyEmail = catchAsync(async (req, res) => {
     res.status(200).header('Content-Type', 'text/html').send(html);
 });
 
+const resendVerificationEmail = catchAsync(async (req, res) => {
+    const result = await authService.resendVerificationEmail({
+        email: req.body.email,
+    });
+    sendResponse(res, 200, result, result.message);
+});
+
 module.exports = {
     createRegistrationUploadUrl,
     register,
     login,
     adminLogin,
     forgotPassword,
+    resendForgotPasswordOtp,
     verifyOtp,
     resetPassword,
     verifyEmail,
+    resendVerificationEmail,
 };

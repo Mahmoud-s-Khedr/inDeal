@@ -313,6 +313,14 @@ const sendVerificationEmail = async (user) => {
     }
 };
 
+const dispatchVerificationEmail = (user) => {
+    process.nextTick(() => {
+        sendVerificationEmail(user).catch((error) => {
+            logger.error('Failed to dispatch verification email (async)', error);
+        });
+    });
+};
+
 const createRegistrationUploadUrl = async ({ fileName, fileType, fileSize }) => {
     return fileService.createUploadUrl({
         fileName,
@@ -387,7 +395,6 @@ const register = async (payload) => {
             );
         }
 
-        await sendVerificationEmail(newUser);
         await client.query('COMMIT');
 
         const token = signToken(newUser.id);
@@ -395,6 +402,8 @@ const register = async (payload) => {
         if (createdDocuments.length) {
             companyPayload.documents = createdDocuments.map(sanitizeDocument);
         }
+
+        dispatchVerificationEmail(newUser);
 
         return {
             token,
@@ -490,6 +499,11 @@ const forgotPassword = async ({ email, ipAddress, userAgent }) => {
     });
 };
 
+const resendForgotPasswordOtp = async ({ email, ipAddress, userAgent }) => {
+    await forgotPassword({ email, ipAddress, userAgent });
+    return { message: 'If the email exists, instructions were sent.' };
+};
+
 const resetPassword = async ({ email, otp, password, ipAddress }) => {
     requireForgotPasswordEnabled();
     const normalizedEmail = normalizeEmail(email);
@@ -564,13 +578,34 @@ const verifyEmail = async ({ email, token }) => {
     return { message: 'Email verified successfully' };
 };
 
+const resendVerificationEmail = async ({ email }) => {
+    if (!emailVerificationSettings.baseUrl) {
+        throw new AppError('Email verification is not configured', 503);
+    }
+
+    const normalizedEmail = normalizeEmail(email);
+    const user = await userRepository.findByEmail(normalizedEmail);
+    if (!user) {
+        return { message: 'If the email exists, a verification link was sent.' };
+    }
+
+    if (user.status === 'verified') {
+        return { message: 'Email already verified' };
+    }
+
+    dispatchVerificationEmail(user);
+    return { message: 'Verification email sent' };
+};
+
 module.exports = {
     createRegistrationUploadUrl,
     register,
     login,
     adminLogin,
     forgotPassword,
+    resendForgotPasswordOtp,
     verifyOtp,
     resetPassword,
     verifyEmail,
+    resendVerificationEmail,
 };
