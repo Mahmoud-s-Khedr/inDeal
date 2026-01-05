@@ -36,8 +36,17 @@ create table users (
     role user_role_enum default 'agent',
     status user_status_enum default 'pending' not null,
     profile_image int references files(id),
+    preferences jsonb,
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp
+);
+
+-- 1b. User Password History
+create table user_password_history (
+    id serial primary key,
+    user_id int not null references users(id) on delete cascade,
+    password_hash varchar(255) not null,
+    created_at timestamp default current_timestamp
 );
 
 -- 2. Companies (Enforcing One Agent)
@@ -83,8 +92,26 @@ create table company_documents (
     company_id int references companies(id),
     file_id int references files(id),
     doc_type varchar(100),
+    title varchar(150),
+    issuer varchar(150),
+    url varchar(255),
     description text,
     uploaded_at timestamp default current_timestamp
+);
+
+-- 3b. Portfolio Contributions
+create table company_contributions (
+    id serial primary key,
+    company_id int references companies(id),
+    media_file_id int references files(id),
+    media_type varchar(30),
+    media_url varchar(255),
+    type varchar(30) not null,
+    title varchar(150) not null,
+    description text,
+    details jsonb,
+    created_at timestamp default current_timestamp,
+    updated_at timestamp default current_timestamp
 );
 
 -- 4. Deals (The Core Transaction)
@@ -187,6 +214,11 @@ CREATE INDEX idx_company_documents_company_id ON company_documents(company_id);
 CREATE INDEX idx_company_documents_file_id ON company_documents(file_id);
 CREATE INDEX idx_company_reviews_company_id ON company_reviews(company_id);
 CREATE INDEX idx_company_reviews_reviewer_company_id ON company_reviews(reviewer_company_id);
+CREATE INDEX idx_user_password_history_user_id_created_at ON user_password_history(user_id, created_at DESC);
+CREATE INDEX idx_company_contributions_company_id ON company_contributions(company_id);
+CREATE INDEX idx_company_contributions_media_file_id ON company_contributions(media_file_id);
+CREATE INDEX idx_company_contributions_media_type ON company_contributions(media_type);
+CREATE INDEX idx_company_contributions_details ON company_contributions USING GIN (details);
 CREATE INDEX idx_deals_company_id ON deals(company_id);
 CREATE INDEX idx_deal_requests_deal_id ON deal_requests(deal_id);
 CREATE INDEX idx_deal_requests_applicant_company_id ON deal_requests(applicant_company_id);
@@ -202,17 +234,3 @@ CREATE INDEX idx_ad_click_events_user_id ON ad_click_events(user_id);
 CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_company_id ON audit_logs(company_id);
 CREATE INDEX idx_audit_logs_details ON audit_logs USING GIN (details);
-
--- 9. Seed initial admin user
-INSERT INTO users (username, email, password_hash, first_name, last_name, job_title, role, status)
-VALUES (
-    'indeal_admin',
-    'admin@indeal.local',
-    '$2b$12$YIiONAQGRy4W9ioADE4yCuEQFU6B7Lv5AFUl.PhTAuYEr1y8IvuZq',
-    'System',
-    'Admin',
-    'Operations Lead',
-    'admin',
-    'verified'
-)
-ON CONFLICT (email) DO NOTHING;

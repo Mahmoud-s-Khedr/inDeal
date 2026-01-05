@@ -60,6 +60,9 @@ inDeal/
     ```
     All environment variables are validated with Zod via `src/config/env.js`. Refer to `.env.example` for the full list, including `LOG_LEVEL`, Redis/Valkey credentials, Cloudflare R2 (S3) settings, Firebase service account keys, and SMTP/email configuration.
 
+    Additional email settings used by the Company Portfolio review workflow:
+    - `COMPANY_REVIEW_NOTIFICATION_EMAIL` (optional): admin inbox address that receives "company resubmitted for review" notifications.
+
 4.  **Start the Docker Stack**
     Build the API image and boot the development stack (API + Postgres + Valkey):
     ```bash

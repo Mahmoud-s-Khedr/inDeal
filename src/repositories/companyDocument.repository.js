@@ -21,7 +21,7 @@ const bulkCreateDocuments = async (client, documents) => {
         `
         INSERT INTO company_documents (company_id, file_id, doc_type, description)
         VALUES ${placeholders}
-        RETURNING id, company_id, file_id, doc_type, description, uploaded_at
+        RETURNING id, company_id, file_id, doc_type, title, issuer, url, description, uploaded_at
         `,
         values
     );
@@ -32,7 +32,7 @@ const bulkCreateDocuments = async (client, documents) => {
 const listByCompanyId = async (companyId) => {
     const result = await pool.query(
         `
-        SELECT id, company_id, file_id, doc_type, description, uploaded_at
+        SELECT id, company_id, file_id, doc_type, title, issuer, url, description, uploaded_at
         FROM company_documents
         WHERE company_id = $1
         ORDER BY uploaded_at DESC
@@ -43,7 +43,77 @@ const listByCompanyId = async (companyId) => {
     return result.rows;
 };
 
+const findById = async (id) => {
+    const result = await pool.query(
+        `
+        SELECT id, company_id, file_id, doc_type, title, issuer, url, description, uploaded_at
+        FROM company_documents
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [id]
+    );
+    return result.rows[0];
+};
+
+const createDocument = async ({ companyId, fileId, docType, title, issuer, url, description }) => {
+    const result = await pool.query(
+        `
+        INSERT INTO company_documents (company_id, file_id, doc_type, title, issuer, url, description)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING id, company_id, file_id, doc_type, title, issuer, url, description, uploaded_at
+        `,
+        [companyId, fileId || null, docType || null, title || null, issuer || null, url || null, description || null]
+    );
+    return result.rows[0];
+};
+
+const updateDocument = async (id, updates) => {
+    const fields = [];
+    const values = [];
+    let index = 1;
+
+    Object.entries(updates).forEach(([key, value]) => {
+        if (value === undefined) return;
+        fields.push(`${key} = $${index}`);
+        values.push(value);
+        index += 1;
+    });
+
+    if (!fields.length) {
+        return await findById(id);
+    }
+
+    const result = await pool.query(
+        `
+        UPDATE company_documents
+        SET ${fields.join(', ')}
+        WHERE id = $${index}
+        RETURNING id, company_id, file_id, doc_type, title, issuer, url, description, uploaded_at
+        `,
+        [...values, id]
+    );
+
+    return result.rows[0] || null;
+};
+
+const deleteDocument = async (id) => {
+    const result = await pool.query(
+        `
+        DELETE FROM company_documents
+        WHERE id = $1
+        RETURNING id, company_id, file_id, doc_type, title, issuer, url, description, uploaded_at
+        `,
+        [id]
+    );
+    return result.rows[0] || null;
+};
+
 module.exports = {
     bulkCreateDocuments,
     listByCompanyId,
+    findById,
+    createDocument,
+    updateDocument,
+    deleteDocument,
 };

@@ -3,6 +3,8 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+const emptyStringToUndefined = (val) => (val === '' ? undefined : val);
+
 const envSchema = z.object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     PORT: z.coerce.number().default(3000),
@@ -17,9 +19,15 @@ const envSchema = z.object({
     REDIS_HOST: z.string().default('localhost'),
     REDIS_PORT: z.coerce.number().default(6379),
     REDIS_PASSWORD: z.string().optional(),
+    REDIS_USERNAME: z.string().optional(),
 
     JWT_SECRET: z.string().default('change_this_secret_key_in_production'),
     JWT_EXPIRES_IN: z.string().default('7d'),
+
+    SESSION_ACCESS_TTL_MIN: z.coerce.number().int().positive().default(15),
+    SESSION_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(7),
+    SESSION_ROTATE_LEEWAY_SECONDS: z.coerce.number().int().nonnegative().default(300),
+    SESSION_ENFORCE_LATEST_JTI: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
 
     R2_BUCKET_NAME: z.string().default('indeal-assets'),
     R2_ACCESS_KEY_ID: z.string().optional(),
@@ -37,6 +45,11 @@ const envSchema = z.object({
     RESEND_API_KEY: z.string().optional(),
     RESEND_FROM_EMAIL: z.string().default('no-reply@indeal.local'),
     RESEND_FROM_NAME: z.string().default('inDeal Support'),
+
+    COMPANY_REVIEW_NOTIFICATION_EMAIL: z.preprocess(
+        emptyStringToUndefined,
+        z.string().email().optional(),
+    ),
 
     FRONTEND_BASE_URL: z.string().url().default('https://app.indeal.local'),
     FORGOT_PASSWORD_ENABLED: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
@@ -83,10 +96,17 @@ module.exports = {
         host: env.REDIS_HOST,
         port: env.REDIS_PORT,
         password: env.REDIS_PASSWORD,
+        username: env.REDIS_USERNAME,
     },
     jwt: {
         secret: env.JWT_SECRET,
         expiresIn: env.JWT_EXPIRES_IN,
+    },
+    session: {
+        accessTtlMinutes: env.SESSION_ACCESS_TTL_MIN,
+        refreshTtlDays: env.SESSION_REFRESH_TTL_DAYS,
+        rotateLeewaySeconds: env.SESSION_ROTATE_LEEWAY_SECONDS,
+        enforceLatestJti: env.SESSION_ENFORCE_LATEST_JTI,
     },
     storage: {
         bucket: env.R2_BUCKET_NAME,
@@ -107,6 +127,9 @@ module.exports = {
         apiKey: env.RESEND_API_KEY,
         fromEmail: env.RESEND_FROM_EMAIL,
         fromName: env.RESEND_FROM_NAME,
+    },
+    companyReview: {
+        notificationEmail: env.COMPANY_REVIEW_NOTIFICATION_EMAIL,
     },
     log: {
         level: env.LOG_LEVEL,

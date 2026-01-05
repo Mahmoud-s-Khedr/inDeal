@@ -120,6 +120,43 @@ const updateCompanyByAgent = async (agentId, updates) => {
     return await findByAgentId(agentId);
 };
 
+const updateCompanyById = async (companyId, updates) => {
+    const fields = [];
+    const values = [];
+    let index = 1;
+
+    Object.entries(updates).forEach(([key, value]) => {
+        if (value === undefined) return;
+        let columnValue = value;
+        if (key === 'contacts' || key === 'locations') {
+            columnValue = value ? JSON.stringify(value) : null;
+            fields.push(`${key} = $${index}::jsonb`);
+        } else {
+            fields.push(`${key} = $${index}`);
+        }
+        values.push(columnValue);
+        index += 1;
+    });
+
+    if (!fields.length) {
+        return await findById(companyId);
+    }
+
+    fields.push(`updated_at = NOW()`);
+
+    const result = await pool.query(
+        `
+        UPDATE companies
+        SET ${fields.join(', ')}
+        WHERE id = $${index}
+        RETURNING *
+        `,
+        [...values, companyId]
+    );
+
+    return result.rows[0] || null;
+};
+
 const updateCompanyStatus = async (companyId, status) => {
     const result = await pool.query(
         `
@@ -155,6 +192,7 @@ module.exports = {
     listByStatus,
     listAll,
     updateCompanyByAgent,
+    updateCompanyById,
     updateCompanyStatus,
     updateCompanyAgent,
 };

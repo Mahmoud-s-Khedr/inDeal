@@ -4,10 +4,12 @@
   "description": "B2B",
   "main": "src/server.js",
   "scripts": {
-    "start": "npm run db:schema && node src/server.js",
-    "dev": "npm run db:schema &&  nodemon src/server.js",
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "db:schema": "node scripts/run-schema.js"
+    "db:schema": "node scripts/run-schema.js",
+    "db:seed": "node scripts/seed.js",
+    "vercel-build": "echo 'No build step required for Express API'"
   },
   "author": "Mahmoud Khedr",
   "license": "ISC",

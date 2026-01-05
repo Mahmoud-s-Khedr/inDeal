@@ -5,6 +5,7 @@ const authRoutes = require('./auth.routes');
 const companyRoutes = require('./company.routes');
 const fileRoutes = require('./file.routes');
 const adminRoutes = require('./admin.routes');
+const userRoutes = require('./user.routes');
 
 const router = express.Router();
 
@@ -13,6 +14,7 @@ router.use('/system', systemRoutes);
 router.use('/auth', authRoutes);
 router.use('/companies', companyRoutes);
 router.use('/files', fileRoutes);
+router.use('/users', userRoutes);
 router.use('/admin', adminRoutes);
 
 module.exports = router;

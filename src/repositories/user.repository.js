@@ -45,8 +45,47 @@ const findById = async (id) => {
     return result.rows[0];
 };
 
-const updatePasswordHash = async (userId, passwordHash) => {
+const updateById = async (userId, updates) => {
+    const fields = [];
+    const values = [];
+    let index = 1;
+
+    Object.entries(updates).forEach(([key, value]) => {
+        if (value === undefined) return;
+
+        if (key === 'preferences') {
+            fields.push(`${key} = $${index}::jsonb`);
+            values.push(value ? JSON.stringify(value) : null);
+        } else {
+            fields.push(`${key} = $${index}`);
+            values.push(value);
+        }
+
+        index += 1;
+    });
+
+    if (!fields.length) {
+        return await findById(userId);
+    }
+
+    fields.push('updated_at = NOW()');
+
     const result = await pool.query(
+        `
+        UPDATE users
+        SET ${fields.join(', ')}
+        WHERE id = $${index}
+        RETURNING *
+        `,
+        [...values, userId]
+    );
+
+    return result.rows[0] || null;
+};
+
+const updatePasswordHash = async (userId, passwordHash, client) => {
+    const executor = run(client);
+    const result = await executor.query(
         `
         UPDATE users
         SET password_hash = $2,
@@ -57,6 +96,55 @@ const updatePasswordHash = async (userId, passwordHash) => {
         [userId, passwordHash]
     );
     return result.rows[0];
+};
+
+const listRecentPasswordHistoryHashes = async (userId, limit = 2, client) => {
+    const executor = run(client);
+    const safeLimit = Number.isInteger(limit) && limit > 0 ? limit : 2;
+    const result = await executor.query(
+        `
+        SELECT password_hash
+        FROM user_password_history
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        LIMIT $2
+        `,
+        [userId, safeLimit]
+    );
+    return result.rows.map((r) => r.password_hash);
+};
+
+const insertPasswordHistory = async (userId, passwordHash, client) => {
+    const executor = run(client);
+    const result = await executor.query(
+        `
+        INSERT INTO user_password_history (user_id, password_hash)
+        VALUES ($1, $2)
+        RETURNING id, user_id, password_hash, created_at
+        `,
+        [userId, passwordHash]
+    );
+    return result.rows[0];
+};
+
+const prunePasswordHistory = async (userId, keep = 10, client) => {
+    const executor = run(client);
+    const safeKeep = Number.isInteger(keep) && keep >= 0 ? keep : 10;
+
+    await executor.query(
+        `
+        DELETE FROM user_password_history
+        WHERE user_id = $1
+          AND id NOT IN (
+              SELECT id
+              FROM user_password_history
+              WHERE user_id = $1
+              ORDER BY created_at DESC
+              LIMIT $2
+          )
+        `,
+        [userId, safeKeep]
+    );
 };
 
 const updateStatus = async (userId, status) => {
@@ -78,6 +166,10 @@ module.exports = {
     findByEmail,
     findByUsername,
     findById,
+    updateById,
     updatePasswordHash,
+    listRecentPasswordHistoryHashes,
+    insertPasswordHistory,
+    prunePasswordHistory,
     updateStatus,
 };
