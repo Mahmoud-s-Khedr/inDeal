@@ -6,6 +6,7 @@ const app = require('./app');
 const { pool } = require('./config/db');
 const config = require('./config/env');
 const logger = require('./utils/logger');
+const startupLogger = require('./utils/startupLogger');
 const redis = require('./config/redis');
 
 // Eager-load infrastructure modules so configuration issues surface on boot
@@ -13,6 +14,11 @@ require('./config/firebase');
 require('./config/storage');
 require('./config/mailer');
 require('./config/queue');
+
+// Job queues and workers
+const { scheduleCleanupJob } = require('./config/jobQueue');
+const { startOrphanCleanupWorker } = require('./jobs/orphanCleanup.job');
+const { startImageOptimizationWorker } = require('./jobs/imageOptimization.job');
 
 const server = http.createServer(app);
 
@@ -25,7 +31,7 @@ let io = null;
 
 if (ENABLE_SOCKETIO) {
     const { Server } = require('socket.io');
-    
+
     io = new Server(server, {
         cors: {
             origin: '*', // Configure allowed origins before production
@@ -34,40 +40,54 @@ if (ENABLE_SOCKETIO) {
     });
 
     io.on('connection', (socket) => {
-        logger.debug(`Socket connected: ${socket.id}`);
+        logger.debug({ socketId: socket.id }, 'Socket connected');
 
         socket.on('disconnect', () => {
-            logger.debug(`Socket disconnected: ${socket.id}`);
+            logger.debug({ socketId: socket.id }, 'Socket disconnected');
         });
     });
 
-    logger.info('Socket.io enabled');
+    logger.info({ feature: 'socketio', enabled: true }, 'Socket.io enabled');
 } else {
-    logger.info('Socket.io disabled (set ENABLE_SOCKETIO=true to enable)');
+    logger.info({ feature: 'socketio', enabled: false }, 'Socket.io disabled (set ENABLE_SOCKETIO=true to enable)');
 }
 
 const startServer = async () => {
     try {
+        // Log startup configuration
+        startupLogger.logStartupConfig();
+
         // Verify database connection on startup (local dev only)
         const client = await pool.connect();
         client.release();
-        logger.info('Database connection verified');
+        logger.info(
+            `Database connection verified @ ${config.db.host}:${config.db.port}/${config.db.name}`
+        );
+
+        // Start background job workers
+        startOrphanCleanupWorker();
+        startupLogger.logWorkerStarted('orphan-cleanup');
+
+        startImageOptimizationWorker();
+        startupLogger.logWorkerStarted('image-optimization');
+
+        await scheduleCleanupJob();
 
         server.listen(config.app.port, () => {
-            logger.info(`Server running on port ${config.app.port} (${config.app.env})`);
+            startupLogger.logServerListening(config.app.port, config.app.env);
         });
     } catch (error) {
-        logger.error('Failed to start server', error);
+        logger.error({ err: error }, 'Failed to start server');
         process.exit(1);
     }
 };
 
 const gracefulShutdown = async (signal) => {
-    logger.warn(`${signal} received. Shutting down gracefully...`);
+    startupLogger.logShutdown(signal);
 
     server.close(async (err) => {
         if (err) {
-            logger.error('Error shutting down HTTP server', err);
+            logger.error({ err }, 'Error shutting down HTTP server');
         }
         try {
             if (io) {
@@ -75,13 +95,28 @@ const gracefulShutdown = async (signal) => {
             }
             await pool.end();
             await redis.quit();
+            logger.info('Graceful shutdown complete');
         } catch (error) {
-            logger.error('Error during shutdown', error);
+            logger.error({ err: error }, 'Error during shutdown');
         } finally {
             process.exit(0);
         }
     });
 };
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    logger.error({ err: error, type: 'uncaughtException' }, 'Uncaught exception');
+    process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error(
+        { err: reason, type: 'unhandledRejection' },
+        'Unhandled promise rejection'
+    );
+});
 
 ['SIGINT', 'SIGTERM'].forEach((signal) => {
     process.on(signal, () => gracefulShutdown(signal));
