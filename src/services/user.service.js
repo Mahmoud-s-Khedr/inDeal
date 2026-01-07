@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const AppError = require('../utils/AppError');
 const userRepository = require('../repositories/user.repository');
 const { pool } = require('../config/db');
+const config = require('../config/env');
 
 const sanitizeUser = (user) => {
     if (!user) return null;
@@ -66,16 +67,17 @@ const updatePassword = async (userId, payload) => {
         throw new AppError('Current password is incorrect', 400);
     }
 
-    // Prevent using the current password or the last 2 passwords from history.
-    const recentHistoryHashes = await userRepository.listRecentPasswordHistoryHashes(userId, 2);
-    const blockedHashes = [existing.password_hash, ...recentHistoryHashes].filter(Boolean);
-    for (const hash of blockedHashes) {
-        // If the new password matches any blocked hash, reject.
-        // bcrypt.compare is safe for salted hashes.
-        // eslint-disable-next-line no-await-in-loop
-        const matches = await bcrypt.compare(payload.newPassword, hash);
-        if (matches) {
-            throw new AppError('You cannot reuse your last 2 passwords', 400);
+    // Prevent using the current password or recent passwords from history.
+    const depth = config.passwordHistory?.depth ?? 5;
+    if (depth > 0) {
+        const recentHistoryHashes = await userRepository.listRecentPasswordHistoryHashes(userId, depth);
+        const blockedHashes = [existing.password_hash, ...recentHistoryHashes].filter(Boolean);
+        for (const hash of blockedHashes) {
+            // eslint-disable-next-line no-await-in-loop
+            const matches = await bcrypt.compare(payload.newPassword, hash);
+            if (matches) {
+                throw new AppError(`Cannot reuse your last ${depth} passwords`, 400);
+            }
         }
     }
 
@@ -86,7 +88,7 @@ const updatePassword = async (userId, payload) => {
         await client.query('BEGIN');
         await userRepository.insertPasswordHistory(userId, existing.password_hash, client);
         await userRepository.updatePasswordHash(userId, passwordHash, client);
-        await userRepository.prunePasswordHistory(userId, 10, client);
+        await userRepository.prunePasswordHistory(userId, config.passwordHistory?.pruneKeep ?? 10, client);
         await client.query('COMMIT');
     } catch (error) {
         await client.query('ROLLBACK');

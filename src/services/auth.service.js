@@ -70,6 +70,7 @@ const OTP_KEY_PREFIX = 'fp:otp:';
 const RATE_LIMIT_PREFIX = 'fp:rate:';
 const otpSettings = config.forgotPassword;
 const emailVerificationSettings = config.emailVerification;
+const passwordHistorySettings = config.passwordHistory;
 const EMAIL_VERIFICATION_KEY_PREFIX = 'email:verification:';
 
 const requireForgotPasswordEnabled = () => {
@@ -321,6 +322,24 @@ const dispatchVerificationEmail = (user) => {
     });
 };
 
+const checkPasswordAgainstHistory = async (userId, newPassword, currentPasswordHash = null) => {
+    const depth = passwordHistorySettings?.depth ?? 5;
+    if (depth <= 0) return; // Password history check disabled
+
+    const recentHashes = await userRepository.listRecentPasswordHistoryHashes(userId, depth);
+    const blockedHashes = currentPasswordHash
+        ? [currentPasswordHash, ...recentHashes]
+        : recentHashes;
+
+    for (const hash of blockedHashes.filter(Boolean)) {
+        // eslint-disable-next-line no-await-in-loop
+        const matches = await bcrypt.compare(newPassword, hash);
+        if (matches) {
+            throw new AppError(`Cannot reuse your last ${depth} passwords`, 400);
+        }
+    }
+};
+
 const createRegistrationUploadUrl = async ({ fileName, fileType, fileSize }) => {
     return fileService.createUploadUrl({
         fileName,
@@ -394,6 +413,9 @@ const register = async (payload) => {
                 }))
             );
         }
+
+        // Store initial password in history
+        await userRepository.insertPasswordHistory(newUser.id, passwordHash, client);
 
         await client.query('COMMIT');
 
@@ -526,8 +548,26 @@ const resetPassword = async ({ email, otp, password, ipAddress }) => {
         throw new AppError('Invalid or expired code', 400);
     }
 
+    // Check new password against history before updating
+    await checkPasswordAgainstHistory(user.id, password, user.password_hash);
+
     const passwordHash = await bcrypt.hash(password, 12);
-    await userRepository.updatePasswordHash(user.id, passwordHash);
+    const pruneKeep = passwordHistorySettings?.pruneKeep ?? 10;
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        await userRepository.insertPasswordHistory(user.id, user.password_hash, client);
+        await userRepository.updatePasswordHash(user.id, passwordHash, client);
+        await userRepository.prunePasswordHistory(user.id, pruneKeep, client);
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
+
     await deleteOtpPayload(normalizedEmail);
 };
 
