@@ -26,14 +26,65 @@ const pool = process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== ''
     });
 
 pool.on('connect', () => {
-    logger.info('Connected to PostgreSQL');
+    logger.debug('Database client connected');
 });
 
 pool.on('error', (err) => {
-    logger.error('Unexpected error on idle database client', err);
+    logger.error({ err, source: 'pg-pool' }, 'Unexpected error on idle database client');
 });
 
+/**
+ * Execute a database query with optional logging
+ * @param {string} text - SQL query text
+ * @param {Array} params - Query parameters
+ * @returns {Promise} Query result
+ */
+const query = async (text, params) => {
+    const start = Date.now();
+
+    try {
+        const result = await pool.query(text, params);
+        const duration = Date.now() - start;
+
+        // Log slow queries
+        if (duration > config.log.slowQueryMs) {
+            logger.warn(
+                {
+                    query: text.substring(0, 200) + (text.length > 200 ? '...' : ''),
+                    duration,
+                    rowCount: result.rowCount,
+                    threshold: config.log.slowQueryMs,
+                },
+                'Slow database query detected'
+            );
+        } else {
+            logger.debug(
+                {
+                    query: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
+                    duration,
+                    rowCount: result.rowCount,
+                },
+                'Database query executed'
+            );
+        }
+
+        return result;
+    } catch (err) {
+        const duration = Date.now() - start;
+        logger.error(
+            {
+                err,
+                query: text.substring(0, 200) + (text.length > 200 ? '...' : ''),
+                duration,
+                source: 'pg-query',
+            },
+            'Database query failed'
+        );
+        throw err;
+    }
+};
+
 module.exports = {
-    query: (text, params) => pool.query(text, params),
+    query,
     pool,
 };

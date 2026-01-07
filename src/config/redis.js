@@ -10,7 +10,12 @@ const redis = new Redis({
     lazyConnect: false,
 });
 
-redis.on('ready', () => logger.info('Valkey (Redis) connection ready'));
-redis.on('error', (err) => logger.error('Valkey (Redis) connection error', err));
+redis.on('ready', () => logger.info(
+    `Valkey (Redis) connection ready @ ${config.redis.host}:${config.redis.port}`
+));
+redis.on('error', (err) => logger.error(
+    { err, redisHost: config.redis.host, redisPort: config.redis.port },
+    'Valkey (Redis) connection error'
+));
 
 module.exports = redis;

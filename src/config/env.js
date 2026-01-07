@@ -8,7 +8,17 @@ const emptyStringToUndefined = (val) => (val === '' ? undefined : val);
 const envSchema = z.object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     PORT: z.coerce.number().default(3000),
+
+    // Logging configuration
     LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
+    LOG_FORMAT: z.enum(['pretty', 'json']).default('pretty'),
+    LOG_REQUEST_BODY: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
+    LOG_RESPONSE_BODY: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
+    LOG_SLOW_QUERY_MS: z.coerce.number().int().nonnegative().default(1000),
+    LOG_FILE_ENABLED: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
+    LOG_FILE_PATH: z.string().default('./logs'),
+    LOG_FILE_MAX_SIZE: z.string().default('10M'),
+    LOG_FILE_MAX_FILES: z.coerce.number().int().positive().default(7),
 
     DB_HOST: z.string().default('localhost'),
     DB_PORT: z.coerce.number().default(5432),
@@ -63,6 +73,15 @@ const envSchema = z.object({
     EMAIL_VERIFICATION_TOKEN_TTL_MINUTES: z.coerce.number().int().positive().default(60 * 24),
     EMAIL_VERIFICATION_API_BASE_URL: z.string().url().default('http://localhost:3000'),
     EMAIL_VERIFICATION_PATH: z.string().default('/api/v1/auth/verify-email'),
+
+    PASSWORD_HISTORY_DEPTH: z.coerce.number().int().nonnegative().default(5),
+    PASSWORD_HISTORY_PRUNE_KEEP: z.coerce.number().int().positive().default(10),
+
+    FILE_RETENTION_SECONDS: z.coerce.number().int().positive().default(7 * 24 * 60 * 60), // 7 days
+
+    IMAGE_THUMB_SIZE: z.coerce.number().int().positive().default(150),
+    IMAGE_MEDIUM_SIZE: z.coerce.number().int().positive().default(600),
+    IMAGE_QUALITY: z.coerce.number().int().min(1).max(100).default(85),
 });
 
 const parsed = envSchema.safeParse({
@@ -133,6 +152,16 @@ module.exports = {
     },
     log: {
         level: env.LOG_LEVEL,
+        format: env.LOG_FORMAT,
+        requestBody: env.LOG_REQUEST_BODY,
+        responseBody: env.LOG_RESPONSE_BODY,
+        slowQueryMs: env.LOG_SLOW_QUERY_MS,
+        file: {
+            enabled: env.LOG_FILE_ENABLED,
+            path: env.LOG_FILE_PATH,
+            maxSize: env.LOG_FILE_MAX_SIZE,
+            maxFiles: env.LOG_FILE_MAX_FILES,
+        },
     },
     forgotPassword: {
         enabled: env.FORGOT_PASSWORD_ENABLED,
@@ -151,5 +180,15 @@ module.exports = {
         tokenTtlMinutes: env.EMAIL_VERIFICATION_TOKEN_TTL_MINUTES,
         baseUrl: env.EMAIL_VERIFICATION_API_BASE_URL,
         route: env.EMAIL_VERIFICATION_PATH,
+    },
+    passwordHistory: {
+        depth: env.PASSWORD_HISTORY_DEPTH,
+        pruneKeep: env.PASSWORD_HISTORY_PRUNE_KEEP,
+    },
+    fileRetentionSeconds: env.FILE_RETENTION_SECONDS,
+    imageOptimization: {
+        thumbSize: env.IMAGE_THUMB_SIZE,
+        mediumSize: env.IMAGE_MEDIUM_SIZE,
+        quality: env.IMAGE_QUALITY,
     },
 };
