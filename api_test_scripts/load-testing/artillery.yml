@@ -1,0 +1,143 @@
+# Artillery Load Testing Configuration for inDeal API
+# Run with: npm run load-test
+
+config:
+  target: "{{ $processEnvironment.API_TEST_BASE_URL || 'https://api-test.indealeg.com' }}"
+  phases:
+    # Warm-up phase
+    - duration: 30
+      arrivalRate: 1
+      name: "Warm-up"
+    # Ramp-up phase
+    - duration: 60
+      arrivalRate: 1
+      rampTo: 10
+      name: "Ramp-up"
+    # Sustained load
+    - duration: 120
+      arrivalRate: 10
+      name: "Sustained load"
+    # Peak load
+    - duration: 60
+      arrivalRate: 20
+      name: "Peak load"
+    # Cool-down
+    - duration: 30
+      arrivalRate: 5
+      rampTo: 1
+      name: "Cool-down"
+
+  defaults:
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+
+  payload:
+    path: "../config/test-data.json"
+    fields:
+      - "users"
+      - "companies"
+      - "admin"
+
+  plugins:
+    expect: {}
+
+  variables:
+    baseUrl: "/api/v1"
+
+scenarios:
+  # Scenario 1: Health check (lightweight)
+  - name: "Health Check"
+    weight: 3
+    flow:
+      - get:
+          url: "{{ baseUrl }}/health"
+          expect:
+            - statusCode: 200
+
+  # Scenario 2: Login and get profile
+  - name: "Login Session"
+    weight: 5
+    flow:
+      - post:
+          url: "{{ baseUrl }}/auth/login"
+          json:
+            email: "{{ users[0].email }}"
+            password: "{{ users[0].password }}"
+          capture:
+            - json: "$.data.accessToken"
+              as: "accessToken"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "{{ baseUrl }}/users/me"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "{{ baseUrl }}/companies/me"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+          expect:
+            - statusCode: 200
+      - post:
+          url: "{{ baseUrl }}/auth/logout"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+
+  # Scenario 3: Browse public company
+  - name: "Browse Company"
+    weight: 4
+    flow:
+      - get:
+          url: "{{ baseUrl }}/companies/1"
+          expect:
+            - statusCode: [200, 404]
+      - get:
+          url: "{{ baseUrl }}/companies/1/gallery"
+          expect:
+            - statusCode: [200, 404]
+      - get:
+          url: "{{ baseUrl }}/companies/1/reviews"
+          expect:
+            - statusCode: [200, 404]
+
+  # Scenario 4: Full profile management
+  - name: "Profile Management"
+    weight: 2
+    flow:
+      - post:
+          url: "{{ baseUrl }}/auth/login"
+          json:
+            email: "{{ users[0].email }}"
+            password: "{{ users[0].password }}"
+          capture:
+            - json: "$.data.accessToken"
+              as: "accessToken"
+      - get:
+          url: "{{ baseUrl }}/companies/me"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+      - put:
+          url: "{{ baseUrl }}/companies/me"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+          json:
+            description: "Updated description for load testing - {{ $timestamp }}"
+      - get:
+          url: "{{ baseUrl }}/companies/me/gallery"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+      - get:
+          url: "{{ baseUrl }}/companies/me/documents"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+      - get:
+          url: "{{ baseUrl }}/companies/me/contributions"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+      - post:
+          url: "{{ baseUrl }}/auth/logout"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"

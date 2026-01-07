@@ -1,0 +1,15 @@
+meta {
+  name: Get Company Profile
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{base_url}}/companies/{{company_id}}
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

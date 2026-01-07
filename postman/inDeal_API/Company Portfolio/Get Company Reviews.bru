@@ -1,0 +1,15 @@
+meta {
+  name: Get Company Reviews
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{base_url}}/companies/{{company_id}}/reviews
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

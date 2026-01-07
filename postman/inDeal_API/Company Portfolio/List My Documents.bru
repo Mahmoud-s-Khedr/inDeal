@@ -1,0 +1,20 @@
+meta {
+  name: List My Documents
+  type: http
+  seq: 1000
+}
+
+get {
+  url: {{base_url}}/companies/me/documents
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

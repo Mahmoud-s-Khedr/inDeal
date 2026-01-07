@@ -1,0 +1,29 @@
+meta {
+  name: Register uploads
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/auth/register/upload-url
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "fileName": "commercial-license.pdf",
+    "fileType": "application/pdf",
+    "fileSize": 734123
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

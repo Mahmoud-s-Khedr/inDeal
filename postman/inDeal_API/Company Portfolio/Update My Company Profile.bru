@@ -1,0 +1,36 @@
+meta {
+  name: Update My Company Profile
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{base_url}}/companies/me
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Demo Manufacturing MENA",
+    "description": "Updated description for regional operations.",
+    "address": "123 Industrial Park, Cairo",
+    "phone": "+15551000",
+    "website": "https://demo.example.com/mena",
+    "companyType": "manufacturer",
+    "companyIndustry": "manufacturing",
+    "manufacturingStrategy": "assembleToOrder",
+    "contacts": [
+      { "type": "whatsapp", "value": "+1-555-1000" }
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+}

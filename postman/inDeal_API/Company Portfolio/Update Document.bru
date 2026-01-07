@@ -1,0 +1,31 @@
+meta {
+  name: Update Document
+  type: http
+  seq: 10
+}
+
+put {
+  url: {{base_url}}/companies/me/documents/1
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "fileId": {{file_id}},
+    "docType": "certificate",
+    "title": "Updated ISO Certificate",
+    "issuer": "Updated Issuer",
+    "description": "Updated description"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

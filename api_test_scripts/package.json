@@ -1,0 +1,34 @@
+{
+    "name": "indeal-api-test-scripts",
+    "version": "1.0.0",
+    "description": "Node.js scripts to simulate user flows and perform load testing for inDeal API",
+    "type": "module",
+    "scripts": {
+        "generate-data": "node scripts/generate-test-data.js",
+        "flow:registration": "node flows/01-registration.flow.js",
+        "flow:session": "node flows/02-session.flow.js",
+        "flow:password-reset": "node flows/03-password-reset.flow.js",
+        "flow:company-profile": "node flows/04-company-profile.flow.js",
+        "flow:documents": "node flows/05-documents.flow.js",
+        "flow:gallery": "node flows/06-gallery.flow.js",
+        "flow:contributions": "node flows/07-contributions.flow.js",
+        "flow:reviews": "node flows/08-reviews.flow.js",
+        "flow:admin": "node flows/09-admin.flow.js",
+        "flow:all": "node scripts/run-all-flows.js",
+        "load-test": "artillery run load-testing/artillery.yml",
+        "load-test:registration": "artillery run load-testing/scenarios/registration.yml",
+        "load-test:session": "artillery run load-testing/scenarios/session.yml"
+    },
+    "dependencies": {
+        "@faker-js/faker": "^9.3.0",
+        "axios": "^1.7.9",
+        "chalk": "^5.4.1",
+        "dotenv": "^16.4.7"
+    },
+    "devDependencies": {
+        "artillery": "^2.0.23"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}

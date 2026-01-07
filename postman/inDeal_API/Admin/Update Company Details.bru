@@ -1,0 +1,28 @@
+meta {
+  name: Update Company Details
+  type: http
+  seq: 200
+}
+
+put {
+  url: {{base_url}}/admin/companies/{{company_id}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+  Content-Type: application/json
+}
+
+body:json {
+  "website": "https://example.com",
+  "manufacturingStrategy": "makeToOrder",
+  "locations": ["Cairo"],
+  "contacts": [{"type": "email", "value": "sales@example.com"}]
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

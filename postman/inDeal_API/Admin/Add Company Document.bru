@@ -1,0 +1,31 @@
+meta {
+  name: Add Company Document
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{base_url}}/admin/companies/{{company_id}}/documents
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "fileId": {{file_id}},
+    "docType": "certificate",
+    "title": "ISO 9001 Certificate",
+    "issuer": "International Organization for Standardization",
+    "description": "Admin added document"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

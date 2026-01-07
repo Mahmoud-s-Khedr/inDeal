@@ -1,0 +1,22 @@
+meta {
+  name: inDeal API
+}
+
+auth {
+  mode: none
+}
+
+vars:pre-request {
+  api_host: http://localhost:3000
+  base_url: {{api_host}}/api/v1
+  auth_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzY3NjIzMTIyLCJleHAiOjE3Njc2MjM0MjJ9.VdI1RbCsmt5WPvLApH99bNEOJkNsYXTvqoIxWhQgiyU
+  company_id: 1
+  file_id: 1
+  new_agent_id: 2
+  contribution_id: 1
+  media_id: 1
+}
+
+docs {
+  Collection covering Auth, File Uploads, System config, Company Portfolio, and Admin review endpoints for the inDeal backend.
+}

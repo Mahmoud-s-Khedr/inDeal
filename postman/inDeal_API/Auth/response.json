@@ -1,0 +1,27 @@
+{
+    "status": "success",
+    "message": "Signed upload URL generated",
+    "data": {
+        "file": {
+            "id": 1,
+            "fileName": "commercial-license.pdf",
+            "filePath": "uploads/2025-12-16/commercial-license-f08d8b36-a95f-4884-a574-d6d90589b80f.pdf",
+            "fileMetadata": {
+                "size": 734123,
+                "mimeType": "application/pdf",
+                "uploaderId": null,
+                "originalFileName": "commercial-license.pdf"
+            },
+            "uploadedAt": "2025-12-16T20:26:54.682Z",
+            "publicUrl": "https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2025-12-16/commercial-license-f08d8b36-a95f-4884-a574-d6d90589b80f.pdf"
+        },
+        "upload": {
+            "url": "https://5d5402ee680a5aebd3ce9fa8037fbe92.r2.cloudflarestorage.com/indeal-test/uploads/2025-12-16/commercial-license-f08d8b36-a95f-4884-a574-d6d90589b80f.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=0e965e1d15d7b1201585648c7ebb0965%2F20251216%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20251216T202654Z&X-Amz-Expires=300&X-Amz-Signature=584abe70395dbef123edca4e3db17a6fe6d87cdaeff93afd22e486ece9242de5&X-Amz-SignedHeaders=host&x-amz-checksum-crc32=AAAAAA%3D%3D&x-amz-sdk-checksum-algorithm=CRC32&x-id=PutObject",
+            "method": "PUT",
+            "headers": {
+                "Content-Type": "application/pdf"
+            },
+            "expiresIn": 300
+        }
+    }
+}

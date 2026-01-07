@@ -1,0 +1,20 @@
+meta {
+  name: Reject Company
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/admin/companies/{{company_id}}/reject
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

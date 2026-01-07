@@ -1,0 +1,16 @@
+meta {
+  name: Verify Email
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{base_url}}/auth/verify-email?email=valizylu@denipl.net&token=example_token
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

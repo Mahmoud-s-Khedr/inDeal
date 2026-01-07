@@ -1,0 +1,20 @@
+meta {
+  name: Get Company Reviews
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{base_url}}/admin/companies/{{company_id}}/reviews
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

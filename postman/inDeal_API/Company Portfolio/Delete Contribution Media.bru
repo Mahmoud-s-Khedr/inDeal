@@ -1,0 +1,19 @@
+meta {
+  name: Delete Contribution Media
+  type: http
+  seq: 2004
+}
+
+delete {
+  url: {{base_url}}/companies/me/contributions/{{contribution_id}}/media/{{media_id}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+docs {
+  Delete a media item from a contribution.
+}

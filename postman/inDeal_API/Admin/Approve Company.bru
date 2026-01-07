@@ -1,0 +1,20 @@
+meta {
+  name: Approve Company
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/admin/companies/{{company_id}}/approve
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

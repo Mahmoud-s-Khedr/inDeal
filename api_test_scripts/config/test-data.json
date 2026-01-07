@@ -1,0 +1,85 @@
+{
+  "_comment": "Auto-generated test data. Edit values as needed, especially email addresses for testing email flows.",
+  "users": [
+    {
+      "username": "nico_harber_zzl0",
+      "email": "j79h9@airsworld.net",
+      "password": "TestWxkDGWjH!",
+      "firstName": "Annamae",
+      "lastName": "Lubowitz",
+      "jobTitle": "Investor Implementation Coordinator",
+      "id": "user-1"
+    },
+    {
+      "username": "darrel_kling_iwz3",
+      "email": "dybehuzy@forexzig.com",
+      "password": "TestBDdTCEov!",
+      "firstName": "Keon",
+      "lastName": "Schinner",
+      "jobTitle": "Future Accountability Architect",
+      "id": "user-2"
+    }
+  ],
+  "companies": [
+    {
+      "name": "DuBuque and Sons",
+      "description": "Sustainable cloud-native frame. Deprimo arto aqua cena trans contra valetudo dedico. Video cum assumenda. Valetudo articulus quisquam calcar supplanto hic taceo tracto campana.",
+      "address": "5800 The Fairway, Shubra El Kheima, Egypt",
+      "phone": "+202676436100",
+      "website": "https://bleak-hundred.biz/",
+      "companyType": "holdingCompany",
+      "companyIndustry": "construction",
+      "contacts": [
+        {
+          "type": "email",
+          "value": "Keyshawn52@gmail.com"
+        },
+        {
+          "type": "phone",
+          "value": "+200433589144"
+        }
+      ],
+      "locations": [
+        "Giza"
+      ],
+      "id": "company-1",
+      "userId": "user-1"
+    },
+    {
+      "name": "Luettgen, Hagenes and Bogisich",
+      "description": "AI-driven needs-based adapter. Arto cultellus angulus. Templum cernuus et annus custodia qui vomito. Ad attollo alveus cicuta quam teres cupressus totam vinitor dens.",
+      "address": "501 Madelynn Corners, Zagazig, Egypt",
+      "phone": "+200836121275",
+      "website": "https://antique-merit.org/",
+      "companyType": "cooperative",
+      "companyIndustry": "healthcare",
+      "contacts": [
+        {
+          "type": "email",
+          "value": "Alta.Nicolas@yahoo.com"
+        },
+        {
+          "type": "phone",
+          "value": "+204135079045"
+        }
+      ],
+      "locations": [
+        "Zagazig",
+        "New Cairo"
+      ],
+      "id": "company-2",
+      "userId": "user-2"
+    }
+  ],
+  "admin": {
+    "email": "admin@indealeg.com",
+    "password": "AdminPassword123!",
+    "_note": "Update with real admin credentials for testing"
+  },
+  "testTokens": {
+    "emailVerificationToken": "",
+    "passwordResetOtp": "",
+    "_note": "These are populated during test runs or manually for email flow testing"
+  },
+  "generatedAt": "2026-01-07T17:08:21.210Z"
+}

@@ -1,0 +1,20 @@
+meta {
+  name: List My Contributions
+  type: http
+  seq: 1002
+}
+
+get {
+  url: {{base_url}}/companies/me/contributions
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
