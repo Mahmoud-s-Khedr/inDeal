@@ -6,6 +6,10 @@ const AppError = require('../utils/AppError');
 const fileRepository = require('../repositories/file.repository');
 const { s3Client, bucket, publicUrl } = require('../config/storage');
 const { MAX_FILE_SIZE_BYTES, SIGNED_URL_TTL_SECONDS } = require('../constants/storage');
+const { enqueueImageOptimization } = require('../config/jobQueue');
+
+// Image types that can be optimized
+const OPTIMIZABLE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 const buildPublicUrl = (filePath) => {
     if (!publicUrl || !filePath) return null;
@@ -14,7 +18,7 @@ const buildPublicUrl = (filePath) => {
 
 const sanitizeFile = (file) => {
     if (!file) return null;
-    return {
+    const result = {
         id: file.id,
         fileName: file.fileName,
         filePath: file.filePath,
@@ -22,6 +26,15 @@ const sanitizeFile = (file) => {
         uploadedAt: file.uploadedAt,
         publicUrl: buildPublicUrl(file.filePath),
     };
+
+    // Add variant URLs if available
+    if (file.fileMetadata?.variants) {
+        const variants = file.fileMetadata.variants;
+        result.thumbnailUrl = variants.thumbUrl || buildPublicUrl(variants.thumb);
+        result.mediumUrl = variants.mediumUrl || buildPublicUrl(variants.medium);
+    }
+
+    return result;
 };
 
 const generateFileKey = (originalName) => {
@@ -84,6 +97,11 @@ const createUploadUrl = async ({ fileName, fileType, fileSize, uploaderId }) => 
         expiresIn: SIGNED_URL_TTL_SECONDS,
     });
 
+    // Enqueue image optimization if this is an optimizable image type
+    if (OPTIMIZABLE_IMAGE_TYPES.includes(fileType)) {
+        await enqueueImageOptimization(fileRecord.id, objectKey, fileType);
+    }
+
     return {
         file: sanitizeFile(fileRecord),
         upload: {
@@ -100,3 +118,4 @@ const createUploadUrl = async ({ fileName, fileType, fileSize, uploaderId }) => 
 module.exports = {
     createUploadUrl,
 };
+
