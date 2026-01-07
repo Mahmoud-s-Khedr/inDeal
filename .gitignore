@@ -1,15 +1,33 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+
+# Environment files (keep .env.example only)
 .env
+.env.docker
+.env.local
+.env.*.local
+
+# IDE
 .DS_Store
 .vscode/
+.idea/
+
+# Testing
 coverage/
+
+# Logs
 npm-debug.log*
 yarn-error.log*
-.idea/
 *.log
+
+# Temp files
 *.swp
 *.swo
 *.bak
 *.tmp
-postman/
+
+# OS generated
+Thumbs.db
