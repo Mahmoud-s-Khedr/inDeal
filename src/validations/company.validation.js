@@ -338,6 +338,74 @@ const updateContributionSchema = z.object({
         }),
 });
 
+// Contribution Media validation schemas
+const contributionMediaIdParamsSchema = z.object({
+    params: z.object({
+        contributionId: z.coerce.number().int().positive(),
+        mediaId: z.coerce.number().int().positive(),
+    }),
+});
+
+const addContributionMediaSchema = z.object({
+    params: z.object({
+        contributionId: z.coerce.number().int().positive(),
+    }),
+    body: z
+        .object({
+            fileId: z.coerce.number().int().positive().optional(),
+            mediaType: z.enum(contributionMediaTypeValues),
+            mediaUrl: z.string().url().max(255).optional(),
+            caption: z.string().max(255).optional(),
+            sortOrder: z.coerce.number().int().nonnegative().optional(),
+        })
+        .superRefine((data, ctx) => {
+            if (data.mediaType === 'url') {
+                if (!data.mediaUrl) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: 'mediaUrl is required when mediaType is url',
+                        path: ['mediaUrl'],
+                    });
+                }
+            } else {
+                if (!data.fileId) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: 'fileId is required when mediaType is not url',
+                        path: ['fileId'],
+                    });
+                }
+            }
+        }),
+});
+
+const updateContributionMediaSchema = z.object({
+    params: z.object({
+        contributionId: z.coerce.number().int().positive(),
+        mediaId: z.coerce.number().int().positive(),
+    }),
+    body: z
+        .object({
+            fileId: z.coerce.number().int().positive().optional(),
+            mediaType: z.enum(contributionMediaTypeValues).optional(),
+            mediaUrl: z.string().url().max(255).optional(),
+            caption: z.string().max(255).optional(),
+            sortOrder: z.coerce.number().int().nonnegative().optional(),
+        })
+        .refine((data) => Object.values(data).some((value) => value !== undefined), {
+            message: 'At least one field must be provided',
+        }),
+});
+
+const reorderContributionMediaSchema = z.object({
+    params: z.object({
+        contributionId: z.coerce.number().int().positive(),
+    }),
+    body: z.object({
+        orderedIds: z.array(z.coerce.number().int().positive()).min(1),
+    }),
+});
+
 module.exports = {
     updateCompanySchema,
     addGalleryItemSchema,
@@ -351,4 +419,9 @@ module.exports = {
     contributionIdParamsSchema,
     createContributionSchema,
     updateContributionSchema,
+    contributionMediaIdParamsSchema,
+    addContributionMediaSchema,
+    updateContributionMediaSchema,
+    reorderContributionMediaSchema,
 };
+

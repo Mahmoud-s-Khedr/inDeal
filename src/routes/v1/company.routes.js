@@ -15,6 +15,10 @@ const {
     updateContributionSchema,
     createReviewSchema,
     companyIdParamsSchema,
+    addContributionMediaSchema,
+    contributionMediaIdParamsSchema,
+    updateContributionMediaSchema,
+    reorderContributionMediaSchema,
 } = require('../../validations/company.validation');
 
 const router = express.Router();
@@ -54,9 +58,42 @@ router.delete(
     companyController.deleteMyContribution
 );
 
+// Contribution Media endpoints (multiple media per contribution)
+router.get(
+    '/me/contributions/:contributionId/media',
+    protect,
+    validate(contributionIdParamsSchema),
+    companyController.listContributionMedia
+);
+router.post(
+    '/me/contributions/:contributionId/media',
+    protect,
+    validate(addContributionMediaSchema),
+    companyController.addContributionMedia
+);
+router.put(
+    '/me/contributions/:contributionId/media/:mediaId',
+    protect,
+    validate(updateContributionMediaSchema),
+    companyController.updateContributionMedia
+);
+router.delete(
+    '/me/contributions/:contributionId/media/:mediaId',
+    protect,
+    validate(contributionMediaIdParamsSchema),
+    companyController.deleteContributionMedia
+);
+router.put(
+    '/me/contributions/:contributionId/media/reorder',
+    protect,
+    validate(reorderContributionMediaSchema),
+    companyController.reorderContributionMedia
+);
+
 router.get('/:id', validate(companyIdParamsSchema), companyController.getCompanyProfile);
 router.get('/:id/gallery', validate(companyIdParamsSchema), companyController.listGallery);
 router.get('/:id/reviews', validate(companyIdParamsSchema), companyController.listReviews);
 router.post('/:id/reviews', protect, validate(createReviewSchema), companyController.createReview);
 
 module.exports = router;
+

@@ -4,6 +4,7 @@ const galleryRepository = require('../repositories/companyGallery.repository');
 const reviewRepository = require('../repositories/companyReview.repository');
 const companyDocumentRepository = require('../repositories/companyDocument.repository');
 const contributionRepository = require('../repositories/companyContribution.repository');
+const contributionMediaRepository = require('../repositories/companyContributionMedia.repository');
 const config = require('../config/env');
 const logger = require('../utils/logger');
 const { sendMail } = require('../config/mailer');
@@ -84,6 +85,17 @@ const sanitizeContribution = (item) => ({
     details: item.details,
     createdAt: item.created_at,
     updatedAt: item.updated_at,
+});
+
+const sanitizeContributionMedia = (item) => ({
+    id: item.id,
+    contributionId: item.contributionId,
+    fileId: item.fileId,
+    mediaType: item.mediaType,
+    mediaUrl: item.mediaUrl,
+    sortOrder: item.sortOrder,
+    caption: item.caption,
+    createdAt: item.createdAt,
 });
 
 const enrichProfile = (company, gallery = [], reviews = [], documents, contributions) => {
@@ -495,6 +507,88 @@ const deleteMyContribution = async (agentId, contributionId) => {
     return sanitizeContribution(deleted);
 };
 
+// ============= Contribution Media CRUD =============
+
+const verifyContributionOwnership = async (agentId, contributionId) => {
+    const company = await getCompanyOrThrowByAgent(agentId);
+    const numericId = Number(contributionId);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
+        throw new AppError('Invalid contribution id', 400);
+    }
+
+    const contribution = await contributionRepository.findById(numericId);
+    if (!contribution) {
+        throw new AppError('Contribution not found', 404);
+    }
+    if (contribution.company_id !== company.id) {
+        throw new AppError('You do not have access to this contribution', 403);
+    }
+    return { company, contribution };
+};
+
+const listContributionMedia = async (agentId, contributionId) => {
+    await verifyContributionOwnership(agentId, contributionId);
+    const media = await contributionMediaRepository.listByContributionId(Number(contributionId));
+    return media.map(sanitizeContributionMedia);
+};
+
+const addContributionMedia = async (agentId, contributionId, payload) => {
+    await verifyContributionOwnership(agentId, contributionId);
+    const media = await contributionMediaRepository.addMedia({
+        contributionId: Number(contributionId),
+        fileId: payload.fileId,
+        mediaType: payload.mediaType,
+        mediaUrl: payload.mediaUrl,
+        caption: payload.caption,
+        sortOrder: payload.sortOrder,
+    });
+    return sanitizeContributionMedia(media);
+};
+
+const updateContributionMedia = async (agentId, contributionId, mediaId, payload) => {
+    await verifyContributionOwnership(agentId, contributionId);
+
+    const numericMediaId = Number(mediaId);
+    const existing = await contributionMediaRepository.findById(numericMediaId);
+    if (!existing) {
+        throw new AppError('Media item not found', 404);
+    }
+    if (existing.contributionId !== Number(contributionId)) {
+        throw new AppError('Media does not belong to this contribution', 403);
+    }
+
+    const updated = await contributionMediaRepository.updateMedia(numericMediaId, {
+        file_id: payload.fileId,
+        media_type: payload.mediaType,
+        media_url: payload.mediaUrl,
+        caption: payload.caption,
+        sort_order: payload.sortOrder,
+    });
+    return sanitizeContributionMedia(updated);
+};
+
+const deleteContributionMedia = async (agentId, contributionId, mediaId) => {
+    await verifyContributionOwnership(agentId, contributionId);
+
+    const numericMediaId = Number(mediaId);
+    const existing = await contributionMediaRepository.findById(numericMediaId);
+    if (!existing) {
+        throw new AppError('Media item not found', 404);
+    }
+    if (existing.contributionId !== Number(contributionId)) {
+        throw new AppError('Media does not belong to this contribution', 403);
+    }
+
+    const deleted = await contributionMediaRepository.deleteMedia(numericMediaId);
+    return sanitizeContributionMedia(deleted);
+};
+
+const reorderContributionMedia = async (agentId, contributionId, orderedIds) => {
+    await verifyContributionOwnership(agentId, contributionId);
+    const media = await contributionMediaRepository.reorderMedia(Number(contributionId), orderedIds);
+    return media.map(sanitizeContributionMedia);
+};
+
 const resendForReview = async (agentId) => {
     const company = await getCompanyOrThrowByAgent(agentId);
     const updated = await companyRepository.updateCompanyStatus(company.id, 'underReview');
@@ -601,4 +695,9 @@ module.exports = {
     createMyContribution,
     updateMyContribution,
     deleteMyContribution,
+    listContributionMedia,
+    addContributionMedia,
+    updateContributionMedia,
+    deleteContributionMedia,
+    reorderContributionMedia,
 };

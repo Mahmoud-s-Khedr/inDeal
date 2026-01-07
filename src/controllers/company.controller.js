@@ -101,6 +101,45 @@ const deleteMyContribution = catchAsync(async (req, res) => {
     sendResponse(res, 200, contribution, 'Company contribution deleted');
 });
 
+// Contribution Media Controllers
+const listContributionMedia = catchAsync(async (req, res) => {
+    const media = await companyService.listContributionMedia(req.user.id, req.params.contributionId);
+    sendResponse(res, 200, media, 'Contribution media fetched');
+});
+
+const addContributionMedia = catchAsync(async (req, res) => {
+    const media = await companyService.addContributionMedia(req.user.id, req.params.contributionId, req.body);
+    sendResponse(res, 201, media, 'Contribution media added');
+});
+
+const updateContributionMedia = catchAsync(async (req, res) => {
+    const media = await companyService.updateContributionMedia(
+        req.user.id,
+        req.params.contributionId,
+        req.params.mediaId,
+        req.body
+    );
+    sendResponse(res, 200, media, 'Contribution media updated');
+});
+
+const deleteContributionMedia = catchAsync(async (req, res) => {
+    const media = await companyService.deleteContributionMedia(
+        req.user.id,
+        req.params.contributionId,
+        req.params.mediaId
+    );
+    sendResponse(res, 200, media, 'Contribution media deleted');
+});
+
+const reorderContributionMedia = catchAsync(async (req, res) => {
+    const media = await companyService.reorderContributionMedia(
+        req.user.id,
+        req.params.contributionId,
+        req.body.orderedIds
+    );
+    sendResponse(res, 200, media, 'Contribution media reordered');
+});
+
 module.exports = {
     getMyProfile,
     updateMyProfile,
@@ -121,4 +160,10 @@ module.exports = {
     createMyContribution,
     updateMyContribution,
     deleteMyContribution,
+    listContributionMedia,
+    addContributionMedia,
+    updateContributionMedia,
+    deleteContributionMedia,
+    reorderContributionMedia,
 };
+
