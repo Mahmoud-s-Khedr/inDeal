@@ -1,49 +1,64 @@
-const util = require('util');
-const { log: logConfig } = require('../config/env');
+/**
+ * Logger Utility - Pino Wrapper
+ * 
+ * Provides a consistent logging API that wraps Pino.
+ * Maintains backward compatibility with existing logger.info(), logger.error() calls.
+ */
 
-const levelPriority = {
-    error: 0,
-    warn: 1,
-    http: 2,
-    info: 3,
-    debug: 4,
-};
+const { logger, createChildLogger, createRequestLogger, createServiceLogger } = require('../config/pino');
 
-const currentLevel = levelPriority[logConfig.level] ?? levelPriority.info;
-
+/**
+ * Format meta data for logging
+ * Ensures Error objects are properly serialized
+ */
 const formatMeta = (meta) => {
-    if (!meta) return '';
+    if (!meta) return undefined;
     if (meta instanceof Error) {
-        return meta.stack || meta.message;
+        return {
+            type: meta.constructor.name,
+            message: meta.message,
+            stack: meta.stack,
+            ...(meta.statusCode && { statusCode: meta.statusCode }),
+            ...(meta.code && { code: meta.code }),
+        };
     }
-    return util.inspect(meta, { depth: null, colors: false });
+    return meta;
 };
 
+/**
+ * Log at specified level with optional metadata
+ */
 const write = (level, message, meta) => {
-    const priority = levelPriority[level];
-    if (priority === undefined) {
-        throw new Error(`Unknown log level: ${level}`);
-    }
-    if (priority > currentLevel) return;
+    const formattedMeta = formatMeta(meta);
 
-    const timestamp = new Date().toISOString();
-    const formattedMeta = meta ? ` | ${formatMeta(meta)}` : '';
-    const output = `[${timestamp}] [${level.toUpperCase()}] ${message}${formattedMeta}`;
+    // Pino uses different method names than our custom levels
+    // Map 'http' to 'info' 
+    const pinoLevel = level === 'http' ? 'info' : level;
 
-    if (level === 'error') {
-        console.error(output);
-    } else if (level === 'warn') {
-        console.warn(output);
+    if (formattedMeta !== undefined) {
+        logger[pinoLevel](formattedMeta, message);
     } else {
-        console.log(output);
+        logger[pinoLevel](message);
     }
 };
 
 module.exports = {
+    // Core Pino logger instance (for advanced use)
+    pino: logger,
+
+    // Child logger factories
+    createChildLogger,
+    createRequestLogger,
+    createServiceLogger,
+
+    // Main logging API (backward compatible)
     log: write,
     error: (message, meta) => write('error', message, meta),
     warn: (message, meta) => write('warn', message, meta),
-    http: (message, meta) => write('http', message, meta),
+    http: (message, meta) => write('info', message, meta), // HTTP logs at info level
     info: (message, meta) => write('info', message, meta),
     debug: (message, meta) => write('debug', message, meta),
+
+    // Convenience method for structured logging
+    child: (bindings) => createChildLogger(bindings),
 };
