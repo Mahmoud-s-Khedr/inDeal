@@ -22,7 +22,8 @@ create table files (
     file_name varchar(100) not null,
     file_metadata jsonb,
     file_path varchar(255) not null,
-    uploaded_at timestamp default current_timestamp
+    uploaded_at timestamp default current_timestamp,
+    deleted_at timestamp  -- Soft delete support
 );
 
 create table users (
@@ -103,15 +104,27 @@ create table company_documents (
 create table company_contributions (
     id serial primary key,
     company_id int references companies(id),
-    media_file_id int references files(id),
-    media_type varchar(30),
-    media_url varchar(255),
+    media_file_id int references files(id),  -- Legacy single-media (deprecated)
+    media_type varchar(30),                  -- Legacy single-media (deprecated)
+    media_url varchar(255),                  -- Legacy single-media (deprecated)
     type varchar(30) not null,
     title varchar(150) not null,
     description text,
     details jsonb,
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp
+);
+
+-- 3c. Multiple Media per Contribution (junction table)
+create table company_contribution_media (
+    id serial primary key,
+    contribution_id int not null references company_contributions(id) on delete cascade,
+    file_id int references files(id),
+    media_type varchar(30) not null,  -- image, video, file, url
+    media_url varchar(255),           -- for external URLs
+    sort_order int default 0,
+    caption varchar(255),
+    created_at timestamp default current_timestamp
 );
 
 -- 4. Deals (The Core Transaction)
