@@ -30,99 +30,109 @@ const ENABLE_SOCKETIO = process.env.ENABLE_SOCKETIO === 'true';
 let io = null;
 
 if (ENABLE_SOCKETIO) {
-    const { Server } = require('socket.io');
+  const { Server } = require('socket.io');
+  const { initializeChatSockets } = require('./sockets/chat.handler');
+  const { createAdapter } = require('@socket.io/redis-adapter');
 
-    io = new Server(server, {
-        cors: {
-            origin: '*', // Configure allowed origins before production
-            methods: ['GET', 'POST'],
-        },
-    });
+  io = new Server(server, {
+    cors: {
+      origin: '*', // Configure allowed origins before production
+      methods: ['GET', 'POST'],
+    },
+  });
 
-    io.on('connection', (socket) => {
-        logger.debug({ socketId: socket.id }, 'Socket connected');
+  // Set up Redis adapter for horizontal scaling (optional, based on Redis availability)
+  const useRedisAdapter = process.env.ENABLE_REDIS_ADAPTER === 'true';
+  if (useRedisAdapter && redis) {
+    try {
+      const pubClient = redis.duplicate();
+      const subClient = redis.duplicate();
+      io.adapter(createAdapter(pubClient, subClient));
+      logger.info({ feature: 'socketio-redis' }, 'Socket.io Redis adapter enabled');
+    } catch (error) {
+      logger.warn({ err: error }, 'Failed to set up Redis adapter, continuing without it');
+    }
+  }
 
-        socket.on('disconnect', () => {
-            logger.debug({ socketId: socket.id }, 'Socket disconnected');
-        });
-    });
+  // Initialize chat handlers
+  initializeChatSockets(io);
 
-    logger.info({ feature: 'socketio', enabled: true }, 'Socket.io enabled');
+  logger.info({ feature: 'socketio', enabled: true }, 'Socket.io enabled');
 } else {
-    logger.info({ feature: 'socketio', enabled: false }, 'Socket.io disabled (set ENABLE_SOCKETIO=true to enable)');
+  logger.info(
+    { feature: 'socketio', enabled: false },
+    'Socket.io disabled (set ENABLE_SOCKETIO=true to enable)'
+  );
 }
 
 const startServer = async () => {
-    try {
-        // Log startup configuration
-        startupLogger.logStartupConfig();
+  try {
+    // Log startup configuration
+    startupLogger.logStartupConfig();
 
-        // Verify database connection on startup (local dev only)
-        const client = await pool.connect();
-        client.release();
-        logger.info(
-            `Database connection verified @ ${config.db.host}:${config.db.port}/${config.db.name}`
-        );
+    // Verify database connection on startup (local dev only)
+    const client = await pool.connect();
+    client.release();
+    logger.info(
+      `Database connection verified @ ${config.db.host}:${config.db.port}/${config.db.name}`
+    );
 
-        // Start background job workers
-        startOrphanCleanupWorker();
-        startupLogger.logWorkerStarted('orphan-cleanup');
+    // Start background job workers
+    startOrphanCleanupWorker();
+    startupLogger.logWorkerStarted('orphan-cleanup');
 
-        startImageOptimizationWorker();
-        startupLogger.logWorkerStarted('image-optimization');
+    startImageOptimizationWorker();
+    startupLogger.logWorkerStarted('image-optimization');
 
-        await scheduleCleanupJob();
+    await scheduleCleanupJob();
 
-        server.listen(config.app.port, () => {
-            startupLogger.logServerListening(config.app.port, config.app.env);
-        });
-    } catch (error) {
-        logger.error({ err: error }, 'Failed to start server');
-        process.exit(1);
-    }
+    server.listen(config.app.port, () => {
+      startupLogger.logServerListening(config.app.port, config.app.env);
+    });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to start server');
+    process.exit(1);
+  }
 };
 
 const gracefulShutdown = async (signal) => {
-    startupLogger.logShutdown(signal);
+  startupLogger.logShutdown(signal);
 
-    server.close(async (err) => {
-        if (err) {
-            logger.error({ err }, 'Error shutting down HTTP server');
-        }
-        try {
-            if (io) {
-                io.close();
-            }
-            await pool.end();
-            await redis.quit();
-            logger.info('Graceful shutdown complete');
-        } catch (error) {
-            logger.error({ err: error }, 'Error during shutdown');
-        } finally {
-            process.exit(0);
-        }
-    });
+  server.close(async (err) => {
+    if (err) {
+      logger.error({ err }, 'Error shutting down HTTP server');
+    }
+    try {
+      if (io) {
+        io.close();
+      }
+      await pool.end();
+      await redis.quit();
+      logger.info('Graceful shutdown complete');
+    } catch (error) {
+      logger.error({ err: error }, 'Error during shutdown');
+    } finally {
+      process.exit(0);
+    }
+  });
 };
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-    logger.error({ err: error, type: 'uncaughtException' }, 'Uncaught exception');
-    process.exit(1);
+  logger.error({ err: error, type: 'uncaughtException' }, 'Uncaught exception');
+  process.exit(1);
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-    logger.error(
-        { err: reason, type: 'unhandledRejection' },
-        'Unhandled promise rejection'
-    );
+process.on('unhandledRejection', (reason, _promise) => {
+  logger.error({ err: reason, type: 'unhandledRejection' }, 'Unhandled promise rejection');
 });
 
 ['SIGINT', 'SIGTERM'].forEach((signal) => {
-    process.on(signal, () => gracefulShutdown(signal));
+  process.on(signal, () => gracefulShutdown(signal));
 });
 
 // Only start server if this file is run directly (not imported)
 if (require.main === module) {
-    startServer();
+  startServer();
 }

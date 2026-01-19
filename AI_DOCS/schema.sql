@@ -10,6 +10,9 @@ CREATE TYPE ad_status_enum AS ENUM ('pending', 'active', 'rejected', 'paused', '
 CREATE TYPE ad_location_enum AS ENUM ('homepage_banner', 'sidebar', 'search_result');
 CREATE TYPE ad_type_enum AS ENUM ('banner', 'video', 'sponsored_listing');
 
+CREATE TYPE support_ticket_status_enum AS ENUM ('open', 'in_progress', 'resolved', 'closed');
+CREATE TYPE support_ticket_priority_enum AS ENUM ('low', 'medium', 'high', 'urgent');
+
 CREATE TYPE company_type_enum AS ENUM ('supplier', 'manufacturer', 'distributor', 'retailer', 'serviceProvider', 'wholesaler', 'eCommerce', 'franchise', 'cooperative', 'holdingCompany', 'consultancy', 'logistics', 'other');
 
 CREATE TYPE industry_enum AS ENUM ('agriculture', 'automotive', 'banking', 'construction', 'education', 'healthcare', 'hospitality', 'manufacturing', 'retail', 'technology', 'telecommunications', 'transportation', 'other');
@@ -169,6 +172,7 @@ create table chat_messages (
     room_id int references chat_rooms(id),
     sender_user_id int references users(id), 
     message_text text,
+    attachment_file_id int references files(id),  -- Optional file attachment
     sent_at timestamp default current_timestamp
 );
 
@@ -217,7 +221,30 @@ create table audit_logs (
     timestamp timestamp default current_timestamp
 );
 
--- 8. Indexes (Performance)
+-- 8. Support Tickets
+create table support_tickets (
+    id serial primary key,
+    user_id int references users(id) on delete set null,
+    company_id int references companies(id) on delete set null,
+    subject varchar(200) not null,
+    message text not null,
+    email varchar(100) not null,
+    priority support_ticket_priority_enum default 'medium',
+    status support_ticket_status_enum default 'open',
+    admin_notes text,
+    created_at timestamp default current_timestamp,
+    updated_at timestamp default current_timestamp
+);
+
+create table support_ticket_responses (
+    id serial primary key,
+    ticket_id int not null references support_tickets(id) on delete cascade,
+    responder_user_id int not null references users(id),
+    message text not null,
+    created_at timestamp default current_timestamp
+);
+
+-- 9. Indexes (Performance)
 CREATE INDEX idx_users_profile_image ON users(profile_image);
 CREATE INDEX idx_companies_agent_id ON companies(agent_id);
 CREATE INDEX idx_companies_logo ON companies(logo);
@@ -247,3 +274,9 @@ CREATE INDEX idx_ad_click_events_user_id ON ad_click_events(user_id);
 CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_company_id ON audit_logs(company_id);
 CREATE INDEX idx_audit_logs_details ON audit_logs USING GIN (details);
+
+CREATE INDEX idx_support_tickets_user_id ON support_tickets(user_id);
+CREATE INDEX idx_support_tickets_company_id ON support_tickets(company_id);
+CREATE INDEX idx_support_tickets_status ON support_tickets(status);
+CREATE INDEX idx_support_tickets_priority ON support_tickets(priority);
+CREATE INDEX idx_support_ticket_responses_ticket_id ON support_ticket_responses(ticket_id);

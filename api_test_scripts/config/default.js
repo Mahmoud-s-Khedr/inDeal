@@ -14,30 +14,30 @@ const __dirname = dirname(__filename);
 dotenvConfig({ path: join(__dirname, '../../.env') });
 
 export const config = {
-    // API Configuration
-    api: {
-        baseUrl: process.env.API_TEST_BASE_URL || 'https://api-test.indealeg.com',
-        version: 'v1',
-        timeout: 30000, // 30 seconds
-    },
+  // API Configuration
+  api: {
+    baseUrl: process.env.API_TEST_BASE_URL || 'https://api-test.indealeg.com',
+    version: 'v1',
+    timeout: 30000, // 30 seconds
+  },
 
-    // Paths
-    paths: {
-        testData: join(__dirname, 'test-data.json'),
-        uploads: join(__dirname, '../uploads'),
-    },
+  // Paths
+  paths: {
+    testData: join(__dirname, 'test-data.json'),
+    uploads: join(__dirname, '../uploads'),
+  },
 
-    // Logging
-    logging: {
-        verbose: process.env.VERBOSE === 'true',
-        showResponseBody: process.env.SHOW_RESPONSE === 'true',
-    },
+  // Logging
+  logging: {
+    verbose: process.env.VERBOSE === 'true',
+    showResponseBody: process.env.SHOW_RESPONSE === 'true',
+  },
 
-    // Timing configuration for flows
-    timing: {
-        delayBetweenRequests: 500, // ms between requests in a flow
-        delayBetweenFlows: 2000,   // ms between flows when running all
-    },
+  // Timing configuration for flows
+  timing: {
+    delayBetweenRequests: 500, // ms between requests in a flow
+    delayBetweenFlows: 2000, // ms between flows when running all
+  },
 };
 
 export default config;

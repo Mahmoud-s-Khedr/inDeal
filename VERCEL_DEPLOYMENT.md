@@ -28,6 +28,7 @@ git push origin main
 Go to your Vercel project settings → Environment Variables and add:
 
 **Required:**
+
 ```env
 NODE_ENV=production
 DATABASE_URL=postgresql://postgres:password@host:5432/dbname
@@ -44,6 +45,7 @@ SESSION_ENFORCE_LATEST_JTI=true
 ```
 
 **Storage (Cloudflare R2):**
+
 ```env
 R2_BUCKET_NAME=your-bucket
 R2_ACCESS_KEY_ID=your-access-key
@@ -56,6 +58,7 @@ R2_MAX_FILE_SIZE_BYTES=20971520
 ```
 
 **Email (Resend):**
+
 ```env
 RESEND_API_KEY=your-api-key
 RESEND_FROM_EMAIL=noreply@yourdomain.com
@@ -64,6 +67,7 @@ COMPANY_REVIEW_NOTIFICATION_EMAIL=admin@yourdomain.com
 ```
 
 **Frontend Integration:**
+
 ```env
 FRONTEND_BASE_URL=https://yourdomain.com
 FORGOT_PASSWORD_ENABLED=true
@@ -80,6 +84,7 @@ EMAIL_VERIFICATION_PATH=/api/v1/auth/verify-email
 ```
 
 **Optional (Firebase):**
+
 ```env
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
@@ -126,6 +131,7 @@ npm run dev
 ```
 
 To enable Socket.io locally, add to your `.env`:
+
 ```env
 ENABLE_SOCKETIO=true
 ```
@@ -135,10 +141,12 @@ ENABLE_SOCKETIO=true
 #### ⚠️ Real-Time Features (Socket.io)
 
 Socket.io is **disabled** on Vercel because:
+
 - Vercel functions are stateless and short-lived
 - WebSockets require persistent connections
 
 **Solutions:**
+
 1. Use a managed service: [Pusher](https://pusher.com), [Ably](https://ably.com), or [Socket.io Cloud](https://socket.io/cloud)
 2. Deploy WebSocket server separately to Railway/Render
 3. Use polling instead of WebSockets (less efficient)
@@ -146,6 +154,7 @@ Socket.io is **disabled** on Vercel because:
 #### 🔄 Background Jobs (BullMQ)
 
 BullMQ workers won't run on Vercel Functions. Options:
+
 1. Use Vercel Cron Jobs for scheduled tasks
 2. Deploy workers separately to Railway/Render
 3. Use managed queue services (AWS SQS, Google Cloud Tasks)
@@ -153,6 +162,7 @@ BullMQ workers won't run on Vercel Functions. Options:
 #### 💾 Database Connection Pooling
 
 Serverless functions can exhaust database connections. Recommendations:
+
 - Use connection pooling services (PgBouncer)
 - Use serverless-friendly databases (Supabase, Neon, PlanetScale)
 - Configure your PostgreSQL `max_connections` appropriately
@@ -181,6 +191,7 @@ curl -X POST https://your-app.vercel.app/api/v1/auth/login \
 ### Monitoring
 
 Monitor your deployment:
+
 1. Vercel Dashboard → Your Project → Logs
 2. Check function execution time and errors
 3. Monitor database connection pool usage
@@ -189,20 +200,24 @@ Monitor your deployment:
 ### Troubleshooting
 
 **"Cannot find module" errors:**
+
 - Ensure all dependencies are in `package.json` (not devDependencies)
 - Check `.vercelignore` isn't excluding required files
 
 **Database connection timeouts:**
+
 - Verify `DATABASE_URL` is correct
 - Check database allows connections from Vercel IPs
 - Use connection pooling (PgBouncer/Supabase)
 
 **Redis connection errors:**
+
 - Ensure Redis is accessible from internet
 - Check firewall rules
 - Verify username/password if required
 
 **Environment variables not working:**
+
 - Redeploy after adding env vars
 - Check for typos in variable names
 - Ensure no spaces around `=` in Vercel dashboard
@@ -221,6 +236,7 @@ Monitor your deployment:
 ### Support
 
 For issues:
+
 - Check Vercel logs: `vercel logs`
 - Review PostgreSQL logs
 - Check Redis connection

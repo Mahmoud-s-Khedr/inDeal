@@ -1,0 +1,20 @@
+meta {
+  name: Get Deal
+  type: http
+  seq: 203
+}
+
+get {
+  url: {{base_url}}/admin/deals/{{deal_id}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

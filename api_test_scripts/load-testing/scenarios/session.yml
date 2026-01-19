@@ -8,130 +8,130 @@ config:
     # Warm-up
     - duration: 20
       arrivalRate: 2
-      name: "Warm-up"
+      name: 'Warm-up'
     # Ramp-up
     - duration: 40
       arrivalRate: 2
       rampTo: 20
-      name: "Ramp-up"
+      name: 'Ramp-up'
     # Peak load
     - duration: 60
       arrivalRate: 20
-      name: "Peak load"
+      name: 'Peak load'
     # Sustained
     - duration: 60
       arrivalRate: 15
-      name: "Sustained"
+      name: 'Sustained'
     # Cool-down
     - duration: 20
       arrivalRate: 5
-      name: "Cool-down"
+      name: 'Cool-down'
 
   defaults:
     headers:
-      Content-Type: "application/json"
-      Accept: "application/json"
+      Content-Type: 'application/json'
+      Accept: 'application/json'
 
   payload:
-    path: "../../config/test-data.json"
+    path: '../../config/test-data.json'
     fields:
-      - "users"
+      - 'users'
 
   plugins:
     expect: {}
 
   variables:
-    baseUrl: "/api/v1"
+    baseUrl: '/api/v1'
 
 scenarios:
   # Quick login/logout
-  - name: "Quick Login"
+  - name: 'Quick Login'
     weight: 5
     flow:
       - post:
-          url: "{{ baseUrl }}/auth/login"
+          url: '{{ baseUrl }}/auth/login'
           json:
-            email: "{{ users[0].email }}"
-            password: "{{ users[0].password }}"
+            email: '{{ users[0].email }}'
+            password: '{{ users[0].password }}'
           capture:
-            - json: "$.data.accessToken"
-              as: "accessToken"
+            - json: '$.data.accessToken'
+              as: 'accessToken'
           expect:
             - statusCode: [200, 401]
       - think: 1
       - post:
-          url: "{{ baseUrl }}/auth/logout"
+          url: '{{ baseUrl }}/auth/logout'
           headers:
-            Authorization: "Bearer {{ accessToken }}"
-          ifTrue: "accessToken"
+            Authorization: 'Bearer {{ accessToken }}'
+          ifTrue: 'accessToken'
 
   # Full session flow
-  - name: "Full Session"
+  - name: 'Full Session'
     weight: 3
     flow:
       - post:
-          url: "{{ baseUrl }}/auth/login"
+          url: '{{ baseUrl }}/auth/login'
           json:
-            email: "{{ users[0].email }}"
-            password: "{{ users[0].password }}"
+            email: '{{ users[0].email }}'
+            password: '{{ users[0].password }}'
           capture:
-            - json: "$.data.accessToken"
-              as: "accessToken"
+            - json: '$.data.accessToken'
+              as: 'accessToken'
           expect:
             - statusCode: [200, 401]
-      
+
       - think: 2
-      
+
       - get:
-          url: "{{ baseUrl }}/users/me"
+          url: '{{ baseUrl }}/users/me'
           headers:
-            Authorization: "Bearer {{ accessToken }}"
-          ifTrue: "accessToken"
+            Authorization: 'Bearer {{ accessToken }}'
+          ifTrue: 'accessToken'
           expect:
             - statusCode: [200, 401]
-      
+
       - think: 1
-      
+
       - get:
-          url: "{{ baseUrl }}/companies/me"
+          url: '{{ baseUrl }}/companies/me'
           headers:
-            Authorization: "Bearer {{ accessToken }}"
-          ifTrue: "accessToken"
+            Authorization: 'Bearer {{ accessToken }}'
+          ifTrue: 'accessToken'
           expect:
             - statusCode: [200, 401]
-      
+
       - think: 1
-      
+
       - get:
-          url: "{{ baseUrl }}/companies/me/gallery"
+          url: '{{ baseUrl }}/companies/me/gallery'
           headers:
-            Authorization: "Bearer {{ accessToken }}"
-          ifTrue: "accessToken"
-      
+            Authorization: 'Bearer {{ accessToken }}'
+          ifTrue: 'accessToken'
+
       - think: 1
-      
+
       - get:
-          url: "{{ baseUrl }}/companies/me/contributions"
+          url: '{{ baseUrl }}/companies/me/contributions'
           headers:
-            Authorization: "Bearer {{ accessToken }}"
-          ifTrue: "accessToken"
-      
+            Authorization: 'Bearer {{ accessToken }}'
+          ifTrue: 'accessToken'
+
       - think: 2
-      
+
       - post:
-          url: "{{ baseUrl }}/auth/logout"
+          url: '{{ baseUrl }}/auth/logout'
           headers:
-            Authorization: "Bearer {{ accessToken }}"
-          ifTrue: "accessToken"
+            Authorization: 'Bearer {{ accessToken }}'
+          ifTrue: 'accessToken'
 
   # Failed login attempts
-  - name: "Failed Login"
+  - name: 'Failed Login'
     weight: 2
     flow:
       - post:
-          url: "{{ baseUrl }}/auth/login"
+          url: '{{ baseUrl }}/auth/login'
           json:
-            email: "nonexistent@example.com"
-            password: "wrongpassword"
+            email: 'nonexistent@example.com'
+            password: 'wrongpassword'
           expect:
             - statusCode: [401, 400]

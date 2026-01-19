@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Root Route
 app.get('/', (req, res) => {
-    res.send('inDeal API is running');
+  res.send('inDeal API is running');
 });
 
 // API Routes
@@ -29,7 +29,7 @@ app.use('/api', routes);
 
 // 404 Handler
 app.use((req, res, next) => {
-    next(new AppError(`Cannot find ${req.originalUrl} on this server`, 404));
+  next(new AppError(`Cannot find ${req.originalUrl} on this server`, 404));
 });
 
 // Global Error Handler

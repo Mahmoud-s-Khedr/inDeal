@@ -13,10 +13,10 @@ const log = createServiceLogger('resend');
 let resend = null;
 
 if (config.resend.apiKey) {
-    resend = new Resend(config.resend.apiKey);
-    log.info({ fromEmail: config.resend.fromEmail }, 'Resend client configured');
+  resend = new Resend(config.resend.apiKey);
+  log.info({ fromEmail: config.resend.fromEmail }, 'Resend client configured');
 } else {
-    log.warn('RESEND_API_KEY is missing. Emails will not be sent until configured.');
+  log.warn('RESEND_API_KEY is missing. Emails will not be sent until configured.');
 }
 
 /**
@@ -31,75 +31,78 @@ if (config.resend.apiKey) {
  * @returns {Promise<Object>} Send result with message ID
  */
 const sendMail = async (options) => {
-    if (!resend) {
-        const error = new Error('Resend client is not configured');
-        error.code = 'MAILER_NOT_CONFIGURED';
-        log.error({ operation: 'send', to: options.to }, 'Attempted to send email without configured client');
-        throw error;
+  if (!resend) {
+    const error = new Error('Resend client is not configured');
+    error.code = 'MAILER_NOT_CONFIGURED';
+    log.error(
+      { operation: 'send', to: options.to },
+      'Attempted to send email without configured client'
+    );
+    throw error;
+  }
+
+  const start = Date.now();
+  const from = options.from || `${config.resend.fromName} <${config.resend.fromEmail}>`;
+  const toAddresses = Array.isArray(options.to) ? options.to : [options.to];
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+      replyTo: options.replyTo,
+    });
+
+    const duration = Date.now() - start;
+
+    if (error) {
+      log.error(
+        {
+          operation: 'send',
+          to: toAddresses,
+          subject: options.subject?.substring(0, 50),
+          error,
+          durationMs: duration,
+        },
+        'Resend send failed'
+      );
+      const err = new Error('Email delivery failed');
+      err.code = 'RESEND_SEND_FAILED';
+      err.details = error;
+      throw err;
     }
 
-    const start = Date.now();
-    const from = options.from || `${config.resend.fromName} <${config.resend.fromEmail}>`;
-    const toAddresses = Array.isArray(options.to) ? options.to : [options.to];
+    log.info(
+      {
+        operation: 'send',
+        messageId: data?.id,
+        to: toAddresses,
+        subject: options.subject?.substring(0, 50),
+        durationMs: duration,
+      },
+      'Email sent successfully'
+    );
 
-    try {
-        const { data, error } = await resend.emails.send({
-            from,
-            to: options.to,
-            subject: options.subject,
-            html: options.html,
-            text: options.text,
-            replyTo: options.replyTo,
-        });
+    return { id: data?.id };
+  } catch (err) {
+    // Re-throw if already logged
+    if (err.code === 'RESEND_SEND_FAILED') throw err;
 
-        const duration = Date.now() - start;
-
-        if (error) {
-            log.error(
-                {
-                    operation: 'send',
-                    to: toAddresses,
-                    subject: options.subject?.substring(0, 50),
-                    error,
-                    durationMs: duration,
-                },
-                'Resend send failed'
-            );
-            const err = new Error('Email delivery failed');
-            err.code = 'RESEND_SEND_FAILED';
-            err.details = error;
-            throw err;
-        }
-
-        log.info(
-            {
-                operation: 'send',
-                messageId: data?.id,
-                to: toAddresses,
-                subject: options.subject?.substring(0, 50),
-                durationMs: duration,
-            },
-            'Email sent successfully'
-        );
-
-        return { id: data?.id };
-    } catch (err) {
-        // Re-throw if already logged
-        if (err.code === 'RESEND_SEND_FAILED') throw err;
-
-        const duration = Date.now() - start;
-        log.error(
-            {
-                err,
-                operation: 'send',
-                to: toAddresses,
-                subject: options.subject?.substring(0, 50),
-                durationMs: duration,
-            },
-            'Resend send threw exception'
-        );
-        throw err;
-    }
+    const duration = Date.now() - start;
+    log.error(
+      {
+        err,
+        operation: 'send',
+        to: toAddresses,
+        subject: options.subject?.substring(0, 50),
+        durationMs: duration,
+      },
+      'Resend send threw exception'
+    );
+    throw err;
+  }
 };
 
 /**
@@ -108,45 +111,43 @@ const sendMail = async (options) => {
  * @returns {Promise<Object[]>} Array of send results
  */
 const sendBatch = async (emails) => {
-    if (!resend) {
-        log.error({ operation: 'batch' }, 'Attempted batch send without configured client');
-        throw new Error('Resend client is not configured');
-    }
+  if (!resend) {
+    log.error({ operation: 'batch' }, 'Attempted batch send without configured client');
+    throw new Error('Resend client is not configured');
+  }
 
-    const start = Date.now();
+  const start = Date.now();
 
-    try {
-        const results = await Promise.allSettled(
-            emails.map((email) => sendMail(email))
-        );
+  try {
+    const results = await Promise.allSettled(emails.map((email) => sendMail(email)));
 
-        const duration = Date.now() - start;
-        const successCount = results.filter((r) => r.status === 'fulfilled').length;
-        const failureCount = results.filter((r) => r.status === 'rejected').length;
+    const duration = Date.now() - start;
+    const successCount = results.filter((r) => r.status === 'fulfilled').length;
+    const failureCount = results.filter((r) => r.status === 'rejected').length;
 
-        log.info(
-            {
-                operation: 'batch',
-                totalEmails: emails.length,
-                successCount,
-                failureCount,
-                durationMs: duration,
-            },
-            'Batch email send completed'
-        );
+    log.info(
+      {
+        operation: 'batch',
+        totalEmails: emails.length,
+        successCount,
+        failureCount,
+        durationMs: duration,
+      },
+      'Batch email send completed'
+    );
 
-        return results;
-    } catch (err) {
-        const duration = Date.now() - start;
-        log.error(
-            { err, operation: 'batch', emailCount: emails.length, durationMs: duration },
-            'Batch email send failed'
-        );
-        throw err;
-    }
+    return results;
+  } catch (err) {
+    const duration = Date.now() - start;
+    log.error(
+      { err, operation: 'batch', emailCount: emails.length, durationMs: duration },
+      'Batch email send failed'
+    );
+    throw err;
+  }
 };
 
 module.exports = {
-    sendMail,
-    sendBatch,
+  sendMail,
+  sendBatch,
 };

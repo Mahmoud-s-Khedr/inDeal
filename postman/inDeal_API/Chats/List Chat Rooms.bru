@@ -1,0 +1,20 @@
+meta {
+  name: List Chat Rooms
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/chats
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

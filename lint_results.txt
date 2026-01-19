@@ -1,0 +1,91 @@
+
+> indeal@1.0.0 lint
+> eslint .
+
+
+/home/mk/Projects/freelance/mohand/inDeal/src/config/pino.js
+  65:1  error  Delete `⏎`  prettier/prettier
+
+/home/mk/Projects/freelance/mohand/inDeal/src/config/storage.js
+  27:7  error  Insert `··`  prettier/prettier
+  28:1  error  Insert `··`  prettier/prettier
+  29:1  error  Insert `··`  prettier/prettier
+
+/home/mk/Projects/freelance/mohand/inDeal/src/server.js
+   33:3  error  Delete `··`                                 prettier/prettier
+   34:1  error  Delete `··`                                 prettier/prettier
+   35:1  error  Replace `····` with `··`                    prettier/prettier
+   37:3  error  Delete `··`                                 prettier/prettier
+   38:1  error  Replace `········` with `····`              prettier/prettier
+   39:1  error  Delete `······`                             prettier/prettier
+   40:7  error  Delete `······`                             prettier/prettier
+   41:1  error  Replace `········` with `····`              prettier/prettier
+   42:1  error  Delete `··`                                 prettier/prettier
+   44:1  error  Delete `··`                                 prettier/prettier
+   45:3  error  Delete `··`                                 prettier/prettier
+   46:1  error  Replace `····` with `··`                    prettier/prettier
+   47:5  error  Delete `····`                               prettier/prettier
+   48:1  error  Replace `············` with `······`        prettier/prettier
+   49:1  error  Replace `············` with `······`        prettier/prettier
+   50:1  error  Replace `············` with `······`        prettier/prettier
+   51:1  error  Delete `······`                             prettier/prettier
+   52:5  error  Delete `····`                               prettier/prettier
+   53:1  error  Replace `············` with `······`        prettier/prettier
+   54:5  error  Delete `····`                               prettier/prettier
+   55:1  error  Replace `····` with `··`                    prettier/prettier
+   57:1  error  Delete `··`                                 prettier/prettier
+   58:1  error  Replace `····` with `··`                    prettier/prettier
+   60:1  error  Delete `··`                                 prettier/prettier
+   62:1  error  Delete `··`                                 prettier/prettier
+   63:5  error  Delete `····`                               prettier/prettier
+   64:1  error  Delete `····`                               prettier/prettier
+   65:1  error  Replace `····` with `··`                    prettier/prettier
+   69:3  error  Delete `··`                                 prettier/prettier
+   70:1  error  Replace `········` with `····`              prettier/prettier
+   71:1  error  Replace `········` with `····`              prettier/prettier
+   73:1  error  Delete `····`                               prettier/prettier
+   74:1  error  Replace `········` with `····`              prettier/prettier
+   75:5  error  Delete `····`                               prettier/prettier
+   76:1  error  Replace `········` with `····`              prettier/prettier
+   77:1  error  Delete `······`                             prettier/prettier
+   78:5  error  Delete `····`                               prettier/prettier
+   80:1  error  Delete `····`                               prettier/prettier
+   81:1  error  Replace `········` with `····`              prettier/prettier
+   82:1  error  Delete `····`                               prettier/prettier
+   84:1  error  Replace `········` with `····`              prettier/prettier
+   85:1  error  Delete `····`                               prettier/prettier
+   87:1  error  Delete `····`                               prettier/prettier
+   89:5  error  Delete `····`                               prettier/prettier
+   90:1  error  Replace `············` with `······`        prettier/prettier
+   91:5  error  Delete `····`                               prettier/prettier
+   92:1  error  Delete `··`                                 prettier/prettier
+   93:1  error  Replace `········` with `····`              prettier/prettier
+   94:5  error  Delete `····`                               prettier/prettier
+   95:1  error  Delete `··`                                 prettier/prettier
+   99:3  error  Delete `··`                                 prettier/prettier
+  101:3  error  Delete `··`                                 prettier/prettier
+  102:1  error  Replace `········` with `····`              prettier/prettier
+  103:1  error  Replace `············` with `······`        prettier/prettier
+  104:5  error  Delete `····`                               prettier/prettier
+  105:1  error  Replace `········` with `····`              prettier/prettier
+  106:1  error  Replace `············` with `······`        prettier/prettier
+  107:1  error  Replace `················` with `········`  prettier/prettier
+  108:7  error  Delete `······`                             prettier/prettier
+  109:1  error  Replace `············` with `······`        prettier/prettier
+  110:1  error  Replace `············` with `······`        prettier/prettier
+  111:1  error  Delete `······`                             prettier/prettier
+  112:1  error  Replace `········` with `····`              prettier/prettier
+  113:1  error  Delete `······`                             prettier/prettier
+  114:5  error  Delete `····`                               prettier/prettier
+  115:1  error  Replace `············` with `······`        prettier/prettier
+  116:5  error  Delete `····`                               prettier/prettier
+  117:1  error  Delete `··`                                 prettier/prettier
+  122:1  error  Delete `··`                                 prettier/prettier
+  123:3  error  Delete `··`                                 prettier/prettier
+  128:1  error  Delete `··`                                 prettier/prettier
+  132:3  error  Delete `··`                                 prettier/prettier
+  137:1  error  Delete `··`                                 prettier/prettier
+
+✖ 77 problems (77 errors, 0 warnings)
+  77 errors and 0 warnings potentially fixable with the `--fix` option.
+

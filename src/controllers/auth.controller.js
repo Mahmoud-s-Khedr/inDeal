@@ -3,79 +3,79 @@ const catchAsync = require('../utils/catchAsync');
 const authService = require('../services/auth.service');
 
 const createRegistrationUploadUrl = catchAsync(async (req, res) => {
-    const signedUpload = await authService.createRegistrationUploadUrl(req.body);
-    sendResponse(res, 201, signedUpload, 'Signed upload URL generated');
+  const signedUpload = await authService.createRegistrationUploadUrl(req.body);
+  sendResponse(res, 201, signedUpload, 'Signed upload URL generated');
 });
 
 const register = catchAsync(async (req, res) => {
-    const result = await authService.register(req.body);
-    sendResponse(res, 201, result, 'Registration submitted successfully');
+  const result = await authService.register(req.body);
+  sendResponse(res, 201, result, 'Registration submitted successfully');
 });
 
 const login = catchAsync(async (req, res) => {
-    const result = await authService.login(req.body);
-    sendResponse(res, 200, result, 'Login successful');
+  const result = await authService.login(req.body);
+  sendResponse(res, 200, result, 'Login successful');
 });
 
 const adminLogin = catchAsync(async (req, res) => {
-    const result = await authService.adminLogin(req.body);
-    sendResponse(res, 200, result, 'Admin login successful');
+  const result = await authService.adminLogin(req.body);
+  sendResponse(res, 200, result, 'Admin login successful');
 });
 
 const forgotPassword = catchAsync(async (req, res) => {
-    await authService.forgotPassword({
-        email: req.body.email,
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent'),
-    });
-    const payload = { message: 'If the email exists, instructions were sent.' };
-    sendResponse(res, 200, payload, payload.message);
+  await authService.forgotPassword({
+    email: req.body.email,
+    ipAddress: req.ip,
+    userAgent: req.get('user-agent'),
+  });
+  const payload = { message: 'If the email exists, instructions were sent.' };
+  sendResponse(res, 200, payload, payload.message);
 });
 
 const resendForgotPasswordOtp = catchAsync(async (req, res) => {
-    const result = await authService.resendForgotPasswordOtp({
-        email: req.body.email,
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent'),
-    });
-    sendResponse(res, 200, result, result.message);
+  const result = await authService.resendForgotPasswordOtp({
+    email: req.body.email,
+    ipAddress: req.ip,
+    userAgent: req.get('user-agent'),
+  });
+  sendResponse(res, 200, result, result.message);
 });
 
 const resetPassword = catchAsync(async (req, res) => {
-    await authService.resetPassword({
-        email: req.body.email,
-        otp: req.body.otp,
-        password: req.body.password,
-        ipAddress: req.ip,
-    });
-    const payload = { message: 'Password updated successfully.' };
-    sendResponse(res, 200, payload, payload.message);
+  await authService.resetPassword({
+    email: req.body.email,
+    otp: req.body.otp,
+    password: req.body.password,
+    ipAddress: req.ip,
+  });
+  const payload = { message: 'Password updated successfully.' };
+  sendResponse(res, 200, payload, payload.message);
 });
 
 const verifyOtp = catchAsync(async (req, res) => {
-    const result = await authService.verifyOtp({
-        email: req.body.email,
-        otp: req.body.otp,
-        ipAddress: req.ip,
-    });
-    sendResponse(res, 200, result, result.message);
+  const result = await authService.verifyOtp({
+    email: req.body.email,
+    otp: req.body.otp,
+    ipAddress: req.ip,
+  });
+  sendResponse(res, 200, result, result.message);
 });
 
 const escapeHtml = (value = '') =>
-    String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/>/g, '&gt;')
-        .replace(/</g, '&lt;')
-        .replace(/\"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+  String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/>/g, '&gt;')
+    .replace(/</g, '&lt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 const buildVerificationPage = ({ title, message, variant }) => {
-    const colors = {
-        success: { bg: '#0f1f3d', accent: '#1c3a70' },
-        info: { bg: '#0f1f3d', accent: '#1c3a70' },
-    };
-    const palette = colors[variant] || colors.info;
-    return `<!DOCTYPE html>
+  const colors = {
+    success: { bg: '#0f1f3d', accent: '#1c3a70' },
+    info: { bg: '#0f1f3d', accent: '#1c3a70' },
+  };
+  const palette = colors[variant] || colors.info;
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
@@ -160,34 +160,34 @@ const buildVerificationPage = ({ title, message, variant }) => {
 };
 
 const verifyEmail = catchAsync(async (req, res) => {
-    const result = await authService.verifyEmail({
-        email: req.query.email,
-        token: req.query.token,
-    });
-    const html = buildVerificationPage({
-        title: 'Email verified',
-        message: result.message || 'Your email is now confirmed. You can close this window.',
-        variant: 'success',
-    });
-    res.status(200).header('Content-Type', 'text/html').send(html);
+  const result = await authService.verifyEmail({
+    email: req.query.email,
+    token: req.query.token,
+  });
+  const html = buildVerificationPage({
+    title: 'Email verified',
+    message: result.message || 'Your email is now confirmed. You can close this window.',
+    variant: 'success',
+  });
+  res.status(200).header('Content-Type', 'text/html').send(html);
 });
 
 const resendVerificationEmail = catchAsync(async (req, res) => {
-    const result = await authService.resendVerificationEmail({
-        email: req.body.email,
-    });
-    sendResponse(res, 200, result, result.message);
+  const result = await authService.resendVerificationEmail({
+    email: req.body.email,
+  });
+  sendResponse(res, 200, result, result.message);
 });
 
 module.exports = {
-    createRegistrationUploadUrl,
-    register,
-    login,
-    adminLogin,
-    forgotPassword,
-    resendForgotPasswordOtp,
-    verifyOtp,
-    resetPassword,
-    verifyEmail,
-    resendVerificationEmail,
+  createRegistrationUploadUrl,
+  register,
+  login,
+  adminLogin,
+  forgotPassword,
+  resendForgotPasswordOtp,
+  verifyOtp,
+  resetPassword,
+  verifyEmail,
+  resendVerificationEmail,
 };

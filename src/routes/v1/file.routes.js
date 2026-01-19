@@ -6,6 +6,11 @@ const protect = require('../../middlewares/authMiddleware');
 
 const router = express.Router();
 
-router.post('/upload-url', protect, validate(createUploadUrlSchema), fileController.createUploadUrl);
+router.post(
+  '/upload-url',
+  protect,
+  validate(createUploadUrlSchema),
+  fileController.createUploadUrl
+);
 
 module.exports = router;

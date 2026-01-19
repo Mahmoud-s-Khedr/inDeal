@@ -27,13 +27,8 @@
             "url": {
               "raw": "{{base_url}}/auth/login",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"],
               "query": [],
               "variable": []
             },
@@ -67,13 +62,8 @@
             "url": {
               "raw": "{{base_url}}/auth/register",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "register"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"],
               "query": [],
               "variable": []
             },
@@ -107,14 +97,8 @@
             "url": {
               "raw": "{{base_url}}/auth/register/upload-url",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "register",
-                "upload-url"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register", "upload-url"],
               "query": [],
               "variable": []
             },
@@ -148,14 +132,8 @@
             "url": {
               "raw": "{{base_url}}/auth/admin/login",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "admin",
-                "login"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["auth", "admin", "login"],
               "query": [],
               "variable": []
             },
@@ -200,14 +178,8 @@
             "url": {
               "raw": "{{base_url}}/companies/me/gallery",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "companies",
-                "me",
-                "gallery"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["companies", "me", "gallery"],
               "query": [],
               "variable": []
             },
@@ -247,14 +219,8 @@
             "url": {
               "raw": "{{base_url}}/companies/{{company_id}}/reviews",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "companies",
-                "{{company_id}}",
-                "reviews"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["companies", "{{company_id}}", "reviews"],
               "query": [],
               "variable": []
             },
@@ -281,14 +247,8 @@
             "url": {
               "raw": "{{base_url}}/companies/{{company_id}}/gallery",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "companies",
-                "{{company_id}}",
-                "gallery"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["companies", "{{company_id}}", "gallery"],
               "query": [],
               "variable": []
             }
@@ -306,13 +266,8 @@
             "url": {
               "raw": "{{base_url}}/companies/{{company_id}}",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "companies",
-                "{{company_id}}"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["companies", "{{company_id}}"],
               "query": [],
               "variable": []
             }
@@ -330,14 +285,8 @@
             "url": {
               "raw": "{{base_url}}/companies/{{company_id}}/reviews",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "companies",
-                "{{company_id}}",
-                "reviews"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["companies", "{{company_id}}", "reviews"],
               "query": [],
               "variable": []
             }
@@ -362,13 +311,8 @@
             "url": {
               "raw": "{{base_url}}/companies/me",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "companies",
-                "me"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["companies", "me"],
               "query": [],
               "variable": []
             }
@@ -399,13 +343,8 @@
             "url": {
               "raw": "{{base_url}}/companies/me",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "companies",
-                "me"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["companies", "me"],
               "query": [],
               "variable": []
             },
@@ -450,13 +389,8 @@
             "url": {
               "raw": "{{base_url}}/files/upload-url",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "files",
-                "upload-url"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["files", "upload-url"],
               "query": [],
               "variable": []
             },
@@ -483,9 +417,7 @@
             "url": {
               "raw": "{{:cloudFlare_upload_url}}",
               "protocol": "",
-              "host": [
-                "{{:cloudFlare_upload_url}}"
-              ],
+              "host": ["{{:cloudFlare_upload_url}}"],
               "path": [],
               "query": [],
               "variable": []
@@ -509,12 +441,8 @@
             "url": {
               "raw": "{{base_url}}/health",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "health"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["health"],
               "query": [],
               "variable": []
             }
@@ -532,9 +460,7 @@
             "url": {
               "raw": "{{api_host}}/",
               "protocol": "",
-              "host": [
-                "{{api_host}}/"
-              ],
+              "host": ["{{api_host}}/"],
               "path": [],
               "query": [],
               "variable": []
@@ -558,13 +484,8 @@
             "url": {
               "raw": "{{base_url}}/system/config",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "system",
-                "config"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["system", "config"],
               "query": [],
               "variable": []
             }
@@ -582,13 +503,8 @@
             "url": {
               "raw": "{{base_url}}/system/stats",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "system",
-                "stats"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["system", "stats"],
               "query": [],
               "variable": []
             }
@@ -618,13 +534,8 @@
             "url": {
               "raw": "{{base_url}}/admin/companies",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "admin",
-                "companies"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["admin", "companies"],
               "query": [],
               "variable": []
             }
@@ -649,14 +560,8 @@
             "url": {
               "raw": "{{base_url}}/admin/companies/pending",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "admin",
-                "companies",
-                "pending"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["admin", "companies", "pending"],
               "query": [],
               "variable": []
             }
@@ -681,14 +586,8 @@
             "url": {
               "raw": "{{base_url}}/admin/companies/{{company_id}}",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "admin",
-                "companies",
-                "{{company_id}}"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["admin", "companies", "{{company_id}}"],
               "query": [],
               "variable": []
             }
@@ -719,15 +618,8 @@
             "url": {
               "raw": "{{base_url}}/admin/companies/{{company_id}}/status",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "admin",
-                "companies",
-                "{{company_id}}",
-                "status"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["admin", "companies", "{{company_id}}", "status"],
               "query": [],
               "variable": []
             },
@@ -761,15 +653,8 @@
             "url": {
               "raw": "{{base_url}}/admin/companies/{{company_id}}/approve",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "admin",
-                "companies",
-                "{{company_id}}",
-                "approve"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["admin", "companies", "{{company_id}}", "approve"],
               "query": [],
               "variable": []
             }
@@ -794,15 +679,8 @@
             "url": {
               "raw": "{{base_url}}/admin/companies/{{company_id}}/reject",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "admin",
-                "companies",
-                "{{company_id}}",
-                "reject"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["admin", "companies", "{{company_id}}", "reject"],
               "query": [],
               "variable": []
             }
@@ -833,15 +711,8 @@
             "url": {
               "raw": "{{base_url}}/admin/companies/{{company_id}}/agent",
               "protocol": "",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "admin",
-                "companies",
-                "{{company_id}}",
-                "agent"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["admin", "companies", "{{company_id}}", "agent"],
               "query": [],
               "variable": []
             },

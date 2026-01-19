@@ -39,9 +39,7 @@
           "value": "+200433589144"
         }
       ],
-      "locations": [
-        "Giza"
-      ],
+      "locations": ["Giza"],
       "id": "company-1",
       "userId": "user-1"
     },
@@ -63,10 +61,7 @@
           "value": "+204135079045"
         }
       ],
-      "locations": [
-        "Zagazig",
-        "New Cairo"
-      ],
+      "locations": ["Zagazig", "New Cairo"],
       "id": "company-2",
       "userId": "user-2"
     }

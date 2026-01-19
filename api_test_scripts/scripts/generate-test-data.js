@@ -24,4 +24,6 @@ console.log(chalk.green(`\n✓ Test data saved to: ${config.paths.testData}`));
 console.log(chalk.gray(`  - ${testData.users.length} users`));
 console.log(chalk.gray(`  - ${testData.companies.length} companies`));
 
-console.log(chalk.yellow('\n⚠️  Remember to edit the file to add real temp emails for testing email flows!\n'));
+console.log(
+  chalk.yellow('\n⚠️  Remember to edit the file to add real temp emails for testing email flows!\n')
+);

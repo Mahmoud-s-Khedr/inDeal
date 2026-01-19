@@ -1,0 +1,20 @@
+meta {
+  name: Get Ad
+  type: http
+  seq: 206
+}
+
+get {
+  url: {{base_url}}/admin/ads/{{ad_id}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

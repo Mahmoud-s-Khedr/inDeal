@@ -8,7 +8,7 @@ services:
       target: development
     container_name: indeal_api
     ports:
-      - "${PORT:-3000}:3000"
+      - '${PORT:-3000}:3000'
     env_file:
       - .env.docker
     environment:
@@ -44,7 +44,7 @@ services:
       target: production
     container_name: indeal_api_prod
     ports:
-      - "${PORT:-3000}:3000"
+      - '${PORT:-3000}:3000'
     env_file:
       - .env.docker
     environment:
@@ -65,7 +65,7 @@ services:
     restart: always
     networks:
       - indeal_network
-    profiles: [ "prod" ]
+    profiles: ['prod']
 
   # ============================================
   # API - Tests
@@ -94,7 +94,7 @@ services:
         condition: service_healthy
     networks:
       - indeal_network
-    profiles: [ "test" ]
+    profiles: ['test']
 
   # ============================================
   # PostgreSQL Database
@@ -108,11 +108,11 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: ${DB_NAME:-indeal}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - '${DB_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-indeal}" ]
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-indeal}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -127,12 +127,12 @@ services:
     container_name: indeal_valkey
     restart: always
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - '${REDIS_PORT:-6379}:6379'
     volumes:
       - valkey_data:/data
     command: valkey-server --appendonly yes
     healthcheck:
-      test: [ "CMD", "valkey-cli", "ping" ]
+      test: ['CMD', 'valkey-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5

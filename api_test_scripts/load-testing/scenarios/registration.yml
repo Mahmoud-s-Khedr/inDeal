@@ -8,63 +8,63 @@ config:
     # Light load for registration (to avoid creating too many accounts)
     - duration: 60
       arrivalRate: 1
-      name: "Registration test"
+      name: 'Registration test'
 
   defaults:
     headers:
-      Content-Type: "application/json"
-      Accept: "application/json"
+      Content-Type: 'application/json'
+      Accept: 'application/json'
 
   variables:
-    baseUrl: "/api/v1"
+    baseUrl: '/api/v1'
 
   plugins:
     expect: {}
 
 scenarios:
-  - name: "Full Registration Flow"
+  - name: 'Full Registration Flow'
     flow:
       # Step 1: Get upload URL
       - post:
-          url: "{{ baseUrl }}/auth/register/upload-url"
+          url: '{{ baseUrl }}/auth/register/upload-url'
           json:
-            fileName: "test-doc-{{ $uuid }}.pdf"
-            fileType: "application/pdf"
+            fileName: 'test-doc-{{ $uuid }}.pdf'
+            fileType: 'application/pdf'
             fileSize: 1024
           capture:
-            - json: "$.data.file.id"
-              as: "fileId"
+            - json: '$.data.file.id'
+              as: 'fileId'
           expect:
             - statusCode: 200
 
       # Step 2: Register user
       - post:
-          url: "{{ baseUrl }}/auth/register"
+          url: '{{ baseUrl }}/auth/register'
           json:
             user:
-              username: "loadtest_{{ $uuid }}"
-              email: "loadtest+{{ $uuid }}@example.com"
-              password: "LoadTest123!"
-              firstName: "Load"
-              lastName: "Tester"
-              jobTitle: "QA Engineer"
+              username: 'loadtest_{{ $uuid }}'
+              email: 'loadtest+{{ $uuid }}@example.com'
+              password: 'LoadTest123!'
+              firstName: 'Load'
+              lastName: 'Tester'
+              jobTitle: 'QA Engineer'
             company:
-              name: "Load Test Company {{ $uuid }}"
-              description: "Company created during load testing"
-              address: "123 Test Street, Cairo, Egypt"
-              phone: "+201234567890"
-              companyType: "manufacturer"
-              companyIndustry: "manufacturing"
-              manufacturingStrategy: "makeToOrder"
+              name: 'Load Test Company {{ $uuid }}'
+              description: 'Company created during load testing'
+              address: '123 Test Street, Cairo, Egypt'
+              phone: '+201234567890'
+              companyType: 'manufacturer'
+              companyIndustry: 'manufacturing'
+              manufacturingStrategy: 'makeToOrder'
               contacts:
-                - type: "email"
-                  value: "info@loadtest.example.com"
+                - type: 'email'
+                  value: 'info@loadtest.example.com'
               locations:
-                - "Cairo"
+                - 'Cairo'
               documents:
-                - fileId: "{{ fileId }}"
-                  docType: "license"
-                  description: "Test license"
+                - fileId: '{{ fileId }}'
+                  docType: 'license'
+                  description: 'Test license'
           expect:
             - statusCode: [200, 201, 400, 409]
             # 400/409 expected for duplicate registrations

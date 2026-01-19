@@ -1,0 +1,20 @@
+meta {
+  name: List Support Tickets
+  type: http
+  seq: 208
+}
+
+get {
+  url: {{base_url}}/admin/tickets
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

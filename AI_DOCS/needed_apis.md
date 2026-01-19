@@ -1,4 +1,5 @@
 # Needed APIs
+
 Testing backend base URL: https://api-test.indealeg.com
 
 1. **Deals module** – list deals, create deals, submit RFQ/auction requests, view/update negotiations, and close/archive deals.

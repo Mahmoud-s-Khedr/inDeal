@@ -6,6 +6,10 @@ const companyRoutes = require('./company.routes');
 const fileRoutes = require('./file.routes');
 const adminRoutes = require('./admin.routes');
 const userRoutes = require('./user.routes');
+const dealRoutes = require('./deal.routes');
+const chatRoutes = require('./chat.routes');
+const adRoutes = require('./ad.routes');
+const supportRoutes = require('./support.routes');
 
 const router = express.Router();
 
@@ -16,5 +20,9 @@ router.use('/companies', companyRoutes);
 router.use('/files', fileRoutes);
 router.use('/users', userRoutes);
 router.use('/admin', adminRoutes);
+router.use('/deals', dealRoutes);
+router.use('/chats', chatRoutes);
+router.use('/ads', adRoutes);
+router.use('/support', supportRoutes);
 
 module.exports = router;

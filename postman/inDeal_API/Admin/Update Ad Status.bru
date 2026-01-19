@@ -1,0 +1,27 @@
+meta {
+  name: Update Ad Status
+  type: http
+  seq: 207
+}
+
+patch {
+  url: {{base_url}}/admin/ads/{{ad_id}}/status
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "status": "active"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

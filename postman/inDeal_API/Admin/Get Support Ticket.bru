@@ -1,0 +1,20 @@
+meta {
+  name: Get Support Ticket
+  type: http
+  seq: 209
+}
+
+get {
+  url: {{base_url}}/admin/tickets/{{ticket_id}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,29 @@
+meta {
+  name: Create Support Ticket
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/support/tickets
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "subject": "Login issue",
+    "message": "Cannot log in with my credentials",
+    "email": "user@example.com",
+    "priority": "medium"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

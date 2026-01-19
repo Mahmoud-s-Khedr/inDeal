@@ -87,7 +87,7 @@ Edit `config/test-data.json` to customize test users:
   "users": [
     {
       "id": "user-1",
-      "email": "your-temp-email@example.com",  // ← Add real temp email
+      "email": "your-temp-email@example.com", // ← Add real temp email
       "password": "TestPassword123!",
       "firstName": "John",
       "lastName": "Doe",
@@ -97,10 +97,10 @@ Edit `config/test-data.json` to customize test users:
   ],
   "admin": {
     "email": "admin@indealeg.com",
-    "password": "your-admin-password"  // ← Add real admin password
+    "password": "your-admin-password" // ← Add real admin password
   },
   "testTokens": {
-    "passwordResetOtp": "123456"  // ← Add OTP from email for password reset flow
+    "passwordResetOtp": "123456" // ← Add OTP from email for password reset flow
   }
 }
 ```
@@ -108,27 +108,33 @@ Edit `config/test-data.json` to customize test users:
 ## User Flows
 
 ### 1. Registration & Onboarding
+
 ```bash
 npm run flow:registration
 ```
+
 - Gets signed URL for document upload
 - Uploads document to R2
 - Registers agent + company
 - Attempts initial login
 
 ### 2. Login/Logout Session
+
 ```bash
 npm run flow:session
 ```
+
 - Authenticates with credentials
 - Gets user profile
 - Gets company profile
 - Logs out and verifies token invalidation
 
 ### 3. Password Reset
+
 ```bash
 npm run flow:password-reset
 ```
+
 - Requests OTP via email
 - Verifies OTP (requires manual input)
 - Resets password
@@ -137,50 +143,62 @@ npm run flow:password-reset
 > **Note**: Update `testTokens.passwordResetOtp` in test-data.json with the OTP from email.
 
 ### 4. Company Profile Management
+
 ```bash
 npm run flow:company-profile
 ```
+
 - Updates company profile details
 - Submits for review (if needed)
 - Verifies changes
 
 ### 5. Document Management
+
 ```bash
 npm run flow:documents
 ```
+
 - Uploads document file
 - Creates document record
 - Lists, updates, and deletes document
 
 ### 6. Gallery Management
+
 ```bash
 npm run flow:gallery
 ```
+
 - Uploads image file
 - Adds gallery item
 - Lists, updates, and deletes gallery item
 
 ### 7. Contributions & Media
+
 ```bash
 npm run flow:contributions
 ```
+
 - Creates contribution with media
 - Adds multiple media items
 - Reorders media
 - Updates and deletes
 
 ### 8. Company Reviews
+
 ```bash
 npm run flow:reviews
 ```
+
 - Views target company profile
 - Lists existing reviews
 - Submits new review
 
 ### 9. Admin Management
+
 ```bash
 npm run flow:admin
 ```
+
 - Admin login
 - Lists pending companies
 - Approves/reviews companies
@@ -225,13 +243,13 @@ API_TEST_BASE_URL=http://localhost:3000 npm run load-test
 
 The main `artillery.yml` includes these phases:
 
-| Phase | Duration | Rate | Description |
-|-------|----------|------|-------------|
-| Warm-up | 30s | 1/s | Initial ramp |
-| Ramp-up | 60s | 1→10/s | Gradual increase |
-| Sustained | 120s | 10/s | Steady state |
-| Peak | 60s | 20/s | High load |
-| Cool-down | 30s | 5→1/s | Gradual decrease |
+| Phase     | Duration | Rate   | Description      |
+| --------- | -------- | ------ | ---------------- |
+| Warm-up   | 30s      | 1/s    | Initial ramp     |
+| Ramp-up   | 60s      | 1→10/s | Gradual increase |
+| Sustained | 120s     | 10/s   | Steady state     |
+| Peak      | 60s      | 20/s   | High load        |
+| Cool-down | 30s      | 5→1/s  | Gradual decrease |
 
 ### Artillery Reports
 
@@ -244,22 +262,28 @@ npx artillery report report.json
 ## Troubleshooting
 
 ### Email Verification Required
+
 If login fails with "email not verified", either:
+
 1. Check email for verification link
 2. Use the admin panel to manually activate the user
 3. Mark email as verified in the database
 
 ### OTP Not Working
+
 For password reset flow:
+
 1. Run `npm run flow:password-reset`
 2. Check email for OTP
 3. Update `testTokens.passwordResetOtp` in test-data.json
 4. Run the flow again
 
 ### Admin Credentials
+
 Update the `admin` section in test-data.json with valid admin credentials.
 
 ### Connection Issues
+
 ```bash
 # Test API connectivity
 curl https://api-test.indealeg.com/api/v1/health

@@ -1,0 +1,33 @@
+meta {
+  name: Create Deal
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/deals
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "title": "Machinery Auction",
+    "description": "Auction for industrial machinery",
+    "type": "auction",
+    "category": "manufacturing",
+    "budget": 100000,
+    "deadline": "2026-02-01T00:00:00Z",
+    "requirements": "ISO certified suppliers only"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

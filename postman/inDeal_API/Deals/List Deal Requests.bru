@@ -1,0 +1,20 @@
+meta {
+  name: List Deal Requests
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{base_url}}/deals/{{deal_id}}/requests
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

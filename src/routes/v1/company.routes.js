@@ -3,22 +3,22 @@ const protect = require('../../middlewares/authMiddleware');
 const validate = require('../../middlewares/validateMiddleware');
 const companyController = require('../../controllers/company.controller');
 const {
-    updateCompanySchema,
-    addGalleryItemSchema,
-    galleryItemParamsSchema,
-    updateGalleryItemSchema,
-    documentIdParamsSchema,
-    createDocumentSchema,
-    updateDocumentSchema,
-    contributionIdParamsSchema,
-    createContributionSchema,
-    updateContributionSchema,
-    createReviewSchema,
-    companyIdParamsSchema,
-    addContributionMediaSchema,
-    contributionMediaIdParamsSchema,
-    updateContributionMediaSchema,
-    reorderContributionMediaSchema,
+  updateCompanySchema,
+  addGalleryItemSchema,
+  galleryItemParamsSchema,
+  updateGalleryItemSchema,
+  documentIdParamsSchema,
+  createDocumentSchema,
+  updateDocumentSchema,
+  contributionIdParamsSchema,
+  createContributionSchema,
+  updateContributionSchema,
+  createReviewSchema,
+  companyIdParamsSchema,
+  addContributionMediaSchema,
+  contributionMediaIdParamsSchema,
+  updateContributionMediaSchema,
+  reorderContributionMediaSchema,
 } = require('../../validations/company.validation');
 
 const router = express.Router();
@@ -29,65 +29,95 @@ router.put('/me', protect, validate(updateCompanySchema), companyController.upda
 router.post('/me/resend-for-review', protect, companyController.resendForReview);
 
 router.get('/me/gallery', protect, companyController.listMyGallery);
-router.post('/me/gallery', protect, validate(addGalleryItemSchema), companyController.addGalleryItem);
-router.put(
-    '/me/gallery/:galleryItemId',
-    protect,
-    validate(updateGalleryItemSchema),
-    companyController.updateMyGalleryItem
+router.post(
+  '/me/gallery',
+  protect,
+  validate(addGalleryItemSchema),
+  companyController.addGalleryItem
 );
-router.delete('/me/gallery/:galleryItemId', protect, validate(galleryItemParamsSchema), companyController.deleteMyGalleryItem);
-
-router.get('/me/documents', protect, companyController.listMyDocuments);
-router.post('/me/documents', protect, validate(createDocumentSchema), companyController.createMyDocument);
-router.put('/me/documents/:documentId', protect, validate(updateDocumentSchema), companyController.updateMyDocument);
-router.delete('/me/documents/:documentId', protect, validate(documentIdParamsSchema), companyController.deleteMyDocument);
-
-router.get('/me/contributions', protect, companyController.listMyContributions);
-router.post('/me/contributions', protect, validate(createContributionSchema), companyController.createMyContribution);
 router.put(
-    '/me/contributions/:contributionId',
-    protect,
-    validate(updateContributionSchema),
-    companyController.updateMyContribution
+  '/me/gallery/:galleryItemId',
+  protect,
+  validate(updateGalleryItemSchema),
+  companyController.updateMyGalleryItem
 );
 router.delete(
-    '/me/contributions/:contributionId',
-    protect,
-    validate(contributionIdParamsSchema),
-    companyController.deleteMyContribution
+  '/me/gallery/:galleryItemId',
+  protect,
+  validate(galleryItemParamsSchema),
+  companyController.deleteMyGalleryItem
+);
+
+router.get('/me/documents', protect, companyController.listMyDocuments);
+router.post(
+  '/me/documents',
+  protect,
+  validate(createDocumentSchema),
+  companyController.createMyDocument
+);
+router.put(
+  '/me/documents/:documentId',
+  protect,
+  validate(updateDocumentSchema),
+  companyController.updateMyDocument
+);
+router.delete(
+  '/me/documents/:documentId',
+  protect,
+  validate(documentIdParamsSchema),
+  companyController.deleteMyDocument
+);
+
+router.get('/me/contributions', protect, companyController.listMyContributions);
+router.post(
+  '/me/contributions',
+  protect,
+  validate(createContributionSchema),
+  companyController.createMyContribution
+);
+router.put(
+  '/me/contributions/:contributionId',
+  protect,
+  validate(updateContributionSchema),
+  companyController.updateMyContribution
+);
+router.delete(
+  '/me/contributions/:contributionId',
+  protect,
+  validate(contributionIdParamsSchema),
+  companyController.deleteMyContribution
 );
 
 // Contribution Media endpoints (multiple media per contribution)
 router.get(
-    '/me/contributions/:contributionId/media',
-    protect,
-    validate(contributionIdParamsSchema),
-    companyController.listContributionMedia
+  '/me/contributions/:contributionId/media',
+  protect,
+  validate(contributionIdParamsSchema),
+  companyController.listContributionMedia
 );
 router.post(
-    '/me/contributions/:contributionId/media',
-    protect,
-    validate(addContributionMediaSchema),
-    companyController.addContributionMedia
+  '/me/contributions/:contributionId/media',
+  protect,
+  validate(addContributionMediaSchema),
+  companyController.addContributionMedia
 );
 router.put(
-    '/me/contributions/:contributionId/media/:mediaId',
-    protect,
-    validate(updateContributionMediaSchema),
-    companyController.updateContributionMedia
+  '/me/contributions/:contributionId/media/:mediaId',
+  protect,
+  validate(updateContributionMediaSchema),
+  companyController.updateContributionMedia
 );
 router.delete(
-    '/me/contributions/:contributionId/media/:mediaId',
-    protect,
-    validate(contributionMediaIdParamsSchema),
-    companyController.deleteContributionMedia
+  '/me/contributions/:contributionId/media/:mediaId',
+  protect,
+  validate(contributionMediaIdParamsSchema),
+  companyController.deleteContributionMedia
 );
 router.put(
-    '/me/contributions/:contributionId/media/reorder',
-    protect,
-    validate(reorderContributionMediaSchema),
-    companyController.reorderContributionMedia
+  '/me/contributions/:contributionId/media/reorder',
+  protect,
+  validate(reorderContributionMediaSchema),
+  companyController.reorderContributionMedia
 );
 
 router.get('/:id', validate(companyIdParamsSchema), companyController.getCompanyProfile);
@@ -96,4 +126,3 @@ router.get('/:id/reviews', validate(companyIdParamsSchema), companyController.li
 router.post('/:id/reviews', protect, validate(createReviewSchema), companyController.createReview);
 
 module.exports = router;
-

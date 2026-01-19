@@ -1,0 +1,20 @@
+meta {
+  name: Archive Deal
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{base_url}}/deals/{{deal_id}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
