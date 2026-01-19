@@ -57,6 +57,9 @@ if (ENABLE_SOCKETIO) {
   // Initialize chat handlers
   initializeChatSockets(io);
 
+  // Initialize general socket service
+  require('./services/socket.service').init(io);
+
   logger.info({ feature: 'socketio', enabled: true }, 'Socket.io enabled');
 } else {
   logger.info(

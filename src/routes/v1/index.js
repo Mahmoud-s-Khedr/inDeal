@@ -10,6 +10,7 @@ const dealRoutes = require('./deal.routes');
 const chatRoutes = require('./chat.routes');
 const adRoutes = require('./ad.routes');
 const supportRoutes = require('./support.routes');
+const notificationRoutes = require('./notification.routes');
 
 const router = express.Router();
 
@@ -24,5 +25,6 @@ router.use('/deals', dealRoutes);
 router.use('/chats', chatRoutes);
 router.use('/ads', adRoutes);
 router.use('/support', supportRoutes);
+router.use('/notifications', notificationRoutes);
 
 module.exports = router;
