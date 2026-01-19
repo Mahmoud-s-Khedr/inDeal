@@ -62,6 +62,7 @@ create table companies (
     address varchar(255),
     phone varchar(20),
     website varchar(100),
+    email varchar(100), -- Public contact email for the company
     company_type company_type_enum,
     company_industry industry_enum,
     manufacturing_strategy manufacturing_strategy_enum,
@@ -69,8 +70,21 @@ create table companies (
     status company_state_enum default 'underReview',
     contacts jsonb,
     locations jsonb,
+    rejection_reason text,
+    social_media_links jsonb,
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp
+);
+
+-- 2b. Company Agents (Multiple agents per company)
+create table company_agents (
+    id serial primary key,
+    company_id int references companies(id) on delete cascade,
+    user_id int references users(id) on delete cascade,
+    role varchar(20) default 'member', -- owner, admin, member
+    status varchar(20) default 'active', -- active, invited
+    created_at timestamp default current_timestamp,
+    unique(company_id, user_id)
 );
 
 -- 3. Assets (Gallery & Reviews)
@@ -100,6 +114,8 @@ create table company_documents (
     issuer varchar(150),
     url varchar(255),
     description text,
+    issue_date date,
+    expiry_date date,
     uploaded_at timestamp default current_timestamp
 );
 
@@ -234,6 +250,18 @@ create table support_tickets (
     admin_notes text,
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp
+);
+
+-- 9. Notifications
+create table notifications (
+    id serial primary key,
+    user_id int references users(id) on delete cascade,
+    type varchar(50) not null,
+    title varchar(200) not null,
+    message text,
+    is_read boolean default false,
+    metadata jsonb,
+    created_at timestamp default current_timestamp
 );
 
 create table support_ticket_responses (
