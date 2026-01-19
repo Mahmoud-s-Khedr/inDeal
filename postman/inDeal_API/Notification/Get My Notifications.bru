@@ -1,0 +1,20 @@
+meta {
+  name: Get My Notifications
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/notifications
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
