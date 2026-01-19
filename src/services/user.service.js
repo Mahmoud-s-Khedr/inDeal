@@ -12,6 +12,7 @@ const sanitizeUser = (user) => {
     firstName: user.first_name,
     lastName: user.last_name,
     email: user.email,
+    jobTitle: user.job_title,
     profileImageFileId: user.profile_image,
     preferences: user.preferences || null,
     createdAt: user.created_at,
@@ -52,6 +53,7 @@ const updateMe = async (userId, payload) => {
   const updated = await userRepository.updateById(userId, {
     first_name: payload.firstName,
     last_name: payload.lastName,
+    job_title: payload.jobTitle,
     preferences,
   });
 

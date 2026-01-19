@@ -151,6 +151,23 @@ const reorderContributionMedia = catchAsync(async (req, res) => {
   sendResponse(res, 200, media, 'Contribution media reordered');
 });
 
+// ============= Company Agents =============
+
+const listCompanyAgents = catchAsync(async (req, res) => {
+  const agents = await companyService.listCompanyAgents(req.user.id);
+  sendResponse(res, 200, agents, 'Company agents fetched');
+});
+
+const addCompanyAgent = catchAsync(async (req, res) => {
+  const agent = await companyService.addCompanyAgent(req.user.id, req.body);
+  sendResponse(res, 201, agent, 'Company agent added');
+});
+
+const removeCompanyAgent = catchAsync(async (req, res) => {
+  const result = await companyService.removeCompanyAgent(req.user.id, req.params.userId);
+  sendResponse(res, 200, result, 'Company agent removed');
+});
+
 module.exports = {
   getMyProfile,
   updateMyProfile,
@@ -176,4 +193,7 @@ module.exports = {
   updateContributionMedia,
   deleteContributionMedia,
   reorderContributionMedia,
+  listCompanyAgents,
+  addCompanyAgent,
+  removeCompanyAgent,
 };

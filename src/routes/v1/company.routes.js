@@ -19,6 +19,8 @@ const {
   contributionMediaIdParamsSchema,
   updateContributionMediaSchema,
   reorderContributionMediaSchema,
+  addAgentSchema,
+  removeAgentSchema,
 } = require('../../validations/company.validation');
 
 const router = express.Router();
@@ -118,6 +120,16 @@ router.put(
   protect,
   validate(reorderContributionMediaSchema),
   companyController.reorderContributionMedia
+);
+
+// Company Agents
+router.get('/me/agents', protect, companyController.listCompanyAgents);
+router.post('/me/agents', protect, validate(addAgentSchema), companyController.addCompanyAgent);
+router.delete(
+  '/me/agents/:userId',
+  protect,
+  validate(removeAgentSchema),
+  companyController.removeCompanyAgent
 );
 
 router.get('/:id', validate(companyIdParamsSchema), companyController.getCompanyProfile);

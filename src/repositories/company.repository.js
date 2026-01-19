@@ -62,10 +62,12 @@ const findById = async (companyId) => {
 const listByStatus = async (status) => {
   const result = await pool.query(
     `
-        SELECT *
-        FROM companies
-        WHERE status = $1
-        ORDER BY created_at ASC
+        SELECT c.*, 
+               u.first_name, u.last_name, u.email, u.job_title, u.username
+        FROM companies c
+        JOIN users u ON c.agent_id = u.id
+        WHERE c.status = $1
+        ORDER BY c.created_at ASC
         `,
     [status]
   );

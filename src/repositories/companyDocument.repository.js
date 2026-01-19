@@ -56,52 +56,58 @@ const findById = async (id) => {
   return result.rows[0];
 };
 
-const createDocument = async ({ companyId, fileId, docType, title, issuer, url, description }) => {
+const createDocument = async ({
+  companyId,
+  fileId,
+  docType,
+  title,
+  issuer,
+  url,
+  description,
+  issueDate,
+  expiryDate,
+}) => {
   const result = await pool.query(
-    `
-        INSERT INTO company_documents (company_id, file_id, doc_type, title, issuer, url, description)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id, company_id, file_id, doc_type, title, issuer, url, description, uploaded_at
-        `,
-    [
-      companyId,
-      fileId || null,
-      docType || null,
-      title || null,
-      issuer || null,
-      url || null,
-      description || null,
-    ]
+    `INSERT INTO company_documents 
+      (company_id, file_id, doc_type, title, issuer, url, description, issue_date, expiry_date)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     RETURNING *`,
+    [companyId, fileId, docType, title, issuer, url, description, issueDate, expiryDate]
   );
   return result.rows[0];
 };
 
-const updateDocument = async (id, updates) => {
+// Helper function for updateDocument to handle fields and values
+const mapField = (data, key, dbColumn, fields, values, idx) => {
+  if (data[key] !== undefined) {
+    fields.push(`${dbColumn} = $${idx}`);
+    values.push(data[key]);
+    return true;
+  }
+  return false;
+};
+
+const updateDocument = async (id, data) => {
   const fields = [];
   const values = [];
-  let index = 1;
+  let idx = 1;
 
-  Object.entries(updates).forEach(([key, value]) => {
-    if (value === undefined) return;
-    fields.push(`${key} = $${index}`);
-    values.push(value);
-    index += 1;
-  });
+  if (mapField(data, 'fileId', 'file_id', fields, values, idx)) idx++;
+  if (mapField(data, 'docType', 'doc_type', fields, values, idx)) idx++;
+  if (mapField(data, 'title', 'title', fields, values, idx)) idx++;
+  if (mapField(data, 'issuer', 'issuer', fields, values, idx)) idx++;
+  if (mapField(data, 'url', 'url', fields, values, idx)) idx++;
+  if (mapField(data, 'description', 'description', fields, values, idx)) idx++;
+  if (mapField(data, 'issueDate', 'issue_date', fields, values, idx)) idx++;
+  if (mapField(data, 'expiryDate', 'expiry_date', fields, values, idx)) idx++;
 
-  if (!fields.length) {
-    return await findById(id);
-  }
+  if (fields.length === 0) return await findById(id); // Return existing if no updates
 
+  values.push(id);
   const result = await pool.query(
-    `
-        UPDATE company_documents
-        SET ${fields.join(', ')}
-        WHERE id = $${index}
-        RETURNING id, company_id, file_id, doc_type, title, issuer, url, description, uploaded_at
-        `,
-    [...values, id]
+    `UPDATE company_documents SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+    values
   );
-
   return result.rows[0] || null;
 };
 

@@ -29,6 +29,15 @@ const sanitizeCompany = (company) => {
     locations: company.locations,
     createdAt: company.created_at,
     updatedAt: company.updated_at,
+    agent: company.first_name
+      ? {
+          firstName: company.first_name,
+          lastName: company.last_name,
+          email: company.email,
+          jobTitle: company.job_title,
+          username: company.username,
+        }
+      : undefined,
   };
 };
 

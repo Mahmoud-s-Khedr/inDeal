@@ -55,12 +55,21 @@ const updateCompanySchema = z.object({
       description: z.string().optional(),
       address: z.string().optional(),
       phone: z.string().max(20).optional(),
+      email: z.string().email().max(100).optional(),
       website: z.string().url().max(100).optional(),
       companyType: z.enum(companyTypeEnumValues).optional(),
       companyIndustry: z.enum(industryEnumValues).optional(),
       manufacturingStrategy: z.enum(manufacturingStrategyEnumValues).optional(),
       contacts: z.array(contactSchema).optional(),
       locations: z.array(z.string().min(1)).optional(),
+      socialMediaLinks: z
+        .array(
+          z.object({
+            platform: z.string().min(1),
+            url: z.string().url(),
+          })
+        )
+        .optional(),
     })
     .refine((data) => Object.values(data).some((value) => value !== undefined), {
       message: 'At least one field must be provided',
@@ -121,6 +130,8 @@ const createDocumentSchema = z.object({
       issuer: z.string().min(1).max(150).optional(),
       url: z.string().url().max(255).optional(),
       description: z.string().optional(),
+      issueDate: z.coerce.date().optional(),
+      expiryDate: z.coerce.date().optional(),
     })
     .superRefine((data, ctx) => {
       const isCertificate = data.docType === 'certificate';
@@ -182,6 +193,8 @@ const updateDocumentSchema = z.object({
       issuer: z.string().min(1).max(150).optional(),
       url: z.string().url().max(255).optional(),
       description: z.string().optional(),
+      issueDate: z.coerce.date().optional(),
+      expiryDate: z.coerce.date().optional(),
     })
     .superRefine((data, ctx) => {
       const providedCertificateFields =
@@ -250,9 +263,29 @@ const createContributionSchema = z.object({
       mediaFileId: z.coerce.number().int().positive().optional(),
       mediaType: z.enum(contributionMediaTypeValues).optional(),
       mediaUrl: z.string().url().max(255).optional(),
+      locations: z.array(z.string().min(1)).optional(),
+      socialMediaLinks: z
+        .array(
+          z.object({
+            platform: z.string().min(1),
+            url: z.string().url(),
+          })
+        )
+        .optional(),
       details: z.object({}).passthrough().optional(),
+      partnerName: z.string().max(100).optional(),
+      contributors: z.array(z.string().min(1)).optional(),
+      tags: z.array(z.string().min(1)).optional(),
     })
     .superRefine((data, ctx) => {
+      if (data.type === 'partnership' && !data.partnerName) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'partnerName is required when type is partnership',
+          path: ['partnerName'],
+        });
+      }
+
       if (data.mediaUrl !== undefined && data.mediaType !== 'url') {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -300,9 +333,28 @@ const updateContributionSchema = z.object({
       mediaFileId: z.coerce.number().int().positive().optional(),
       mediaType: z.enum(contributionMediaTypeValues).optional(),
       mediaUrl: z.string().url().max(255).optional(),
+      locations: z.array(z.string().min(1)).optional(),
+      socialMediaLinks: z
+        .array(
+          z.object({
+            platform: z.string().min(1),
+            url: z.string().url(),
+          })
+        )
+        .optional(),
       details: z.object({}).passthrough().optional(),
+      partnerName: z.string().max(100).optional(),
+      contributors: z.array(z.string().min(1)).optional(),
+      tags: z.array(z.string().min(1)).optional(),
     })
     .superRefine((data, ctx) => {
+      if (data.type === 'partnership' && !data.partnerName) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'partnerName is required when type is partnership',
+          path: ['partnerName'],
+        });
+      }
       // For updates, allow mediaUrl without re-sending mediaType,
       // because the validator doesn't know the existing record's mediaType.
       // If mediaType is explicitly provided and it's not 'url', reject.
@@ -413,6 +465,19 @@ const reorderContributionMediaSchema = z.object({
   }),
 });
 
+const addAgentSchema = z.object({
+  body: z.object({
+    email: z.string().email(),
+    role: z.enum(['admin', 'member']).default('member'),
+  }),
+});
+
+const removeAgentSchema = z.object({
+  params: z.object({
+    userId: z.coerce.number().int().positive(),
+  }),
+});
+
 module.exports = {
   updateCompanySchema,
   addGalleryItemSchema,
@@ -430,4 +495,6 @@ module.exports = {
   addContributionMediaSchema,
   updateContributionMediaSchema,
   reorderContributionMediaSchema,
+  addAgentSchema,
+  removeAgentSchema,
 };

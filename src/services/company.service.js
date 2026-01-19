@@ -1,5 +1,6 @@
 const AppError = require('../utils/AppError');
 const companyRepository = require('../repositories/company.repository');
+const companyAgentRepository = require('../repositories/companyAgent.repository');
 const galleryRepository = require('../repositories/companyGallery.repository');
 const reviewRepository = require('../repositories/companyReview.repository');
 const companyDocumentRepository = require('../repositories/companyDocument.repository');
@@ -8,6 +9,8 @@ const contributionMediaRepository = require('../repositories/companyContribution
 const config = require('../config/env');
 const logger = require('../utils/logger');
 const { sendMail } = require('../config/mailer');
+const notificationService = require('./notification.service');
+const { validateCompanyCompleteness } = require('../utils/validationHelper');
 
 const sanitizeCompany = (company) => {
   if (!company) return null;
@@ -19,13 +22,16 @@ const sanitizeCompany = (company) => {
     description: company.description,
     address: company.address,
     phone: company.phone,
+    email: company.email,
     website: company.website,
     companyType: company.company_type,
     companyIndustry: company.company_industry,
     manufacturingStrategy: company.manufacturing_strategy,
     status: company.status,
+    rejectionReason: company.rejection_reason,
     contacts: company.contacts,
     locations: company.locations,
+    socialMediaLinks: company.social_media_links || [],
     createdAt: company.created_at,
     updatedAt: company.updated_at,
   };
@@ -70,6 +76,8 @@ const sanitizeDocument = (doc) => ({
   issuer: doc.issuer,
   url: doc.url,
   description: doc.description,
+  issueDate: doc.issue_date,
+  expiryDate: doc.expiry_date,
   uploadedAt: doc.uploaded_at,
 });
 
@@ -82,7 +90,13 @@ const sanitizeContribution = (item) => ({
   type: item.type,
   title: item.title,
   description: item.description,
+  media: item.media || [],
   details: item.details,
+  locations: item.details?.locations || [],
+  socialMediaLinks: item.details?.socialMediaLinks || [],
+  partnerName: item.details?.partnerName,
+  contributors: item.details?.contributors || [],
+  tags: item.details?.tags || [],
   createdAt: item.created_at,
   updatedAt: item.updated_at,
 });
@@ -171,12 +185,14 @@ const updateMyProfile = async (agentId, payload) => {
     description: payload.description,
     address: payload.address,
     phone: payload.phone,
+    email: payload.email,
     website: payload.website,
     company_type: payload.companyType,
     company_industry: payload.companyIndustry,
     manufacturing_strategy: payload.manufacturingStrategy,
     contacts: payload.contacts,
     locations: payload.locations,
+    social_media_links: payload.socialMediaLinks,
   };
 
   const updated = await companyRepository.updateCompanyByAgent(agentId, dbUpdates);
@@ -188,12 +204,13 @@ const updateMyProfile = async (agentId, payload) => {
 
 const getCompanyProfile = async (companyId) => {
   const company = await getCompanyOrThrowById(companyId);
-  const [gallery, reviews, contributions] = await Promise.all([
+  const [gallery, reviews, contributions, documents] = await Promise.all([
     galleryRepository.listByCompanyId(company.id),
     reviewRepository.listByCompanyId(company.id),
     contributionRepository.listByCompanyId(company.id),
+    companyDocumentRepository.listByCompanyId(company.id),
   ]);
-  return enrichProfile(company, gallery, reviews, undefined, contributions);
+  return enrichProfile(company, gallery, reviews, documents, contributions);
 };
 
 const addGalleryItem = async (agentId, payload) => {
@@ -302,6 +319,8 @@ const createMyDocument = async (agentId, payload) => {
     issuer: payload.issuer,
     url: payload.url,
     description: payload.description,
+    issueDate: payload.issueDate,
+    expiryDate: payload.expiryDate,
   });
   return sanitizeDocument(doc);
 };
@@ -356,6 +375,8 @@ const updateMyDocument = async (agentId, documentId, payload) => {
     issuer: payload.issuer,
     url: payload.url,
     description: payload.description,
+    issueDate: payload.issueDate,
+    expiryDate: payload.expiryDate,
   };
 
   // If explicitly changing away from certificate, clear certificate metadata.
@@ -396,12 +417,23 @@ const listMyContributions = async (agentId) => {
 
 const createMyContribution = async (agentId, payload) => {
   const company = await getCompanyOrThrowByAgent(agentId);
+
+  // Map top-level UI fields to details JSONB
+  const details = {
+    ...(payload.details || {}),
+  };
+  if (payload.locations) details.locations = payload.locations;
+  if (payload.socialMediaLinks) details.socialMediaLinks = payload.socialMediaLinks;
+  if (payload.partnerName) details.partnerName = payload.partnerName;
+  if (payload.contributors) details.contributors = payload.contributors;
+  if (payload.tags) details.tags = payload.tags;
+
   const item = await contributionRepository.createContribution({
     companyId: company.id,
     mediaFileId: payload.mediaFileId,
     mediaType: payload.mediaType,
     mediaUrl: payload.mediaUrl,
-    details: payload.details,
+    details,
     type: payload.type,
     title: payload.title,
     description: payload.description,
@@ -464,11 +496,22 @@ const updateMyContribution = async (agentId, contributionId, payload) => {
     }
   }
 
+  // Handle details updates (merge with existing or payload.details)
+  const nextDetails = {
+    ...(existing.details || {}),
+    ...(payload.details || {}),
+  };
+  if (payload.locations) nextDetails.locations = payload.locations;
+  if (payload.socialMediaLinks) nextDetails.socialMediaLinks = payload.socialMediaLinks;
+  if (payload.partnerName) nextDetails.partnerName = payload.partnerName;
+  if (payload.contributors) nextDetails.contributors = payload.contributors;
+  if (payload.tags) nextDetails.tags = payload.tags;
+
   const contributionUpdates = {
     media_file_id: payload.mediaFileId,
     media_type: payload.mediaType,
     media_url: payload.mediaUrl,
-    details: payload.details,
+    details: nextDetails,
     type: payload.type,
     title: payload.title,
     description: payload.description,
@@ -588,10 +631,22 @@ const reorderContributionMedia = async (agentId, contributionId, orderedIds) => 
   const media = await contributionMediaRepository.reorderMedia(Number(contributionId), orderedIds);
   return media.map(sanitizeContributionMedia);
 };
+// validateCompanyCompleteness is imported from utils/validationHelper
 
 const resendForReview = async (agentId) => {
   const company = await getCompanyOrThrowByAgent(agentId);
+  validateCompanyCompleteness(company);
+
   const updated = await companyRepository.updateCompanyStatus(company.id, 'underReview');
+
+  // Send in-app notification
+  await notificationService.createNotification({
+    userId: agentId,
+    type: 'COMPANY_STATUS_CHANGE',
+    title: 'Application Submitted',
+    message: 'Your company profile has been submitted for review.',
+    metadata: { companyId: company.id, status: 'underReview' },
+  });
 
   const agentEmail = company.email || company?.agent?.email;
   if (agentEmail) {
@@ -681,6 +736,80 @@ const resendForReview = async (agentId) => {
   return { company: sanitizeCompany(updated) };
 };
 
+// ============= Company Agents =============
+
+const listCompanyAgents = async (agentId) => {
+  const company = await getCompanyOrThrowByAgent(agentId);
+  return await companyAgentRepository.listByCompanyId(company.id);
+};
+
+const addCompanyAgent = async (currentAgentId, { email, role }) => {
+  const company = await getCompanyOrThrowByAgent(currentAgentId);
+
+  // Check if current user is owner/admin
+  const currentAgent = await companyAgentRepository.findByCompanyAndUser(
+    company.id,
+    currentAgentId
+  );
+  // Allow if they are the main agent (legacy) or have admin role in new table
+  // For now, since we backfill legacy agent as owner, we check table
+  // If not in table yet (no migration run?), verify against company.agent_id
+
+  const isOwner = company.agent_id === currentAgentId;
+  const isAdmin = currentAgent?.role === 'owner' || currentAgent?.role === 'admin';
+
+  if (!isOwner && !isAdmin) {
+    throw new AppError('You do not have permission to invite agents', 403);
+  }
+
+  // Find user by email
+  const user = await require('../repositories/user.repository').findByEmail(email);
+  if (!user) {
+    throw new AppError('User not found with this email', 404);
+  }
+
+  // Check if already an agent
+  const existing = await companyAgentRepository.findByCompanyAndUser(company.id, user.id);
+  if (existing) {
+    throw new AppError('User is already an agent for this company', 400);
+  }
+
+  const newAgent = await companyAgentRepository.addAgent({
+    companyId: company.id,
+    userId: user.id,
+    role,
+    status: 'active', // or 'invited' if we implement invitation flow
+  });
+
+  return newAgent;
+};
+
+const removeCompanyAgent = async (currentAgentId, targetUserId) => {
+  const company = await getCompanyOrThrowByAgent(currentAgentId);
+
+  const numericTargetId = Number(targetUserId);
+  if (numericTargetId === currentAgentId) {
+    throw new AppError('You cannot remove yourself', 400);
+  }
+
+  const isOwner = company.agent_id === currentAgentId;
+  const currentAgent = await companyAgentRepository.findByCompanyAndUser(
+    company.id,
+    currentAgentId
+  );
+  const isAdmin = currentAgent?.role === 'owner' || currentAgent?.role === 'admin';
+
+  if (!isOwner && !isAdmin) {
+    throw new AppError('You do not have permission to remove agents', 403);
+  }
+
+  const removed = await companyAgentRepository.removeAgent(company.id, numericTargetId);
+  if (!removed) {
+    throw new AppError('Agent not found', 404);
+  }
+  return removed;
+};
+
 module.exports = {
   getMyProfile,
   updateMyProfile,
@@ -706,4 +835,7 @@ module.exports = {
   updateContributionMedia,
   deleteContributionMedia,
   reorderContributionMedia,
+  listCompanyAgents,
+  addCompanyAgent,
+  removeCompanyAgent,
 };
