@@ -47,6 +47,7 @@ const registerChatHandlers = (io, socket) => {
 
   // Track online user
   onlineUsers.set(socket.id, { userId, companyId });
+  socket.join(`user:${userId}`);
   logger.debug({ socketId: socket.id, userId, companyId }, 'User connected to chat');
 
   /**
