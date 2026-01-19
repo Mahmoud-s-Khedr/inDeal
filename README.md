@@ -108,7 +108,15 @@ inDeal/
 - `GET /api/v1/companies/:id` — public profile with gallery + reviews; dedicated `/:id/gallery` and `/:id/reviews` endpoints are also available.
 - `POST /api/v1/companies/:id/reviews` — authenticated reviewers can rate other companies (1–5 stars) with optional review text.
 
-## 📤 File Uploads (Cloudflare R2)
+- `POST /api/v1/companies/:id/reviews` — authenticated reviewers can rate other companies (1–5 stars) with optional review text.
+
+## 🔔 Notifications API
+
+- `GET /api/v1/notifications` — list user notifications.
+- `PUT /api/v1/notifications/:id/read` — mark as read.
+- **Real-time**: Socket.IO events (`notification:new`) are emitted to connected clients.
+
+## RETROFIT 📤 File Uploads (Cloudflare R2)
 
 - `POST /api/v1/files/upload-url` — authenticated agents request a signed `PUT` URL, upload directly to Cloudflare R2, and receive the created `files` row (with its `id`) to reference in subsequent APIs (gallery, avatars, ads, etc.). The signed URL TTL (`R2_SIGNED_URL_TTL_SECONDS`) and max file size cap (`R2_MAX_FILE_SIZE_BYTES`) are configurable via environment variables (defaults: 5 minutes, 20 MB).
 
@@ -128,7 +136,9 @@ Detailed documentation is maintained in the `AI_DOCS` directory:
 
 - [**Architecture & Tech Stack**](AI_DOCS/tech_stack.md)
 - [**Implementation Plan**](AI_DOCS/plan.md)
+- [**Implementation Plan**](AI_DOCS/plan.md)
 - [**Database Schema**](AI_DOCS/schema.sql)
+- [**Notification Guide**](AI_DOCS/notification_integration_guide.md)
 
 ## 🧪 Postman Collection
 

@@ -133,7 +133,20 @@ Testing backend base URL: https://api-test.indealeg.com
 | `POST`    | `/api/v1/chats/:roomId/messages`           |   ✅   |
 | Socket.io | `chat:join`, `chat:message`, `chat:typing` |   ✅   |
 
-#### **7. Advertisement Module** ✅
+#### **7. Notification System** ✅
+
+- **Status:** ✅ DONE
+- **Description:**
+  - ✅ In-app notifications
+  - ✅ Real-time alerts via Socket.io
+  - ✅ Listings and Read status management
+
+| Method | Endpoint                    | Status |
+| :----- | :-------------------------- | :----: |
+| `GET`  | `/api/v1/notifications`     |   ✅   |
+| `PUT`  | `/api/v1/notifications/read`|   ✅   |
+
+#### **8. Advertisement Module** ✅
 
 - **Status:** ✅ DONE
 - **Description:**
@@ -157,7 +170,7 @@ Testing backend base URL: https://api-test.indealeg.com
 
 **Total Duration:** ~2 Weeks | **Total Cost:** 9,500 EGP
 
-#### **8. Admin Dashboard** ✅
+#### **9. Admin Dashboard** ✅
 
 - **Status:** ✅ DONE
 - **Description:**
@@ -180,7 +193,7 @@ Testing backend base URL: https://api-test.indealeg.com
 | `GET`   | `/api/v1/admin/tickets`               |   ✅   |
 | `POST`  | `/api/v1/admin/tickets/:id/responses` |   ✅   |
 
-#### **9. Customer Support** ✅
+#### **10. Customer Support** ✅
 
 - **Status:** ✅ DONE
 
@@ -202,6 +215,7 @@ Testing backend base URL: https://api-test.indealeg.com
 | `api_reference.md`           | Complete API documentation        |
 | `chat_integration_guide.md`  | Flutter/Web Socket.io integration |
 | `deals_integration_guide.md` | Deals API integration             |
+| `notification_integration_guide.md`| Real-time Notification Guide      |
 | `migrations/*.sql`           | Database migrations               |
 
 ---

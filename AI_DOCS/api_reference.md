@@ -23,6 +23,7 @@ Complete API reference for `/api/v1` endpoints. All responses use the standard J
 - [User Settings](#user-settings)
 - [Admin](#admin)
 - [System](#system)
+- [Notifications](#notifications-new)
 - [Health](#health)
 
 ---
@@ -230,6 +231,7 @@ Update company profile.
   "companyIndustry": "manufacturing|technology|...",
   "manufacturingStrategy": "makeToStock|makeToOrder|...",
   "contacts": [{ "type": "phone", "value": "..." }],
+  "socialMediaLinks": [{ "platform": "linkedin", "url": "https://..." }],
   "locations": ["Cairo"]
 }
 ```
@@ -361,7 +363,8 @@ Create contribution.
   "mediaFileId": 5,
   "mediaType": "image|video|file|url",
   "mediaUrl": "https://youtube.com/...",
-  "details": { "price": 100, "specs": {...} }
+  "tags": ["Tag1", "Tag2"],
+  "details": { "price": 100, "partnerName": "Partner Co", "contributors": [...] }
 }
 ```
 
