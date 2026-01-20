@@ -1,0 +1,20 @@
+<h2>New Request on Your Deal</h2>
+<p>You have a new request from <strong>{{applicantName}}</strong> on your deal "<strong>{{dealName}}</strong>".</p>
+
+{{#if offer}}
+<div class="info-box">
+    <strong>Offer Amount:</strong> {{offer}}
+</div>
+{{/if}}
+
+{{#if requestDetails}}
+<div class="info-box">
+    <strong>Details:</strong> {{requestDetails}}
+</div>
+{{/if}}
+
+<p>Log in to view and respond to this request.</p>
+
+<p style="text-align: center; margin: 30px 0;">
+    <a href="{{frontendUrl}}/deals" class="btn">View Request</a>
+</p>

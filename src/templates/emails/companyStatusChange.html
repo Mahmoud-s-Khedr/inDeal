@@ -1,0 +1,29 @@
+<h2>Company Status Updated</h2>
+<p>The status of your company "<strong>{{companyName}}</strong>" has been updated.</p>
+
+<div class="info-box">
+    <strong>New Status:</strong>
+    {{#if isApproved}}<span class="status-accepted">Approved</span>{{/if}}
+    {{#if isRejected}}<span class="status-rejected">Rejected</span>{{/if}}
+    {{#if isOther}}{{status}}{{/if}}
+</div>
+
+{{#if isApproved}}
+<p>Congratulations! Your company is now active and visible to other businesses on inDeal.</p>
+<p style="text-align: center; margin: 30px 0;">
+    <a href="{{frontendUrl}}/dashboard" class="btn">Go to Dashboard</a>
+</p>
+{{/if}}
+
+{{#if isRejected}}
+<p>Unfortunately, your company profile did not meet our requirements at this time.</p>
+{{#if rejectionReason}}
+<div class="info-box">
+    <strong>Reason:</strong> {{rejectionReason}}
+</div>
+{{/if}}
+<p>You can update your profile and resubmit for review.</p>
+<p style="text-align: center; margin: 30px 0;">
+    <a href="{{frontendUrl}}/company/edit" class="btn">Update Profile</a>
+</p>
+{{/if}}

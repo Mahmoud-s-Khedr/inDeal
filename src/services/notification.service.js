@@ -34,7 +34,7 @@ const markAsRead = async (userId, notificationId) => {
 const socketService = require('./socket.service');
 
 const createNotification = async (payload) => {
-  const notification = await notificationRepository.create(payload);
+  const notification = await notificationRepository.createNotification(payload);
 
   // Notify via socket
   socketService.notifyUser(payload.userId, sanitizeNotification(notification));
@@ -47,9 +47,24 @@ const markAllAsRead = async (userId) => {
   return { success: true };
 };
 
+const deleteNotification = async (userId, notificationId) => {
+  const deleted = await notificationRepository.deleteById(notificationId, userId);
+  if (!deleted) {
+    throw new AppError('Notification not found', 404);
+  }
+  return sanitizeNotification(deleted);
+};
+
+const deleteAllRead = async (userId) => {
+  const count = await notificationRepository.deleteAllRead(userId);
+  return { deleted: count };
+};
+
 module.exports = {
   getMyNotifications,
   createNotification,
   markAsRead,
   markAllAsRead,
+  deleteNotification,
+  deleteAllRead,
 };

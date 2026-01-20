@@ -5,7 +5,7 @@ const { pool } = require('../config/db');
 const { signToken } = require('../utils/jwt');
 const config = require('../config/env');
 const redis = require('../config/redis');
-const { sendMail } = require('../config/mailer');
+const { sendEmailSync } = require('./email.service');
 const logger = require('../utils/logger');
 const userRepository = require('../repositories/user.repository');
 const companyRepository = require('../repositories/company.repository');
@@ -222,45 +222,17 @@ const updateOtpAttempts = async (email, payload, attempts) => {
 };
 
 const sendOtpEmail = async ({ to, otp, ttlMinutes, userAgent, ipAddress }) => {
-  const subject = 'Reset your inDeal password';
-  const lines = [
-    'Use the one-time code below to reset your password.',
-    `Code: ${otp}`,
-    `Expires in: ${ttlMinutes} minutes`,
-  ];
-  if (ipAddress) {
-    lines.push(`Request IP: ${ipAddress}`);
-  }
-  if (userAgent) {
-    lines.push(`Device: ${userAgent}`);
-  }
-  lines.push('');
-  lines.push('If you did not request this, you can ignore this email.');
-
-  const text = lines.join('\n');
-  const html = `
-        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #333;">Password Reset Request</h2>
-            <p>Use the one-time code below to reset your password. It is valid for <strong>${ttlMinutes} minutes</strong>.</p>
-            <div style="background: #f4f4f4; padding: 20px; text-align: center; border-radius: 5px;">
-                <span style="font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #007bff;">${otp}</span>
-            </div>
-            <p style="margin-top: 20px; color: #666; font-size: 14px;">
-                ${ipAddress ? `<strong>Request IP:</strong> ${ipAddress}<br>` : ''}
-                ${userAgent ? `<strong>Device:</strong> ${userAgent}<br>` : ''}
-            </p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="color: #999; font-size: 12px;">If you did not request this, you can safely ignore this email.</p>
-            <p style="font-size: 12px;"><a href="${config.forgotPassword.frontendUrl}" style="color: #007bff;">Visit inDeal</a></p>
-        </div>
-    `;
-
   try {
-    await sendMail({
+    await sendEmailSync({
       to,
-      subject,
-      text,
-      html,
+      subject: 'Reset your inDeal password',
+      template: 'passwordReset',
+      variables: {
+        otp,
+        ttlMinutes,
+        userAgent,
+        ipAddress,
+      },
     });
     logger.info(`Forgot password OTP sent to ${to}`);
   } catch (error) {
@@ -297,34 +269,16 @@ const sendVerificationEmail = async (user) => {
   const token = await createEmailVerificationToken(normalizedEmail, user.id);
   const verificationLink = buildEmailVerificationLink(normalizedEmail, token);
   const expiresMinutes = emailVerificationSettings.tokenTtlMinutes;
-  const subject = 'Verify your inDeal email';
-  const lines = [
-    'Welcome to inDeal!',
-    'Click the link below to verify your email and unlock your dashboard:',
-    verificationLink,
-    `Link expires in ${expiresMinutes} minutes.`,
-    '',
-    'If you did not register, you can safely ignore this email.',
-  ];
-  const text = lines.join('\n');
-  const html = `
-        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #333;">Verify your email</h2>
-            <p>Thanks for joining inDeal! Verify your email to access your account and get your company reviewed.</p>
-            <a href="${verificationLink}" style="display: inline-block; margin: 20px 0; padding: 12px 24px; background: #007bff; color: #fff; text-decoration: none; border-radius: 6px;">Verify email</a>
-            <p style="color: #666; font-size: 14px;">Link expires in ${expiresMinutes} minutes.</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="color: #999; font-size: 12px;">If you did not register for inDeal, you can ignore this message.</p>
-            <p style="font-size: 12px;"><a href="${config.forgotPassword.frontendUrl}" style="color: #007bff;">Visit inDeal</a></p>
-        </div>
-    `;
 
   try {
-    await sendMail({
+    await sendEmailSync({
       to: normalizedEmail,
-      subject,
-      text,
-      html,
+      subject: 'Verify your inDeal email',
+      template: 'verifyEmail',
+      variables: {
+        verificationLink,
+        expiresMinutes,
+      },
     });
     logger.info(`Email verification link sent to ${normalizedEmail}`);
   } catch (error) {

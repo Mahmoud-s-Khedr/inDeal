@@ -17,8 +17,20 @@ const markAllAsRead = catchAsync(async (req, res) => {
   sendResponse(res, 200, result);
 });
 
+const deleteNotification = catchAsync(async (req, res) => {
+  const result = await notificationService.deleteNotification(req.user.id, req.params.id);
+  sendResponse(res, 200, result);
+});
+
+const deleteAllRead = catchAsync(async (req, res) => {
+  const result = await notificationService.deleteAllRead(req.user.id);
+  sendResponse(res, 200, result);
+});
+
 module.exports = {
   getMyNotifications,
   markAsRead,
   markAllAsRead,
+  deleteNotification,
+  deleteAllRead,
 };

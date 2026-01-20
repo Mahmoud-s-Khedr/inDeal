@@ -272,7 +272,21 @@ create table support_ticket_responses (
     created_at timestamp default current_timestamp
 );
 
--- 9. Indexes (Performance)
+-- 10. Email Logs (Tracking)
+create table email_logs (
+    id serial primary key,
+    message_id varchar(100),
+    recipient varchar(255) not null,
+    template varchar(50),
+    subject varchar(255),
+    status varchar(20) default 'queued',
+    error text,
+    attempts int default 0,
+    sent_at timestamp,
+    created_at timestamp default current_timestamp
+);
+
+-- 11. Indexes (Performance)
 CREATE INDEX idx_users_profile_image ON users(profile_image);
 CREATE INDEX idx_companies_agent_id ON companies(agent_id);
 CREATE INDEX idx_companies_logo ON companies(logo);
@@ -308,3 +322,16 @@ CREATE INDEX idx_support_tickets_company_id ON support_tickets(company_id);
 CREATE INDEX idx_support_tickets_status ON support_tickets(status);
 CREATE INDEX idx_support_tickets_priority ON support_tickets(priority);
 CREATE INDEX idx_support_ticket_responses_ticket_id ON support_ticket_responses(ticket_id);
+
+-- Notification indexes
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read) WHERE is_read = false;
+CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
+CREATE INDEX idx_notifications_read_created ON notifications(is_read, created_at);
+
+-- Email log indexes
+CREATE INDEX idx_email_logs_recipient ON email_logs(recipient);
+CREATE INDEX idx_email_logs_status ON email_logs(status);
+CREATE INDEX idx_email_logs_template ON email_logs(template);
+CREATE INDEX idx_email_logs_created_at ON email_logs(created_at DESC);
+

@@ -1,0 +1,19 @@
+<h2>Request Update</h2>
+<p>Your request on "<strong>{{dealName}}</strong>" has been
+    {{#if isAccepted}}<span class="status-accepted">accepted</span>{{else}}<span
+        class="status-rejected">declined</span>{{/if}}.
+</p>
+
+{{#if isAccepted}}
+<p>You can now message the deal owner to discuss next steps.</p>
+
+<p style="text-align: center; margin: 30px 0;">
+    <a href="{{frontendUrl}}/messages" class="btn">Start Conversation</a>
+</p>
+{{else}}
+<p class="muted">Don't worry – there are many other opportunities on inDeal. Keep exploring!</p>
+
+<p style="text-align: center; margin: 30px 0;">
+    <a href="{{frontendUrl}}/deals" class="btn">Browse Deals</a>
+</p>
+{{/if}}

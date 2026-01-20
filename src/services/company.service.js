@@ -10,6 +10,7 @@ const config = require('../config/env');
 const logger = require('../utils/logger');
 const { sendMail } = require('../config/mailer');
 const notificationService = require('./notification.service');
+const { NOTIFICATION_TYPES } = require('../constants/notificationTypes');
 const { validateCompanyCompleteness } = require('../utils/validationHelper');
 
 const sanitizeCompany = (company) => {
@@ -642,7 +643,7 @@ const resendForReview = async (agentId) => {
   // Send in-app notification
   await notificationService.createNotification({
     userId: agentId,
-    type: 'COMPANY_STATUS_CHANGE',
+    type: NOTIFICATION_TYPES.COMPANY_STATUS_CHANGE,
     title: 'Application Submitted',
     message: 'Your company profile has been submitted for review.',
     metadata: { companyId: company.id, status: 'underReview' },

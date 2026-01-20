@@ -4,6 +4,8 @@ const dealRequestRepository = require('../repositories/dealRequest.repository');
 const companyRepository = require('../repositories/company.repository');
 const { sendMail } = require('../config/mailer');
 const logger = require('../utils/logger');
+const notificationService = require('./notification.service');
+const { NOTIFICATION_TYPES } = require('../constants/notificationTypes');
 
 // ─────────────────────────────────────────────────────────────
 // HELPER FUNCTIONS
@@ -382,7 +384,30 @@ const adminUpdateDealStatus = async (dealId, status) => {
 const notifyDealOwnerOfNewRequest = async (deal, applicant, request) => {
   // Get deal owner's user info
   const ownerCompany = await companyRepository.findById(deal.company_id);
-  if (!ownerCompany?.email) return;
+  if (!ownerCompany) return;
+
+  // Create in-app notification
+  try {
+    await notificationService.createNotification({
+      userId: ownerCompany.agent_id,
+      type: NOTIFICATION_TYPES.DEAL_REQUEST_RECEIVED,
+      title: 'New Request on Your Deal',
+      message: `${applicant.name} has submitted a request on "${deal.deal_name}"`,
+      metadata: {
+        dealId: deal.id,
+        dealName: deal.deal_name,
+        requestId: request.id,
+        applicantCompanyId: applicant.id,
+        applicantCompanyName: applicant.name,
+        offer: request.request_offer,
+      },
+    });
+  } catch (err) {
+    logger.error({ err, dealId: deal.id }, 'Failed to create in-app notification for new request');
+  }
+
+  // Send email notification
+  if (!ownerCompany.email) return;
 
   await sendMail({
     to: ownerCompany.email,
@@ -400,9 +425,35 @@ const notifyDealOwnerOfNewRequest = async (deal, applicant, request) => {
 
 const notifyApplicantOfStatusChange = async (request, newStatus) => {
   const applicant = await companyRepository.findById(request.applicant_company_id);
-  if (!applicant?.email) return;
+  if (!applicant) return;
 
-  const statusText = newStatus === 'accepted' ? 'accepted' : 'declined';
+  const isAccepted = newStatus === 'accepted';
+  const statusText = isAccepted ? 'accepted' : 'declined';
+  const notificationType = isAccepted
+    ? NOTIFICATION_TYPES.DEAL_REQUEST_ACCEPTED
+    : NOTIFICATION_TYPES.DEAL_REQUEST_REJECTED;
+
+  // Create in-app notification
+  try {
+    await notificationService.createNotification({
+      userId: applicant.agent_id,
+      type: notificationType,
+      title: `Request ${statusText.charAt(0).toUpperCase() + statusText.slice(1)}`,
+      message: `Your request on "${request.deal_name}" has been ${statusText}`,
+      metadata: {
+        dealId: request.deal_id,
+        dealName: request.deal_name,
+        requestId: request.id,
+        status: newStatus,
+      },
+    });
+  } catch (err) {
+    logger.error({ err, requestId: request.id }, 'Failed to create in-app notification for status change');
+  }
+
+  // Send email notification
+  if (!applicant.email) return;
+
   await sendMail({
     to: applicant.email,
     subject: `Your request on "${request.deal_name}" has been ${statusText}`,
@@ -410,7 +461,7 @@ const notifyApplicantOfStatusChange = async (request, newStatus) => {
     html: `
             <h2>Request Update</h2>
             <p>Your request on "<strong>${request.deal_name}</strong>" has been <strong>${statusText}</strong>.</p>
-            ${newStatus === 'accepted' ? '<p>You can now message the deal owner to discuss next steps.</p>' : ''}
+            ${isAccepted ? '<p>You can now message the deal owner to discuss next steps.</p>' : ''}
         `,
   });
 };

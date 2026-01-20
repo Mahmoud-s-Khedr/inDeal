@@ -1,6 +1,6 @@
 # Notification Integration Guide
 
-This guide details how to integrate with the inDeal Notification System, covering both REST API endpoints and real-time Socket.IO events.
+This guide details how to integrate with the inDeal Notification System, covering REST API endpoints, real-time Socket.IO events, and data retention policies.
 
 ## 1. REST API
 
@@ -60,11 +60,59 @@ PUT /api/v1/notifications/read-all
 Authorization: Bearer <token>
 ```
 
+### 1.4 Delete Notification (`DELETE /api/v1/notifications/:id`)
+
+Deletes a specific notification.
+
+**Request:**
+```http
+DELETE /api/v1/notifications/10
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 10,
+    "type": "COMPANY_STATUS_CHANGE",
+    "title": "Application Submitted",
+    "message": "Your company profile has been submitted for review.",
+    "isRead": true,
+    "metadata": { ... },
+    "createdAt": "2026-01-20T10:00:00.000Z"
+  }
+}
+```
+
+### 1.5 Delete All Read (`DELETE /api/v1/notifications/read`)
+
+Deletes all read notifications for the current user.
+
+**Request:**
+```http
+DELETE /api/v1/notifications/read
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "deleted": 15
+  }
+}
+```
+
 ---
 
 ## 2. Real-time (Socket.IO)
 
 The backend emits real-time events when a new notification is created.
+
+> **Note:** Socket.IO is disabled by default. Set `ENABLE_SOCKETIO=true` to enable real-time notifications.
 
 ### 2.1 Connection
 
@@ -96,10 +144,11 @@ socket.on("notification:new", (notification) => {
   // Example Payload:
   // {
   //   "id": 11,
-  //   "type": "DEAL_UPDATE",
-  //   "title": "New Bid Received",
-  //   "message": "Company X has placed a bid on your deal.",
+  //   "type": "DEAL_REQUEST_RECEIVED",
+  //   "title": "New Request on Your Deal",
+  //   "message": "Acme Corp has submitted a request on \"Office Equipment\"",
   //   "isRead": false,
+  //   "metadata": { "dealId": 5, "requestId": 12 },
   //   "createdAt": "..."
   // }
   
@@ -119,9 +168,59 @@ socket.on("notification:new", (notification) => {
 
 ## 3. Notification Types
 
-Common notification types include:
+All notification types are defined in `src/constants/notificationTypes.js`:
 
-*   `COMPANY_STATUS_CHANGE`: When company profile status changes (e.g., submitted, approved, rejected).
-*   `DEAL_UPDATE`: Updates related to deals (new status).
-*   `DEAL_REQUEST`: New bid or request on a deal.
-*   `CHAT_MESSAGE`: (handled via separate Chat events, but may generate notification fallback).
+| Type | Description |
+|------|-------------|
+| `COMPANY_STATUS_CHANGE` | When company profile status changes (submitted, approved, rejected) |
+| `DEAL_REQUEST_RECEIVED` | A company has submitted a request on your deal |
+| `DEAL_REQUEST_ACCEPTED` | Your deal request was accepted |
+| `DEAL_REQUEST_REJECTED` | Your deal request was rejected |
+| `DEAL_UPDATE` | General deal status updates |
+| `CHAT_MESSAGE` | Fallback notification when user is offline (future) |
+| `SUPPORT_TICKET_REPLY` | Admin replied to a support ticket |
+
+---
+
+## 4. Data Retention Policy
+
+To prevent database bloat, old notifications are automatically cleaned up:
+
+| Status | Retention Period |
+|--------|-----------------|
+| Read notifications | 90 days |
+| Unread notifications | 180 days |
+
+The cleanup job runs weekly (Sunday at 4:00 AM). These values can be configured via environment variables:
+
+```bash
+NOTIFICATION_RETENTION_READ_DAYS=90
+NOTIFICATION_RETENTION_UNREAD_DAYS=180
+```
+
+---
+
+## 5. Creating Notifications (Backend)
+
+To create a notification from a service:
+
+```javascript
+const notificationService = require('./notification.service');
+const { NOTIFICATION_TYPES } = require('../constants/notificationTypes');
+
+await notificationService.createNotification({
+  userId: 123,
+  type: NOTIFICATION_TYPES.DEAL_REQUEST_RECEIVED,
+  title: 'New Request on Your Deal',
+  message: 'Acme Corp has submitted a request on "Office Equipment"',
+  metadata: {
+    dealId: 5,
+    requestId: 12,
+    applicantCompanyName: 'Acme Corp',
+  },
+});
+```
+
+This will:
+1. Insert the notification into the database
+2. Emit a real-time `notification:new` event via Socket.IO (if enabled)
