@@ -31,4 +31,14 @@ router.use(protect);
 router.get('/tickets', validate(listMyTicketsSchema), supportController.getMyTickets);
 router.get('/tickets/:id', validate(getTicketSchema), supportController.getTicket);
 
+// ─────────────────────────────────────────────────────────────
+// LIVE SUPPORT CHAT (FR-SUP-004)
+// ─────────────────────────────────────────────────────────────
+const supportChatController = require('../../controllers/supportChat.controller');
+
+router.post('/chat', supportChatController.startChat);
+router.get('/chat', supportChatController.getActiveChat);
+router.get('/chat/:roomId/messages', supportChatController.getMessages);
+router.post('/chat/:roomId/messages', supportChatController.sendMessage);
+
 module.exports = router;

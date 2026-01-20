@@ -1,0 +1,26 @@
+meta {
+  name: change agent mail (dev only)
+  type: http
+  seq: 34
+}
+
+patch {
+  url: {{base_url}}/agents/:id/email
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 
+}
+
+body:json {
+  {
+    "email":"some@mail.com"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

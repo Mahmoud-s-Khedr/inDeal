@@ -152,10 +152,10 @@ const registerChatHandlers = (io, socket) => {
         senderLastName: fullMessage.sender_last_name,
         attachment: fullMessage.attachment_file_id
           ? {
-              id: fullMessage.attachment_file_id,
-              fileName: fullMessage.attachment_file_name,
-              filePath: fullMessage.attachment_file_path,
-            }
+            id: fullMessage.attachment_file_id,
+            fileName: fullMessage.attachment_file_name,
+            filePath: fullMessage.attachment_file_path,
+          }
           : null,
       };
 
@@ -216,11 +216,18 @@ const initializeChatSockets = (io) => {
   // Apply authentication middleware
   io.use(authenticateSocket);
 
+  // Import support chat handlers
+  const { registerSupportChatHandlers } = require('./supportChat.handler');
+
   io.on('connection', (socket) => {
+    // Register B2B chat handlers
     registerChatHandlers(io, socket);
+
+    // Register support chat handlers (FR-SUP-004)
+    registerSupportChatHandlers(io, socket);
   });
 
-  logger.info('Chat socket handlers initialized');
+  logger.info('Chat and support socket handlers initialized');
 };
 
 /**

@@ -1,33 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{subject}}</title>
   <style>
-    body { margin: 0; padding: 0; background-color: #f6f9fc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .card { background: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; }
-    .header { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); padding: 30px 20px; text-align: center; }
-    .header h1 { color: #ffffff; font-size: 24px; margin: 0; font-weight: 600; }
-    .content { padding: 30px; }
-    .content h2 { color: #333; font-size: 20px; margin: 0 0 15px 0; }
-    .content p { color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 15px 0; }
-    .btn { display: inline-block; padding: 14px 28px; background: #007bff; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; }
-    .btn:hover { background: #0056b3; }
-    .code-box { background: #f4f6f8; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; }
-    .code { font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #007bff; font-family: monospace; }
-    .info-box { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; font-size: 14px; }
-    .info-box strong { color: #333; }
-    .divider { border: none; border-top: 1px solid #eee; margin: 25px 0; }
-    .footer { padding: 20px 30px; text-align: center; background: #f8f9fa; }
-    .footer p { color: #888; font-size: 13px; margin: 5px 0; }
-    .footer a { color: #007bff; text-decoration: none; }
-    .muted { color: #888; font-size: 14px; }
-    .status-accepted { color: #28a745; font-weight: 600; }
-    .status-rejected { color: #dc3545; font-weight: 600; }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f6f9fc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    .header h1 {
+      color: #ffffff;
+      font-size: 24px;
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .content h2 {
+      color: #333;
+      font-size: 20px;
+      margin: 0 0 15px 0;
+    }
+
+    .content p {
+      color: #555;
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 0 0 15px 0;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 14px 28px;
+      background: #007bff;
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .btn:hover {
+      background: #0056b3;
+    }
+
+    .code-box {
+      background: #f4f6f8;
+      padding: 20px;
+      text-align: center;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    .code {
+      font-size: 32px;
+      font-weight: bold;
+      letter-spacing: 8px;
+      color: #007bff;
+      font-family: monospace;
+    }
+
+    .info-box {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-size: 14px;
+    }
+
+    .info-box strong {
+      color: #333;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 25px 0;
+    }
+
+    .footer {
+      padding: 20px 30px;
+      text-align: center;
+      background: #f8f9fa;
+    }
+
+    .footer p {
+      color: #888;
+      font-size: 13px;
+      margin: 5px 0;
+    }
+
+    .footer a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    .muted {
+      color: #888;
+      font-size: 14px;
+    }
+
+    .status-accepted {
+      color: #28a745;
+      font-weight: 600;
+    }
+
+    .status-rejected {
+      color: #dc3545;
+      font-weight: 600;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
     <div class="card">
@@ -35,7 +146,7 @@
         <h1>inDeal</h1>
       </div>
       <div class="content">
-        {{content}}
+        {{{content}}}
       </div>
       <div class="footer">
         <p><a href="{{frontendUrl}}">Visit inDeal</a></p>
@@ -44,4 +155,5 @@
     </div>
   </div>
 </body>
+
 </html>

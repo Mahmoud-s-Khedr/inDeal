@@ -1,7 +1,7 @@
 meta {
   name: Create My Contribution
   type: http
-  seq: 1003
+  seq: 17
 }
 
 post {
@@ -16,14 +16,16 @@ headers {
 }
 
 body:json {
-  "type": "product",
-  "title": "Most popular product",
-  "description": "Top-selling product in 2025",
-  "mediaFileId": 1,
-  "mediaType": "image",
-  "details": {
-    "category": "electronics",
-    "price": 99.99
+  {
+    "type": "product",
+    "title": "Most popular product",
+    "description": "Top-selling product in 2025",
+    "mediaFileId": 1,
+    "mediaType": "image",
+    "details": {
+      "category": "electronics",
+      "price": 99.99
+    }
   }
 }
 

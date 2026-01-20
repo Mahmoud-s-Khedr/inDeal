@@ -13,6 +13,9 @@
     "prepare": "husky",
     "db:schema": "node scripts/run-schema.js",
     "db:seed": "node scripts/seed.js",
+    "db:seed:dev": "SEED_MODE=dev node scripts/seed.js",
+    "db:seed:prod": "SEED_MODE=prod node scripts/seed.js",
+    "db:seed:test": "SEED_MODE=test node scripts/seed.js",
     "vercel-build": "echo 'No build step required for Express API'"
   },
   "author": "Mahmoud Khedr",

@@ -21,12 +21,12 @@ Complete API reference for `/api/v1` endpoints. All responses use the standard J
 - [Support](#support)
 - [Files](#files)
 - [User Settings](#user-settings)
+- [Device Tokens](#device-tokens-push-notifications)
 - [Admin](#admin)
 - [System](#system)
 - [Notifications](#notifications-new)
 - [Health](#health)
 
----
 
 ## Auth
 
@@ -60,7 +60,6 @@ Get signed URL for file upload during registration.
 ### POST `/auth/register`
 
 Register agent + company in one call.
-
 **Request Body:**
 
 ```json
@@ -71,30 +70,24 @@ Register agent + company in one call.
     "password": "SecurePass123",
     "firstName": "John",
     "lastName": "Doe",
-    "jobTitle": "Manager"
   },
   "company": {
     "name": "Acme Corp",
     "description": "...",
     "address": "...",
-    "phone": "+1234567890",
     "website": "https://acme.com",
     "companyType": "manufacturer",
     "companyIndustry": "manufacturing",
     "manufacturingStrategy": "makeToOrder",
     "contacts": [{ "type": "email", "value": "info@acme.com" }],
-    "locations": ["Cairo", "Alexandria"],
     "documents": [{ "fileId": 1, "docType": "license", "description": "..." }]
   }
-}
 ```
 
 **Response:** `{ "user": {...}, "company": {...}, "message": "Registration successful" }`
-
 ---
 
 ### POST `/auth/login`
-
 Agent login.
 
 **Request Body:**
@@ -117,7 +110,6 @@ Agent login.
 
 ### POST `/auth/admin/login`
 
-Admin login. Same request/response as agent login.
 
 ---
 
@@ -177,14 +169,6 @@ Resend email verification link.
 ### GET `/auth/verify-email?email=...&token=...`
 
 Email verification (HTML page response).
-
----
-
-### POST `/auth/logout` 🔐
-
-Revoke current session.
-
-**Headers:** `Authorization: Bearer <token>`
 
 ---
 
@@ -472,6 +456,20 @@ Reorder media items.
 ---
 
 ## Public Company Endpoints
+
+### GET `/companies/search`
+
+Search companies (public).
+
+**Query Parameters:**
+
+- `keyword` — Search by name/description
+- `companyType` — Company type enum
+- `companyIndustry` — Industry enum
+- `manufacturingStrategy` — Strategy enum
+- `location` — Location string
+- `status` — Company status enum
+- `limit` (default: 20), `offset` (default: 0)
 
 ### GET `/companies/:id`
 
@@ -943,6 +941,40 @@ Get ticket details with responses.
 
 ---
 
+### Live Support Chat (FR-SUP-004)
+
+All routes require authentication. 🔐
+
+#### POST `/support/chat` 🔐
+
+Start a support chat.
+
+**Response:** `{ "id": 15, "status": "waiting", "createdAt": "..." }`
+
+---
+
+#### GET `/support/chat` 🔐
+
+Get active support chat (or `null` if none).
+
+---
+
+#### GET `/support/chat/:roomId/messages` 🔐
+
+List messages in a support chat room.
+
+**Query Parameters:** `limit`, `offset`
+
+---
+
+#### POST `/support/chat/:roomId/messages` 🔐
+
+Send a message to support.
+
+**Request Body:** `{ "message": "Hello, I need help." }`
+
+---
+
 ### Admin Support Endpoints 🔒
 
 | Method | Endpoint                       | Description                |
@@ -1040,6 +1072,54 @@ Update profile image.
 
 ---
 
+## Device Tokens (Push Notifications)
+
+All routes require authentication. 🔐
+
+### GET `/users/me/devices` 🔐
+
+List registered device tokens.
+
+**Response:**
+
+```json
+[
+  {
+    "id": 1,
+    "token": "fcm_token_here",
+    "deviceType": "ios",
+    "deviceInfo": { "model": "iPhone 15", "os": "iOS 18", "appVersion": "1.0.0" },
+    "createdAt": "2026-01-20T10:00:00.000Z"
+  }
+]
+```
+
+---
+
+### POST `/users/me/devices` 🔐
+
+Register a device token.
+
+**Request Body:**
+
+```json
+{
+  "token": "fcm_token_here",
+  "deviceType": "ios|android|web",
+  "deviceInfo": { "model": "iPhone 15", "os": "iOS 18", "appVersion": "1.0.0" }
+}
+```
+
+---
+
+### DELETE `/users/me/devices` 🔐
+
+Unregister a device token.
+
+**Request Body:** `{ "token": "fcm_token_here" }`
+
+---
+
 ## Admin
 
 All routes require admin role. 🔐👑
@@ -1051,6 +1131,26 @@ List all companies.
 ### GET `/admin/companies/pending`
 
 List companies under review.
+
+### GET `/admin/companies/pending-updates`
+
+List all pending profile updates.
+
+**Query Parameters:** `limit`, `offset`, `status`
+
+### GET `/admin/companies/pending-updates/:id`
+
+Get pending update details.
+
+### POST `/admin/companies/pending-updates/:id/approve`
+
+Approve pending update.
+
+### POST `/admin/companies/pending-updates/:id/reject`
+
+Reject pending update.
+
+**Request Body:** `{ "reason": "Incomplete documentation" }`
 
 ### GET `/admin/companies/:id`
 
@@ -1086,6 +1186,12 @@ Reassign agent.
 
 **Request Body:** `{ "agentId": 5 }`
 
+### PATCH `/admin/agents/:id/email`
+
+Dev-only: change agent email.
+
+**Request Body:** `{ "email": "agent@company.com" }`
+
 ### GET `/admin/companies/:id/reviews`
 
 List reviews.
@@ -1120,19 +1226,100 @@ Moderate deal status.
 
 ---
 
+### Admin Support Live Chat Endpoints 🔒
+
+| Method | Endpoint                         | Description                       |
+| ------ | -------------------------------- | --------------------------------- |
+| GET    | `/admin/support/chats`           | List all support chats            |
+| GET    | `/admin/support/chats/waiting`   | List waiting queue (unassigned)   |
+| GET    | `/admin/support/chats/:id`       | Support chat details              |
+| POST   | `/admin/support/chats/:id/assign`| Assign admin to chat              |
+| POST   | `/admin/support/chats/:id/close` | Close support chat                |
+
+---
+
 ## System
 
 ### GET `/system/stats`
 
 System statistics.
 
-**Response:** `{ "totalCompanies": 100, "activeCompanies": 85, ... }`
+**Response:**
+
+```json
+{ "companies": 0, "deals": 0, "locations": 0 }
+```
 
 ### GET `/system/config`
 
 System configuration.
 
-**Response:** `{ "supportedLanguages": ["en", "ar"], "defaults": {...} }`
+**Response:**
+
+```json
+{
+  "defaultLanguage": "en",
+  "languages": [
+    { "code": "en", "label": "English", "default": true },
+    { "code": "ar", "label": "Arabic", "default": false }
+  ]
+}
+```
+
+---
+
+## Notifications (NEW)
+
+All routes require authentication. 🔐
+
+### GET `/notifications` 🔐
+
+List notifications (paginated).
+
+**Query Parameters:** `limit` (default: 50), `offset` (default: 0)
+
+**Response:**
+
+```json
+{
+  "items": [
+    {
+      "id": 10,
+      "type": "COMPANY_STATUS_CHANGE",
+      "title": "Application Submitted",
+      "message": "Your company profile has been submitted for review.",
+      "isRead": false,
+      "metadata": { "companyId": 123, "status": "underReview" },
+      "createdAt": "2026-01-20T10:00:00.000Z"
+    }
+  ],
+  "unreadCount": 5
+}
+```
+
+---
+
+### PUT `/notifications/read-all` 🔐
+
+Mark all notifications as read.
+
+---
+
+### PUT `/notifications/:id/read` 🔐
+
+Mark a notification as read.
+
+---
+
+### DELETE `/notifications/:id` 🔐
+
+Delete a notification.
+
+---
+
+### DELETE `/notifications/read` 🔐
+
+Delete all read notifications.
 
 ---
 
@@ -1142,7 +1329,11 @@ System configuration.
 
 Health check.
 
-**Response:** `{ "status": "ok", "timestamp": "..." }`
+**Response:**
+
+```json
+{ "status": "ok", "uptime": 123.45, "timestamp": "..." }
+```
 
 ---
 

@@ -22,6 +22,15 @@ const changeCompanyAgentSchema = z.object({
   }),
 });
 
+const changeAgentEmailSchema = z.object({
+  params: z.object({
+    id: z.coerce.number().int().positive(),
+  }),
+  body: z.object({
+    email: z.string().email(),
+  }),
+});
+
 const updateCompanySchema = z.object({
   params: companyIdSchema,
   body: z
@@ -337,4 +346,5 @@ module.exports = {
   createCompanyContributionSchema,
   updateCompanyContributionSchema,
   contributionParamsSchema,
+  changeAgentEmailSchema,
 };

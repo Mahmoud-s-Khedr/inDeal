@@ -1,38 +1,47 @@
 const sendResponse = require('../utils/response');
 const catchAsync = require('../utils/catchAsync');
 const adService = require('../services/ad.service');
+const AppError = require('../utils/AppError');
+
+const getCompanyId = (req) => {
+  const companyId = req.user?.company?.id;
+  if (!companyId) {
+    throw new AppError('Company context required', 403);
+  }
+  return companyId;
+};
 
 // ─────────────────────────────────────────────────────────────
 // AGENT AD MANAGEMENT
 // ─────────────────────────────────────────────────────────────
 
 const createAd = catchAsync(async (req, res) => {
-  const ad = await adService.createAd(req.user.company.id, req.body);
+  const ad = await adService.createAd(getCompanyId(req), req.body);
   sendResponse(res, 201, ad, 'Advertisement created');
 });
 
 const getMyAds = catchAsync(async (req, res) => {
-  const result = await adService.getMyAds(req.user.company.id, req.query);
+  const result = await adService.getMyAds(getCompanyId(req), req.query);
   sendResponse(res, 200, result, 'Advertisements fetched');
 });
 
 const getMyAd = catchAsync(async (req, res) => {
-  const ad = await adService.getAdById(req.params.id, req.user.company.id);
+  const ad = await adService.getAdById(req.params.id, getCompanyId(req));
   sendResponse(res, 200, ad, 'Advertisement details fetched');
 });
 
 const updateAd = catchAsync(async (req, res) => {
-  const ad = await adService.updateAd(req.params.id, req.user.company.id, req.body);
+  const ad = await adService.updateAd(req.params.id, getCompanyId(req), req.body);
   sendResponse(res, 200, ad, 'Advertisement updated');
 });
 
 const deleteAd = catchAsync(async (req, res) => {
-  await adService.deleteAd(req.params.id, req.user.company.id);
+  await adService.deleteAd(req.params.id, getCompanyId(req));
   sendResponse(res, 200, null, 'Advertisement deleted');
 });
 
 const getAdAnalytics = catchAsync(async (req, res) => {
-  const analytics = await adService.getAdAnalytics(req.params.id, req.user.company.id, req.query);
+  const analytics = await adService.getAdAnalytics(req.params.id, getCompanyId(req), req.query);
   sendResponse(res, 200, analytics, 'Analytics fetched');
 });
 
@@ -51,11 +60,6 @@ const recordClick = catchAsync(async (req, res) => {
   const userAgent = req.headers['user-agent'] || null;
 
   const result = await adService.recordClick(req.params.id, userId, ipAddress, userAgent);
-
-  // Redirect to target URL if exists
-  if (result.targetUrl) {
-    return res.redirect(result.targetUrl);
-  }
 
   sendResponse(res, 200, result, 'Click recorded');
 });

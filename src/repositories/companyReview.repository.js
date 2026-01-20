@@ -7,6 +7,7 @@ const listByCompanyId = async (companyId) => {
             cr.id,
             cr.company_id,
             cr.reviewer_company_id,
+            cr.deal_id,
             cr.review_text,
             cr.rating,
             cr.created_at,
@@ -21,25 +22,40 @@ const listByCompanyId = async (companyId) => {
   return result.rows;
 };
 
-const createReview = async ({ companyId, reviewerCompanyId, reviewText, rating }) => {
+const createReview = async ({ companyId, reviewerCompanyId, dealId, reviewText, rating }) => {
   const result = await pool.query(
     `
         INSERT INTO company_reviews (
             company_id,
             reviewer_company_id,
+            deal_id,
             review_text,
             rating
         )
-        VALUES ($1, $2, $3, $4)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING *
         `,
-    [companyId, reviewerCompanyId, reviewText || null, rating]
+    [companyId, reviewerCompanyId, dealId, reviewText || null, rating]
   );
 
+  return result.rows[0];
+};
+
+const findByDealAndCompanies = async ({ dealId, companyId, reviewerCompanyId }) => {
+  const result = await pool.query(
+    `
+        SELECT *
+        FROM company_reviews
+        WHERE deal_id = $1 AND company_id = $2 AND reviewer_company_id = $3
+        LIMIT 1
+        `,
+    [dealId, companyId, reviewerCompanyId]
+  );
   return result.rows[0];
 };
 
 module.exports = {
   listByCompanyId,
   createReview,
+  findByDealAndCompanies,
 };

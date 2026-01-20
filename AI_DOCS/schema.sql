@@ -100,6 +100,7 @@ create table company_reviews (
     id serial primary key,
     company_id int references companies(id), -- The company being reviewed
     reviewer_company_id int references companies(id), -- B2B: Companies review Companies
+    deal_id int, -- Deal being reviewed (FK added after deals table is created)
     review_text text,
     rating int check (rating >= 1 and rating <= 5),
     created_at timestamp default current_timestamp
@@ -169,6 +170,11 @@ create table deal_requests (
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp
 );
+
+-- Add FK after deals table exists
+ALTER TABLE company_reviews
+ADD CONSTRAINT fk_company_reviews_deal_id
+FOREIGN KEY (deal_id) REFERENCES deals(id);
 
 -- 5. Chat System (Fixed for B2B Context)
 create table chat_rooms (
@@ -296,6 +302,8 @@ CREATE INDEX idx_company_documents_company_id ON company_documents(company_id);
 CREATE INDEX idx_company_documents_file_id ON company_documents(file_id);
 CREATE INDEX idx_company_reviews_company_id ON company_reviews(company_id);
 CREATE INDEX idx_company_reviews_reviewer_company_id ON company_reviews(reviewer_company_id);
+CREATE INDEX idx_company_reviews_deal_id ON company_reviews(deal_id);
+CREATE UNIQUE INDEX idx_company_reviews_unique_deal_pair ON company_reviews(deal_id, company_id, reviewer_company_id);
 CREATE INDEX idx_user_password_history_user_id_created_at ON user_password_history(user_id, created_at DESC);
 CREATE INDEX idx_company_contributions_company_id ON company_contributions(company_id);
 CREATE INDEX idx_company_contributions_media_file_id ON company_contributions(media_file_id);
@@ -335,3 +343,64 @@ CREATE INDEX idx_email_logs_status ON email_logs(status);
 CREATE INDEX idx_email_logs_template ON email_logs(template);
 CREATE INDEX idx_email_logs_created_at ON email_logs(created_at DESC);
 
+-- ═══════════════════════════════════════════════════════════════
+-- 12. Company Pending Updates (FR-ADMIN-003)
+-- ═══════════════════════════════════════════════════════════════
+CREATE TABLE company_pending_updates (
+    id SERIAL PRIMARY KEY,
+    company_id INT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    pending_data JSONB NOT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'pending', -- pending, approved, rejected
+    reviewed_by INT REFERENCES users(id),
+    reviewed_at TIMESTAMP,
+    rejection_reason TEXT
+);
+
+CREATE INDEX idx_pending_updates_company ON company_pending_updates(company_id);
+CREATE INDEX idx_pending_updates_status ON company_pending_updates(status);
+
+-- ═══════════════════════════════════════════════════════════════
+-- 13. FCM Device Tokens (Push Notifications)
+-- ═══════════════════════════════════════════════════════════════
+CREATE TABLE user_device_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(500) NOT NULL,
+    device_type VARCHAR(20) NOT NULL, -- ios, android, web
+    device_info JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, token)
+);
+
+CREATE INDEX idx_device_tokens_user ON user_device_tokens(user_id);
+
+-- ═══════════════════════════════════════════════════════════════
+-- 14. Support Live Chat (FR-SUP-004)
+-- ═══════════════════════════════════════════════════════════════
+CREATE TYPE support_chat_status_enum AS ENUM ('waiting', 'active', 'closed');
+
+CREATE TABLE support_chat_rooms (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id),
+    company_id INT REFERENCES companies(id),
+    assigned_admin_id INT REFERENCES users(id),
+    status support_chat_status_enum DEFAULT 'waiting',
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ended_at TIMESTAMP
+);
+
+CREATE TABLE support_chat_messages (
+    id SERIAL PRIMARY KEY,
+    room_id INT NOT NULL REFERENCES support_chat_rooms(id) ON DELETE CASCADE,
+    sender_id INT NOT NULL REFERENCES users(id),
+    is_from_support BOOLEAN DEFAULT FALSE,
+    message_text TEXT NOT NULL,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_support_rooms_user ON support_chat_rooms(user_id);
+CREATE INDEX idx_support_rooms_admin ON support_chat_rooms(assigned_admin_id);
+CREATE INDEX idx_support_rooms_status ON support_chat_rooms(status);
+CREATE INDEX idx_support_messages_room ON support_chat_messages(room_id);

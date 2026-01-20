@@ -237,6 +237,10 @@ const sendOtpEmail = async ({ to, otp, ttlMinutes, userAgent, ipAddress }) => {
     logger.info(`Forgot password OTP sent to ${to}`);
   } catch (error) {
     logger.error('Failed to dispatch forgot password email', error);
+    if (config.app.env !== 'production') {
+      logger.warn('Skipping forgot password email failure in non-production environment');
+      return;
+    }
     throw new AppError('Unable to send password reset email. Please try again later.', 503);
   }
 };

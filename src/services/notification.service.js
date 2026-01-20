@@ -32,12 +32,37 @@ const markAsRead = async (userId, notificationId) => {
 };
 
 const socketService = require('./socket.service');
+const deviceTokenRepository = require('../repositories/deviceToken.repository');
+const firebase = require('../config/firebase');
+const logger = require('../utils/logger');
 
 const createNotification = async (payload) => {
   const notification = await notificationRepository.createNotification(payload);
 
-  // Notify via socket
+  // Notify via socket (in-app real-time)
   socketService.notifyUser(payload.userId, sanitizeNotification(notification));
+
+  // Send push notification via FCM if user has registered devices
+  try {
+    const tokens = await deviceTokenRepository.findByUserId(payload.userId);
+    if (tokens && tokens.length > 0) {
+      const fcmTokens = tokens.map((t) => t.token);
+      await firebase.sendMulticastNotification({
+        tokens: fcmTokens,
+        title: payload.title,
+        body: payload.message,
+        data: {
+          type: payload.type,
+          notificationId: String(notification.id),
+          ...(payload.metadata || {}),
+        },
+      });
+      logger.debug({ userId: payload.userId, tokenCount: fcmTokens.length }, 'Push notification sent');
+    }
+  } catch (err) {
+    // Don't fail the notification creation if push fails
+    logger.warn({ err, userId: payload.userId }, 'Failed to send push notification');
+  }
 
   return sanitizeNotification(notification);
 };

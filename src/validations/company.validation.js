@@ -44,6 +44,8 @@ const manufacturingStrategyEnumValues = [
   'engineerToOrder',
 ];
 
+const companyStatusEnumValues = ['active', 'underReview', 'rejected', 'suspended'];
+
 const companyIdParam = z.object({
   id: z.string().regex(/^\d+$/, 'Company ID must be numeric'),
 });
@@ -86,6 +88,7 @@ const addGalleryItemSchema = z.object({
 const createReviewSchema = z.object({
   params: companyIdParam,
   body: z.object({
+    dealId: z.coerce.number().int().positive(),
     rating: z.coerce.number().int().min(1).max(5),
     reviewText: z.string().optional(),
   }),
@@ -93,6 +96,19 @@ const createReviewSchema = z.object({
 
 const companyIdParamsSchema = z.object({
   params: companyIdParam,
+});
+
+const searchCompaniesSchema = z.object({
+  query: z.object({
+    keyword: z.string().max(200).optional(),
+    companyType: z.enum(companyTypeEnumValues).optional(),
+    companyIndustry: z.enum(industryEnumValues).optional(),
+    manufacturingStrategy: z.enum(manufacturingStrategyEnumValues).optional(),
+    location: z.string().max(100).optional(),
+    status: z.enum(companyStatusEnumValues).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    offset: z.coerce.number().int().min(0).default(0),
+  }),
 });
 
 const galleryItemParamsSchema = z.object({
@@ -465,24 +481,14 @@ const reorderContributionMediaSchema = z.object({
   }),
 });
 
-const addAgentSchema = z.object({
-  body: z.object({
-    email: z.string().email(),
-    role: z.enum(['admin', 'member']).default('member'),
-  }),
-});
 
-const removeAgentSchema = z.object({
-  params: z.object({
-    userId: z.coerce.number().int().positive(),
-  }),
-});
 
 module.exports = {
   updateCompanySchema,
   addGalleryItemSchema,
   createReviewSchema,
   companyIdParamsSchema,
+  searchCompaniesSchema,
   galleryItemParamsSchema,
   updateGalleryItemSchema,
   documentIdParamsSchema,
@@ -495,6 +501,5 @@ module.exports = {
   addContributionMediaSchema,
   updateContributionMediaSchema,
   reorderContributionMediaSchema,
-  addAgentSchema,
-  removeAgentSchema,
+
 };

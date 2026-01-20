@@ -225,6 +225,29 @@ const getRequestStats = async (dealId) => {
   return result.rows[0];
 };
 
+/**
+ * Find accepted deal relationship between two companies for a deal
+ */
+const findAcceptedDealBetweenCompanies = async ({ dealId, companyAId, companyBId }) => {
+  const result = await pool.query(
+    `
+        SELECT r.*, d.status AS deal_status, d.company_id AS deal_owner_company_id
+        FROM deal_requests r
+        JOIN deals d ON r.deal_id = d.id
+        WHERE r.deal_id = $1
+          AND r.status = 'accepted'
+          AND d.status IN ('open', 'negotiating', 'closed')
+          AND (
+            (d.company_id = $2 AND r.applicant_company_id = $3)
+            OR (d.company_id = $3 AND r.applicant_company_id = $2)
+          )
+        LIMIT 1
+        `,
+    [dealId, companyAId, companyBId]
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   createRequest,
   findById,
@@ -236,4 +259,5 @@ module.exports = {
   updateRequest,
   withdrawRequest,
   getRequestStats,
+  findAcceptedDealBetweenCompanies,
 };

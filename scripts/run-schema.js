@@ -74,8 +74,23 @@ async function run() {
     }
 
     if (seedEnabled) {
+      const mode = String(process.env.SEED_MODE || 'dev').toLowerCase();
       const { seedDevData } = require('../src/seed/devSeeder');
-      await seedDevData();
+      const { seedProdData } = require('../src/seed/prodSeeder');
+      const { seedTestData } = require('../src/seed/testSeeder');
+
+      const runners = {
+        dev: seedDevData,
+        prod: seedProdData,
+        test: seedTestData,
+      };
+
+      const runner = runners[mode];
+      if (!runner) {
+        throw new Error(`Unknown SEED_MODE "${mode}". Use one of: dev, prod, test.`);
+      }
+
+      await runner();
     }
   } catch (error) {
     console.error('❌ Database initialization failed');

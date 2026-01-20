@@ -1,11 +1,25 @@
 const { seedDevData } = require('../src/seed/devSeeder');
+const { seedProdData } = require('../src/seed/prodSeeder');
+const { seedTestData } = require('../src/seed/testSeeder');
 const { pool } = require('../src/config/db');
 const redis = require('../src/config/redis');
 
 async function run() {
   try {
-    console.log('🌱 Starting database seeding...');
-    await seedDevData();
+    const mode = String(process.env.SEED_MODE || 'dev').toLowerCase();
+    const runners = {
+      dev: seedDevData,
+      prod: seedProdData,
+      test: seedTestData,
+    };
+
+    const runner = runners[mode];
+    if (!runner) {
+      throw new Error(`Unknown SEED_MODE "${mode}". Use one of: dev, prod, test.`);
+    }
+
+    console.log(`🌱 Starting database seeding (mode=${mode})...`);
+    await runner();
     console.log('✅ Database seeding completed successfully!');
   } catch (error) {
     console.error('❌ Seeding failed:', error);

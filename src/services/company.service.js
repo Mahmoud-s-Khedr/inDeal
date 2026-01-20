@@ -6,6 +6,7 @@ const reviewRepository = require('../repositories/companyReview.repository');
 const companyDocumentRepository = require('../repositories/companyDocument.repository');
 const contributionRepository = require('../repositories/companyContribution.repository');
 const contributionMediaRepository = require('../repositories/companyContributionMedia.repository');
+const dealRequestRepository = require('../repositories/dealRequest.repository');
 const config = require('../config/env');
 const logger = require('../utils/logger');
 const { sendMail } = require('../config/mailer');
@@ -25,6 +26,7 @@ const sanitizeCompany = (company) => {
     phone: company.phone,
     email: company.email,
     website: company.website,
+    logoFileId: company.logo || null,
     companyType: company.company_type,
     companyIndustry: company.company_industry,
     manufacturingStrategy: company.manufacturing_strategy,
@@ -62,6 +64,7 @@ const sanitizeReview = (review) => ({
   id: review.id,
   companyId: review.company_id,
   reviewerCompanyId: review.reviewer_company_id,
+  dealId: review.deal_id,
   reviewerCompanyName: review.reviewer_name || null,
   reviewText: review.review_text,
   rating: review.rating,
@@ -284,6 +287,35 @@ const listReviews = async (companyId) => {
   return reviews.map(sanitizeReview);
 };
 
+const searchCompanies = async (filters = {}) => {
+  const limit = parseInt(filters.limit, 10) || 20;
+  const offset = parseInt(filters.offset, 10) || 0;
+  const status = filters.status || 'active';
+
+  const normalizedFilters = {
+    keyword: filters.keyword,
+    companyType: filters.companyType,
+    companyIndustry: filters.companyIndustry,
+    manufacturingStrategy: filters.manufacturingStrategy,
+    location: filters.location,
+    status,
+    limit,
+    offset,
+  };
+
+  const [items, total] = await Promise.all([
+    companyRepository.searchCompanies(normalizedFilters),
+    companyRepository.countCompanies(normalizedFilters),
+  ]);
+
+  return {
+    items: items.map(sanitizeCompany),
+    total,
+    limit,
+    offset,
+  };
+};
+
 const createReview = async (agentId, companyId, payload) => {
   const [targetCompany, reviewerCompany] = await Promise.all([
     getCompanyOrThrowById(companyId),
@@ -294,9 +326,34 @@ const createReview = async (agentId, companyId, payload) => {
     throw new AppError('You cannot review your own company', 400);
   }
 
+  if (!payload.dealId) {
+    throw new AppError('dealId is required to submit a review', 400);
+  }
+
+  const acceptedDeal = await dealRequestRepository.findAcceptedDealBetweenCompanies({
+    dealId: payload.dealId,
+    companyAId: targetCompany.id,
+    companyBId: reviewerCompany.id,
+  });
+
+  if (!acceptedDeal) {
+    throw new AppError('You can only review companies with accepted deals', 403);
+  }
+
+  const existingReview = await reviewRepository.findByDealAndCompanies({
+    dealId: payload.dealId,
+    companyId: targetCompany.id,
+    reviewerCompanyId: reviewerCompany.id,
+  });
+
+  if (existingReview) {
+    throw new AppError('You have already reviewed this deal', 409);
+  }
+
   const review = await reviewRepository.createReview({
     companyId: targetCompany.id,
     reviewerCompanyId: reviewerCompany.id,
+    dealId: payload.dealId,
     reviewText: payload.reviewText,
     rating: payload.rating,
   });
@@ -737,79 +794,7 @@ const resendForReview = async (agentId) => {
   return { company: sanitizeCompany(updated) };
 };
 
-// ============= Company Agents =============
 
-const listCompanyAgents = async (agentId) => {
-  const company = await getCompanyOrThrowByAgent(agentId);
-  return await companyAgentRepository.listByCompanyId(company.id);
-};
-
-const addCompanyAgent = async (currentAgentId, { email, role }) => {
-  const company = await getCompanyOrThrowByAgent(currentAgentId);
-
-  // Check if current user is owner/admin
-  const currentAgent = await companyAgentRepository.findByCompanyAndUser(
-    company.id,
-    currentAgentId
-  );
-  // Allow if they are the main agent (legacy) or have admin role in new table
-  // For now, since we backfill legacy agent as owner, we check table
-  // If not in table yet (no migration run?), verify against company.agent_id
-
-  const isOwner = company.agent_id === currentAgentId;
-  const isAdmin = currentAgent?.role === 'owner' || currentAgent?.role === 'admin';
-
-  if (!isOwner && !isAdmin) {
-    throw new AppError('You do not have permission to invite agents', 403);
-  }
-
-  // Find user by email
-  const user = await require('../repositories/user.repository').findByEmail(email);
-  if (!user) {
-    throw new AppError('User not found with this email', 404);
-  }
-
-  // Check if already an agent
-  const existing = await companyAgentRepository.findByCompanyAndUser(company.id, user.id);
-  if (existing) {
-    throw new AppError('User is already an agent for this company', 400);
-  }
-
-  const newAgent = await companyAgentRepository.addAgent({
-    companyId: company.id,
-    userId: user.id,
-    role,
-    status: 'active', // or 'invited' if we implement invitation flow
-  });
-
-  return newAgent;
-};
-
-const removeCompanyAgent = async (currentAgentId, targetUserId) => {
-  const company = await getCompanyOrThrowByAgent(currentAgentId);
-
-  const numericTargetId = Number(targetUserId);
-  if (numericTargetId === currentAgentId) {
-    throw new AppError('You cannot remove yourself', 400);
-  }
-
-  const isOwner = company.agent_id === currentAgentId;
-  const currentAgent = await companyAgentRepository.findByCompanyAndUser(
-    company.id,
-    currentAgentId
-  );
-  const isAdmin = currentAgent?.role === 'owner' || currentAgent?.role === 'admin';
-
-  if (!isOwner && !isAdmin) {
-    throw new AppError('You do not have permission to remove agents', 403);
-  }
-
-  const removed = await companyAgentRepository.removeAgent(company.id, numericTargetId);
-  if (!removed) {
-    throw new AppError('Agent not found', 404);
-  }
-  return removed;
-};
 
 module.exports = {
   getMyProfile,
@@ -818,6 +803,7 @@ module.exports = {
   addGalleryItem,
   listGallery,
   listReviews,
+  searchCompanies,
   createReview,
   resendForReview,
   listMyGallery,
@@ -836,7 +822,5 @@ module.exports = {
   updateContributionMedia,
   deleteContributionMedia,
   reorderContributionMedia,
-  listCompanyAgents,
-  addCompanyAgent,
-  removeCompanyAgent,
+
 };

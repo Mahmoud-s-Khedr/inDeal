@@ -2,6 +2,7 @@ const { verifyToken } = require('../utils/jwt');
 const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
 const { pool } = require('../config/db');
+const companyRepository = require('../repositories/company.repository');
 
 const protect = catchAsync(async (req, res, next) => {
   // 1) Get token and check of it's there
@@ -27,6 +28,11 @@ const protect = catchAsync(async (req, res, next) => {
 
   // GRANT ACCESS TO PROTECTED ROUTE
   req.user = currentUser;
+
+  if (currentUser.role === 'agent') {
+    const company = await companyRepository.findByAgentId(currentUser.id);
+    req.user.company = company || null;
+  }
   next();
 });
 

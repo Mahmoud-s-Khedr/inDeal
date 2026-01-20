@@ -85,6 +85,139 @@ const listAll = async () => {
   return result.rows;
 };
 
+const searchCompanies = async ({
+  keyword,
+  companyType,
+  companyIndustry,
+  manufacturingStrategy,
+  location,
+  status,
+  limit = 20,
+  offset = 0,
+} = {}) => {
+  let query = `
+        SELECT c.*
+        FROM companies c
+        WHERE 1 = 1
+    `;
+  const params = [];
+  let paramIndex = 1;
+
+  if (status) {
+    query += ` AND c.status = $${paramIndex}`;
+    params.push(status);
+    paramIndex++;
+  }
+
+  if (keyword) {
+    query += ` AND (
+            c.name ILIKE $${paramIndex}
+            OR c.description ILIKE $${paramIndex}
+            OR c.address ILIKE $${paramIndex}
+        )`;
+    params.push(`%${keyword}%`);
+    paramIndex++;
+  }
+
+  if (companyType) {
+    query += ` AND c.company_type = $${paramIndex}`;
+    params.push(companyType);
+    paramIndex++;
+  }
+
+  if (companyIndustry) {
+    query += ` AND c.company_industry = $${paramIndex}`;
+    params.push(companyIndustry);
+    paramIndex++;
+  }
+
+  if (manufacturingStrategy) {
+    query += ` AND c.manufacturing_strategy = $${paramIndex}`;
+    params.push(manufacturingStrategy);
+    paramIndex++;
+  }
+
+  if (location) {
+    query += ` AND EXISTS (
+            SELECT 1
+            FROM jsonb_array_elements_text(c.locations) AS loc
+            WHERE loc ILIKE $${paramIndex}
+        )`;
+    params.push(`%${location}%`);
+    paramIndex++;
+  }
+
+  query += ` ORDER BY c.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  params.push(limit, offset);
+
+  const result = await pool.query(query, params);
+  return result.rows;
+};
+
+const countCompanies = async ({
+  keyword,
+  companyType,
+  companyIndustry,
+  manufacturingStrategy,
+  location,
+  status,
+} = {}) => {
+  let query = `
+        SELECT COUNT(*) AS total
+        FROM companies c
+        WHERE 1 = 1
+    `;
+  const params = [];
+  let paramIndex = 1;
+
+  if (status) {
+    query += ` AND c.status = $${paramIndex}`;
+    params.push(status);
+    paramIndex++;
+  }
+
+  if (keyword) {
+    query += ` AND (
+            c.name ILIKE $${paramIndex}
+            OR c.description ILIKE $${paramIndex}
+            OR c.address ILIKE $${paramIndex}
+        )`;
+    params.push(`%${keyword}%`);
+    paramIndex++;
+  }
+
+  if (companyType) {
+    query += ` AND c.company_type = $${paramIndex}`;
+    params.push(companyType);
+    paramIndex++;
+  }
+
+  if (companyIndustry) {
+    query += ` AND c.company_industry = $${paramIndex}`;
+    params.push(companyIndustry);
+    paramIndex++;
+  }
+
+  if (manufacturingStrategy) {
+    query += ` AND c.manufacturing_strategy = $${paramIndex}`;
+    params.push(manufacturingStrategy);
+    paramIndex++;
+  }
+
+  if (location) {
+    query += ` AND EXISTS (
+            SELECT 1
+            FROM jsonb_array_elements_text(c.locations) AS loc
+            WHERE loc ILIKE $${paramIndex}
+        )`;
+    params.push(`%${location}%`);
+    paramIndex++;
+  }
+
+  const result = await pool.query(query, params);
+  return parseInt(result.rows[0].total, 10);
+};
+
 const updateCompanyByAgent = async (agentId, updates) => {
   const fields = [];
   const values = [];
@@ -193,6 +326,8 @@ module.exports = {
   findById,
   listByStatus,
   listAll,
+  searchCompanies,
+  countCompanies,
   updateCompanyByAgent,
   updateCompanyById,
   updateCompanyStatus,

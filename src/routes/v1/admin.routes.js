@@ -3,11 +3,13 @@ const protect = require('../../middlewares/authMiddleware');
 const requireRoles = require('../../middlewares/roleMiddleware');
 const validate = require('../../middlewares/validateMiddleware');
 const adminCompanyController = require('../../controllers/adminCompany.controller');
+const adminUserController = require('../../controllers/adminUser.controller');
 const dealController = require('../../controllers/deal.controller');
 const {
   reviewCompanyStatusSchema,
   companyParamsSchema,
   changeCompanyAgentSchema,
+  changeAgentEmailSchema,
   updateCompanySchema,
   updateCompanySummarySchema,
   createCompanyGalleryItemSchema,
@@ -32,6 +34,15 @@ router.use(protect, requireRoles('admin'));
 
 router.get('/companies', adminCompanyController.listCompanies);
 router.get('/companies/pending', adminCompanyController.listPendingCompanies);
+// ═══════════════════════════════════════════════════════════════
+// Admin Pending Updates Management (FR-ADMIN-003)
+// ═══════════════════════════════════════════════════════════════
+const pendingUpdateController = require('../../controllers/pendingUpdate.controller');
+
+router.get('/companies/pending-updates', pendingUpdateController.listPendingUpdates);
+router.get('/companies/pending-updates/:id', pendingUpdateController.getPendingUpdate);
+router.post('/companies/pending-updates/:id/approve', pendingUpdateController.approveUpdate);
+router.post('/companies/pending-updates/:id/reject', pendingUpdateController.rejectUpdate);
 router.get(
   '/companies/:id',
   validate(companyParamsSchema),
@@ -62,6 +73,13 @@ router.post(
   '/companies/:id/agent',
   validate(changeCompanyAgentSchema),
   adminCompanyController.changeCompanyAgent
+);
+
+// Dev-only: change agent email
+router.patch(
+  '/agents/:id/email',
+  validate(changeAgentEmailSchema),
+  adminUserController.changeAgentEmail
 );
 
 router.get(
@@ -179,5 +197,16 @@ router.post(
   validate(addResponseSchema),
   supportController.adminAddResponse
 );
+
+// ═══════════════════════════════════════════════════════════════
+// Admin Support Live Chat Management (FR-SUP-004)
+// ═══════════════════════════════════════════════════════════════
+const supportChatController = require('../../controllers/supportChat.controller');
+
+router.get('/support/chats', supportChatController.adminListChats);
+router.get('/support/chats/waiting', supportChatController.adminGetWaitingQueue);
+router.get('/support/chats/:id', supportChatController.adminGetChat);
+router.post('/support/chats/:id/assign', supportChatController.adminAssignChat);
+router.post('/support/chats/:id/close', supportChatController.adminCloseChat);
 
 module.exports = router;

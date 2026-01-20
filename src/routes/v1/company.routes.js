@@ -15,15 +15,18 @@ const {
   updateContributionSchema,
   createReviewSchema,
   companyIdParamsSchema,
+  searchCompaniesSchema,
   addContributionMediaSchema,
   contributionMediaIdParamsSchema,
   updateContributionMediaSchema,
   reorderContributionMediaSchema,
-  addAgentSchema,
-  removeAgentSchema,
+
 } = require('../../validations/company.validation');
 
 const router = express.Router();
+
+// Company search (public)
+router.get('/search', validate(searchCompaniesSchema), companyController.searchCompanies);
 
 router.get('/me', protect, companyController.getMyProfile);
 router.put('/me', protect, validate(updateCompanySchema), companyController.updateMyProfile);
@@ -104,6 +107,12 @@ router.post(
   companyController.addContributionMedia
 );
 router.put(
+  '/me/contributions/:contributionId/media/reorder',
+  protect,
+  validate(reorderContributionMediaSchema),
+  companyController.reorderContributionMedia
+);
+router.put(
   '/me/contributions/:contributionId/media/:mediaId',
   protect,
   validate(updateContributionMediaSchema),
@@ -115,22 +124,9 @@ router.delete(
   validate(contributionMediaIdParamsSchema),
   companyController.deleteContributionMedia
 );
-router.put(
-  '/me/contributions/:contributionId/media/reorder',
-  protect,
-  validate(reorderContributionMediaSchema),
-  companyController.reorderContributionMedia
-);
 
 // Company Agents
-router.get('/me/agents', protect, companyController.listCompanyAgents);
-router.post('/me/agents', protect, validate(addAgentSchema), companyController.addCompanyAgent);
-router.delete(
-  '/me/agents/:userId',
-  protect,
-  validate(removeAgentSchema),
-  companyController.removeCompanyAgent
-);
+
 
 router.get('/:id', validate(companyIdParamsSchema), companyController.getCompanyProfile);
 router.get('/:id/gallery', validate(companyIdParamsSchema), companyController.listGallery);

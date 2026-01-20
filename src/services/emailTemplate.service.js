@@ -66,7 +66,13 @@ const compileTemplate = (template, variables) => {
         }
     );
 
-    // Replace simple {{variable}} placeholders
+    // Handle {{{variable}}} - Unescaped content
+    result = result.replace(/\{\{\{(\w+)\}\}\}/g, (match, varName) => {
+        const value = variables[varName];
+        return (value === undefined || value === null) ? '' : value;
+    });
+
+    // Handle {{variable}} - Escaped content (default)
     result = result.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
         const value = variables[varName];
         if (value === undefined || value === null) {
