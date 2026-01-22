@@ -5,19 +5,23 @@ meta {
 }
 
 patch {
-  url: {{base_url}}/agents/:id/email
+  url: {{base_url}}/admin/agents/2/email
   body: json
   auth: inherit
 }
 
-params:path {
-  id: 
+headers {
+  Authorization: Bearer {{auth_token}}
 }
 
 body:json {
   {
-    "email":"some@mail.com"
+    "email":"mohand.test@gmail.com"
   }
+}
+
+vars:pre-request {
+  id: 5
 }
 
 settings {
