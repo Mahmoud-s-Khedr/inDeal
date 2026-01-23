@@ -22,6 +22,7 @@ const s3Client = new S3Client({
   region: config.storage.region,
   endpoint: config.storage.endpoint || undefined,
   forcePathStyle: true,
+  requestChecksumCalculation: 'WHEN_REQUIRED',
   credentials: hasCredentials
     ? {
         accessKeyId: config.storage.accessKeyId,

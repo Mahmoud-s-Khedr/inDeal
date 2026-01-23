@@ -1,0 +1,46 @@
+meta {
+  name: Resubmit
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/auth/resubmit
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "company": {
+      "name": "Updated Company Name",
+      "description": "Updated description",
+      "address": "123 Updated St",
+      "phone": "+1234567890",
+      "website": "https://updated.example.com",
+      "companyType": "manufacturer",
+      "companyIndustry": "manufacturing",
+      "manufacturingStrategy": "makeToOrder",
+      "contacts": [
+        { "type": "email", "value": "contact@updated.com" }
+      ],
+      "locations": ["New York", "Los Angeles"]
+    },
+    "documents": [
+      {
+        "fileId": 123,
+        "docType": "license",
+        "description": "Commercial license document"
+      }
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
