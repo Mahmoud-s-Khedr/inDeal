@@ -12,6 +12,11 @@ const register = catchAsync(async (req, res) => {
   sendResponse(res, 201, result, 'Registration submitted successfully');
 });
 
+const resubmit = catchAsync(async (req, res) => {
+  const result = await authService.resubmit(req.user.id, req.body);
+  sendResponse(res, 200, result, 'Company resubmitted successfully');
+});
+
 const login = catchAsync(async (req, res) => {
   const result = await authService.login(req.body);
   sendResponse(res, 200, result, 'Login successful');
@@ -182,6 +187,7 @@ const resendVerificationEmail = catchAsync(async (req, res) => {
 module.exports = {
   createRegistrationUploadUrl,
   register,
+  resubmit,
   login,
   adminLogin,
   forgotPassword,

@@ -415,6 +415,87 @@ const register = async (payload) => {
   }
 };
 
+const resubmit = async (userId, payload) => {
+  const company = await companyRepository.findByAgentId(userId);
+  if (!company) {
+    throw new AppError('Company not found', 404);
+  }
+
+  if (company.status !== 'rejected') {
+    throw new AppError('Only rejected companies can resubmit', 400);
+  }
+
+  const documentsPayload = payload.documents || [];
+  if (documentsPayload.length) {
+    const documentFileIds = documentsPayload.map((doc) => doc.fileId);
+    const existingFiles = await fileRepository.findByIds(documentFileIds);
+    if (existingFiles.length !== documentFileIds.length) {
+      throw new AppError('One or more company document files are invalid', 400);
+    }
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Update company details if provided
+    let updatedCompany = company;
+    if (payload.company) {
+      updatedCompany = await companyRepository.updateCompanyById(
+        company.id,
+        payload.company
+      );
+    }
+
+    // Set status to pending
+    updatedCompany = await companyRepository.updateCompanyStatus(
+      company.id,
+      'pending'
+    );
+
+    // Add new documents
+    let createdDocuments = [];
+    if (documentsPayload.length) {
+      createdDocuments = await companyDocumentRepository.bulkCreateDocuments(
+        client,
+        documentsPayload.map((doc) => ({
+          companyId: company.id,
+          fileId: doc.fileId,
+          docType: doc.docType,
+          description: doc.description,
+        }))
+      );
+    }
+
+    await client.query('COMMIT');
+
+    const companyPayload = sanitizeCompany(updatedCompany);
+    if (createdDocuments.length) {
+      // We might want to return all documents or just the new ones.
+      // For now, let's fetch all documents to return a complete state or just return what we have.
+      // The register response returns proper structure. Let's return the complete object.
+      // But fetching all docs might be extra. Let's return the new ones merged or just the company object with new docs.
+      // Typically the UI will reload the profile.
+      // Let's stick to returning the updated company object.
+      // But to be consistent with register, we can attach documents.
+      // However, we didn't fetch old documents here.
+      // Let's just return the new documents in the response or let the repository handle listing if needed.
+      // For simplicity and performance, let's return the updated company and the NEW documents.
+      // The user can refetch if they want full list.
+      companyPayload.documents = createdDocuments.map(sanitizeDocument);
+    }
+
+    return {
+      company: companyPayload,
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 const login = async (payload) => {
   const email = payload.email.toLowerCase();
   const user = await userRepository.findByEmail(email);
@@ -614,6 +695,7 @@ const resendVerificationEmail = async ({ email }) => {
 module.exports = {
   createRegistrationUploadUrl,
   register,
+  resubmit,
   login,
   adminLogin,
   forgotPassword,

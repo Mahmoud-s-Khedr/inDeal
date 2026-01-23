@@ -131,6 +131,28 @@ const resendVerificationSchema = z.object({
   }),
 });
 
+const resubmitSchema = z.object({
+  body: z.object({
+    company: z
+      .object({
+        name: z.string().min(1).max(100).optional(),
+        description: z.string().optional(),
+        address: z.string().optional(),
+        phone: z.string().max(20).optional(),
+        website: z.string().url().max(100).optional(),
+        companyType: z.enum(companyTypeEnumValues).optional(),
+        companyIndustry: z.enum(industryEnumValues).optional(),
+        manufacturingStrategy: z.enum(manufacturingStrategyEnumValues).optional(),
+        contacts: z.array(contactSchema).optional(),
+        locations: z.array(z.string().min(1)).optional(),
+      })
+      .optional(),
+    documents: z
+      .array(documentSchema)
+      .min(1, 'At least one document must be provided'),
+  }),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
@@ -139,4 +161,5 @@ module.exports = {
   verifyOtpSchema,
   verifyEmailSchema,
   resendVerificationSchema,
+  resubmitSchema,
 };
