@@ -27,7 +27,6 @@ Complete API reference for `/api/v1` endpoints. All responses use the standard J
 - [Notifications](#notifications-new)
 - [Health](#health)
 
-
 ## Auth
 
 All auth endpoints are public unless noted.
@@ -84,10 +83,10 @@ Register agent + company in one call.
   }
 ```
 
-**Response:** `{ "user": {...}, "company": {...}, "message": "Registration successful" }`
----
+## **Response:** `{ "user": {...}, "company": {...}, "message": "Registration successful" }`
 
 ### POST `/auth/login`
+
 Agent login.
 
 **Request Body:**
@@ -109,7 +108,6 @@ Agent login.
 ---
 
 ### POST `/auth/admin/login`
-
 
 ---
 
@@ -653,13 +651,34 @@ Withdraw my bid/request.
 
 ## Chat
 
-Real-time messaging between companies. All routes require authentication. 🔐
+Real-time 1-on-1 B2B messaging between companies. The chat system uses a **single-socket architecture** where users are automatically subscribed to all their chat rooms upon connection—no manual join/leave required.
 
-### GET `/chats` 🔐
+All routes require authentication. 🔐
 
-List my chat rooms.
+### Architecture Overview
 
-**Query Parameters:** `status` (`active`|`archived`), `limit`, `offset`
+- **Single socket per user**: One WebSocket connection handles all B2B and support chats
+- **Auto-subscription**: On connect, user automatically joins all active chat rooms
+- **No manual join/leave**: Users cannot leave B2B rooms (1-on-1 only)
+- **Mid-session room creation**: When a new room is created via REST, both parties are auto-subscribed and notified
+
+---
+
+### REST Endpoints
+
+#### GET `/chats` 🔐
+
+List all chat rooms for the authenticated user's company.
+
+**When to use:** On app launch to populate the chat list UI, or to refresh the list after returning from background.
+
+**Query Parameters:**
+
+| Parameter | Type   | Default  | Description                                   |
+| --------- | ------ | -------- | --------------------------------------------- |
+| `status`  | string | `active` | Filter by room status: `active` or `archived` |
+| `limit`   | number | 20       | Max rooms to return                           |
+| `offset`  | number | 0        | Pagination offset                             |
 
 **Response:**
 
@@ -669,44 +688,112 @@ List my chat rooms.
     "id": 1,
     "companyAId": 1,
     "companyBId": 5,
-    "otherCompanyId": 5,
-    "otherCompanyName": "Acme Corp",
+    "otherCompany": {
+      "id": 5,
+      "name": "Acme Corp",
+      "logo": "https://cdn.../logo.jpg"
+    },
+    "status": "active",
+    "createdAt": "2026-01-15T08:00:00Z",
     "lastMessage": "Thanks for your offer",
     "lastMessageAt": "2026-01-19T10:30:00Z",
-    "status": "active"
+    "unreadCount": 2
   }
 ]
 ```
 
 ---
 
-### POST `/chats` 🔐
+#### POST `/chats` 🔐
 
-Create or get chat room with another company.
+Create a new chat room with another company, or retrieve the existing room if one already exists.
 
-**Request Body:** `{ "targetCompanyId": 5 }`
+**When to use:**
 
-**Response:** Chat room object (201 if created, 200 if exists)
+- User clicks "Message" button on a company profile
+- User wants to start a conversation from a deal listing
+- Initiating contact with a potential business partner
+
+**Request Body:**
+
+```json
+{ "targetCompanyId": 5 }
+```
+
+**Response:**
+
+- `201 Created` — New room created (both parties auto-subscribed via WebSocket)
+- `200 OK` — Existing room returned
+
+```json
+{
+  "id": 1,
+  "companyAId": 1,
+  "companyBId": 5,
+  "otherCompany": {
+    "id": 5,
+    "name": "Acme Corp",
+    "logo": "https://cdn.../logo.jpg"
+  },
+  "status": "active",
+  "createdAt": "2026-01-25T10:00:00Z",
+  "lastMessage": null,
+  "lastMessageAt": null,
+  "unreadCount": 0
+}
+```
+
+**Important:** When a new room is created, the server automatically:
+
+1. Subscribes both companies' connected sockets to the new room
+2. Emits `chat:room:new` event to both parties
 
 ---
 
-### GET `/chats/:roomId` 🔐
+#### GET `/chats/:roomId` 🔐
 
-Get room details.
+Get details of a specific chat room.
 
----
+**When to use:** When navigating to a chat room to get full room metadata before loading messages.
 
-### PATCH `/chats/:roomId/archive` 🔐
-
-Archive a chat room.
+**Response:** Same structure as room object in `GET /chats`
 
 ---
 
-### GET `/chats/:roomId/messages` 🔐
+#### PATCH `/chats/:roomId/archive` 🔐
 
-Get messages in a room.
+Archive a chat room. Archived rooms are hidden from the active list but messages are preserved.
 
-**Query Parameters:** `limit`, `offset`, `before` (cursor), `after` (cursor)
+**When to use:** User wants to clean up their chat list without deleting conversation history.
+
+**Note:** Archived rooms are excluded from auto-subscription on connect.
+
+---
+
+#### GET `/chats/:roomId/messages` 🔐
+
+Get paginated message history for a room.
+
+**When to use:**
+
+- Initial load when opening a chat room
+- Loading older messages when user scrolls up (infinite scroll)
+- Syncing messages after reconnection
+
+**Query Parameters:**
+
+| Parameter | Type   | Default | Description                                  |
+| --------- | ------ | ------- | -------------------------------------------- |
+| `limit`   | number | 50      | Max messages to return                       |
+| `offset`  | number | 0       | Pagination offset (ignored if cursor used)   |
+| `before`  | number | -       | Get messages before this message ID (cursor) |
+| `after`   | number | -       | Get messages after this message ID (cursor)  |
+
+**Pagination Strategy:**
+
+- For initial load: Use `limit=50` (most recent messages)
+- For infinite scroll up: Use `before={oldestMessageId}` to load older messages
+- For syncing new messages: Use `after={newestMessageId}`
 
 **Response:**
 
@@ -717,20 +804,47 @@ Get messages in a room.
       "id": 1,
       "roomId": 1,
       "messageText": "Hello!",
-      "senderFirstName": "John",
-      "senderCompanyName": "Acme",
-      "sentAt": "2026-01-19T10:30:00Z"
+      "sentAt": "2026-01-19T10:30:00Z",
+      "readAt": null,
+      "isRead": false,
+      "agent": {
+        "id": 9,
+        "firstName": "John",
+        "lastName": "Doe",
+        "profileImage": "https://..."
+      },
+      "company": {
+        "id": 5,
+        "name": "Acme",
+        "logo": "https://..."
+      },
+      "attachment": {
+        "id": 5,
+        "fileName": "doc.pdf",
+        "publicUrl": "https://cdn.../uploads/...",
+        "mimeType": "application/pdf",
+        "size": 102400
+      }
     }
   ],
-  "pagination": { "total": 50, "limit": 50, "offset": 0, "hasMore": false }
+  "pagination": {
+    "mode": "cursor",
+    "total": 50,
+    "limit": 50,
+    "offset": 0,
+    "hasMore": true,
+    "nextCursor": 1
+  }
 }
 ```
 
 ---
 
-### POST `/chats/:roomId/messages` 🔐
+#### POST `/chats/:roomId/messages` 🔐
 
-Send message (REST fallback when Socket.io unavailable).
+Send a message via REST API.
+
+**When to use:** Fallback when WebSocket is unavailable (poor network, reconnecting). Prefer Socket.io `chat:message` for real-time delivery.
 
 **Request Body:**
 
@@ -741,42 +855,156 @@ Send message (REST fallback when Socket.io unavailable).
 }
 ```
 
-> At least one of `messageText` or `attachmentFileId` required. Upload file via `POST /files/upload-url` first.
+> At least one of `messageText` or `attachmentFileId` required.
+
+**Attachment workflow:**
+
+1. Upload file via `POST /files/upload-url`
+2. Include returned `fileId` as `attachmentFileId`
+
+---
+
+#### POST `/chats/:roomId/read` 🔐
+
+Mark messages as read. Updates read receipts and unread counts.
+
+**When to use:**
+
+- User opens a chat room (mark all as read)
+- User scrolls through unread messages
+- App comes to foreground with chat visible
+
+**Request Body:**
+
+```json
+{ "messageId": 123 }
+```
+
+| Field       | Required | Description                                                                                  |
+| ----------- | -------- | -------------------------------------------------------------------------------------------- |
+| `messageId` | No       | Mark this message and all before it as read. If omitted, marks ALL messages in room as read. |
+
+**Response:**
+
+```json
+{
+  "roomId": 1,
+  "messageId": 123,
+  "readCount": 25,
+  "unreadCount": 0
+}
+```
 
 ---
 
 ### Socket.io Events
 
-Real-time chat via WebSocket. Connect to the server with JWT token in handshake auth.
+Real-time chat via WebSocket with automatic room subscription.
 
-**Connection:**
+#### Connection
 
 ```javascript
 const socket = io('wss://api.indeal.com', {
   auth: { token: 'eyJ...' },
+  transports: ['websocket', 'polling'],
 });
 ```
 
-**Events (Client → Server):**
+**On successful connection, the server automatically:**
 
-| Event          | Payload                                               | Description                           |
-| -------------- | ----------------------------------------------------- | ------------------------------------- |
-| `chat:join`    | `{ roomId: 1 }`                                       | Join a room to receive messages       |
-| `chat:leave`   | `{ roomId: 1 }`                                       | Leave a room                          |
-| `chat:message` | `{ roomId: 1, text?: "Hello", attachmentFileId?: 5 }` | Send message with optional attachment |
-| `chat:typing`  | `{ roomId: 1, isTyping: true }`                       | Typing indicator                      |
+1. Joins the socket to `user:{userId}` room (for notifications)
+2. Joins the socket to `company:{companyId}` room (for new room notifications)
+3. Fetches all active B2B chat rooms and joins each `room:{roomId}`
+4. Fetches active support chat room (if any) and joins `support:room:{roomId}`
+5. Emits `chat:ready` event with room IDs
 
-**Events (Server → Client):**
+---
 
-| Event          | Payload                                                             | Description                |
-| -------------- | ------------------------------------------------------------------- | -------------------------- |
-| `chat:joined`  | `{ roomId }`                                                        | Confirmation of room join  |
-| `chat:left`    | `{ roomId }`                                                        | Confirmation of room leave |
-| `chat:message` | `{ id, roomId, messageText, attachment?, senderFirstName, sentAt }` | New message                |
-| `chat:typing`  | `{ roomId, userId, isTyping }`                                      | Other user typing          |
-| `chat:error`   | `{ message }`                                                       | Error notification         |
+#### Events (Server → Client)
 
-**Attachment flow:** Upload file via `POST /files/upload-url`, then send `attachmentFileId` in message.
+| Event           | Payload                                                   | When Emitted                                                   | How to Handle                                          |
+| --------------- | --------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------ |
+| `chat:ready`    | `{ b2bRoomIds: number[], supportRoomId: number \| null }` | Immediately after connection, once auto-subscription completes | Store room IDs locally; safe to start sending messages |
+| `chat:room:new` | `{ roomId: number, room: object }`                        | When another user creates a room with you via REST API         | Add room to chat list UI; socket already subscribed    |
+| `chat:message`  | Full message object (see below)                           | When any message is sent to a room you're in                   | Display in chat UI; update last message in room list   |
+| `chat:typing`   | `{ roomId, userId, isTyping }`                            | When other user starts/stops typing                            | Show/hide typing indicator                             |
+| `chat:read`     | `{ roomId, companyId, messageId?, unreadCount }`          | When other party reads messages                                | Update read receipts UI; show "seen" status            |
+| `chat:error`    | `{ message, code? }`                                      | On validation or authorization errors                          | Show error toast; handle specific error codes          |
+
+**`chat:message` payload structure:**
+
+```json
+{
+  "id": 123,
+  "roomId": 1,
+  "messageText": "Hello!",
+  "sentAt": "2026-01-25T10:30:00Z",
+  "readAt": null,
+  "isRead": false,
+  "agent": {
+    "id": 9,
+    "firstName": "John",
+    "lastName": "Doe",
+    "profileImage": "https://..."
+  },
+  "company": {
+    "id": 5,
+    "name": "Acme Corp",
+    "logo": "https://..."
+  },
+  "attachment": {
+    "id": 5,
+    "fileName": "proposal.pdf",
+    "publicUrl": "https://cdn.indeal.com/uploads/...",
+    "mimeType": "application/pdf",
+    "size": 102400
+  }
+}
+```
+
+---
+
+#### Events (Client → Server)
+
+| Event          | Payload                                       | When to Emit                              | Server Response                   |
+| -------------- | --------------------------------------------- | ----------------------------------------- | --------------------------------- |
+| `chat:message` | `{ roomId, messageText?, attachmentFileId? }` | User sends a message                      | Broadcasts `chat:message` to room |
+| `chat:typing`  | `{ roomId, isTyping: boolean }`               | User starts/stops typing (debounce 300ms) | Broadcasts `chat:typing` to room  |
+| `chat:read`    | `{ roomId, messageId? }`                      | User views messages                       | Broadcasts `chat:read` to room    |
+
+**Sending a message:**
+
+```javascript
+// Text only
+socket.emit('chat:message', {
+  roomId: 1,
+  messageText: 'Hello!',
+});
+
+// With attachment (upload file first)
+socket.emit('chat:message', {
+  roomId: 1,
+  messageText: 'See attached proposal',
+  attachmentFileId: 5,
+});
+
+// Attachment only
+socket.emit('chat:message', {
+  roomId: 1,
+  attachmentFileId: 5,
+});
+```
+
+---
+
+#### Error Codes
+
+| Code              | Message                 | Cause                   | Resolution              |
+| ----------------- | ----------------------- | ----------------------- | ----------------------- |
+| `ROOM_NOT_FOUND`  | Room not found          | Invalid roomId          | Verify room exists      |
+| `UNAUTHORIZED`    | Not authorized          | User not member of room | Check room membership   |
+| `INVALID_PAYLOAD` | Missing required fields | Bad event payload       | Check payload structure |
+| `MESSAGE_EMPTY`   | Message cannot be empty | No text or attachment   | Provide content         |
 
 ---
 
@@ -949,7 +1177,20 @@ All routes require authentication. 🔐
 
 Start a support chat.
 
-**Response:** `{ "id": 15, "status": "waiting", "createdAt": "..." }`
+**Response:**
+
+```json
+{
+  "id": 15,
+  "status": "waiting",
+  "startedAt": "2026-01-25T10:00:00Z",
+  "endedAt": null,
+  "messageCount": 0,
+  "user": { "id": 1, "firstName": "John", "lastName": "Doe", "email": "john@example.com" },
+  "company": { "id": 5, "name": "Acme Corp" },
+  "assignedAdmin": null
+}
+```
 
 ---
 
@@ -972,6 +1213,52 @@ List messages in a support chat room.
 Send a message to support.
 
 **Request Body:** `{ "message": "Hello, I need help." }`
+
+---
+
+#### Support Chat Socket.io Events
+
+Real-time support chat via WebSocket. Uses the same connection as B2B chat—**no separate connection needed**.
+
+**Architecture:**
+
+- Support room is auto-joined on socket connect (if user has an active support chat)
+- When user creates a new support chat via REST, socket is auto-subscribed
+- No manual `support:join` required
+
+---
+
+**Events (Server → Client):**
+
+| Event                  | Payload                                                                                  | When Emitted                            | How to Handle                         |
+| ---------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------- |
+| `support:room:new`     | `{ roomId }`                                                                             | When user creates support chat via REST | Update UI to show active support chat |
+| `support:message`      | `{ id, roomId, messageText, isFromSupport, sentAt, agent: { id, firstName, lastName } }` | New message in support chat             | Display in support chat UI            |
+| `support:typing`       | `{ roomId, userId, isAdmin, isTyping }`                                                  | Admin starts/stops typing               | Show typing indicator                 |
+| `support:admin:joined` | `{ roomId, admin: { id, firstName, lastName } }`                                         | Admin accepts the chat                  | Show "Connected to {admin.firstName}" |
+| `support:queue:update` | `{ waitingCount }`                                                                       | Queue position changes (admins only)    | Update queue UI                       |
+| `support:error`        | `{ message }`                                                                            | On errors                               | Show error message                    |
+
+---
+
+**Events (Client → Server):**
+
+| Event                  | Payload                | When to Emit                 | Notes                        |
+| ---------------------- | ---------------------- | ---------------------------- | ---------------------------- |
+| `support:message`      | `{ roomId, text }`     | User sends support message   | Requires active support room |
+| `support:typing`       | `{ roomId, isTyping }` | User typing (debounce 300ms) | Optional but improves UX     |
+| `support:admin:accept` | `{ roomId }`           | Admin takes a waiting chat   | Admin/support role only      |
+
+---
+
+**User Flow:**
+
+1. User creates support chat via `POST /support/chat`
+2. Server auto-subscribes socket and emits `support:room:new`
+3. User waits for admin (status: `waiting`)
+4. Admin accepts → `support:admin:joined` emitted
+5. Conversation proceeds via `support:message` events
+6. Admin closes chat via REST endpoint
 
 ---
 
@@ -1228,13 +1515,13 @@ Moderate deal status.
 
 ### Admin Support Live Chat Endpoints 🔒
 
-| Method | Endpoint                         | Description                       |
-| ------ | -------------------------------- | --------------------------------- |
-| GET    | `/admin/support/chats`           | List all support chats            |
-| GET    | `/admin/support/chats/waiting`   | List waiting queue (unassigned)   |
-| GET    | `/admin/support/chats/:id`       | Support chat details              |
-| POST   | `/admin/support/chats/:id/assign`| Assign admin to chat              |
-| POST   | `/admin/support/chats/:id/close` | Close support chat                |
+| Method | Endpoint                          | Description                     |
+| ------ | --------------------------------- | ------------------------------- |
+| GET    | `/admin/support/chats`            | List all support chats          |
+| GET    | `/admin/support/chats/waiting`    | List waiting queue (unassigned) |
+| GET    | `/admin/support/chats/:id`        | Support chat details            |
+| POST   | `/admin/support/chats/:id/assign` | Assign admin to chat            |
+| POST   | `/admin/support/chats/:id/close`  | Close support chat              |
 
 ---
 

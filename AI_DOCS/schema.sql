@@ -1,7 +1,7 @@
 -- 0. Enums
 CREATE TYPE user_role_enum AS ENUM ('agent', 'admin', 'support');
 CREATE TYPE user_status_enum AS ENUM ('pending', 'verified', 'suspended');
-CREATE TYPE company_state_enum AS ENUM ('active', 'underReview', 'rejected', 'suspended');
+CREATE TYPE company_state_enum AS ENUM ('active', 'underReview', 'pendingUpdate', 'rejected', 'suspended');
 CREATE TYPE deal_status_enum AS ENUM ('open', 'closed', 'negotiating', 'archived');
 CREATE TYPE deal_type_enum AS ENUM ('auction', 'rfq');
 CREATE TYPE deal_request_status_enum AS ENUM ('pending', 'accepted', 'rejected', 'withdrawn');
@@ -198,6 +198,13 @@ create table chat_messages (
     sent_at timestamp default current_timestamp
 );
 
+create table chat_message_reads (
+    message_id int not null references chat_messages(id) on delete cascade,
+    company_id int not null references companies(id) on delete cascade,
+    read_at timestamp default current_timestamp,
+    primary key (message_id, company_id)
+);
+
 -- 6. Ads
 create table advertisements (
     id serial primary key,
@@ -293,6 +300,7 @@ create table email_logs (
 );
 
 -- 11. Indexes (Performance)
+CREATE INDEX idx_files_deleted_at ON files(deleted_at) WHERE deleted_at IS NOT NULL;
 CREATE INDEX idx_users_profile_image ON users(profile_image);
 CREATE INDEX idx_companies_agent_id ON companies(agent_id);
 CREATE INDEX idx_companies_logo ON companies(logo);
@@ -309,6 +317,8 @@ CREATE INDEX idx_company_contributions_company_id ON company_contributions(compa
 CREATE INDEX idx_company_contributions_media_file_id ON company_contributions(media_file_id);
 CREATE INDEX idx_company_contributions_media_type ON company_contributions(media_type);
 CREATE INDEX idx_company_contributions_details ON company_contributions USING GIN (details);
+CREATE INDEX idx_contribution_media_contribution_id ON company_contribution_media(contribution_id);
+CREATE INDEX idx_contribution_media_file_id ON company_contribution_media(file_id);
 CREATE INDEX idx_deals_company_id ON deals(company_id);
 CREATE INDEX idx_deal_requests_deal_id ON deal_requests(deal_id);
 CREATE INDEX idx_deal_requests_applicant_company_id ON deal_requests(applicant_company_id);
@@ -316,6 +326,9 @@ CREATE INDEX idx_chat_rooms_company_a_id ON chat_rooms(company_a_id);
 CREATE INDEX idx_chat_rooms_company_b_id ON chat_rooms(company_b_id);
 CREATE INDEX idx_chat_messages_room_id ON chat_messages(room_id);
 CREATE INDEX idx_chat_messages_sender_user_id ON chat_messages(sender_user_id);
+CREATE INDEX idx_chat_messages_attachment_file_id ON chat_messages(attachment_file_id);
+CREATE INDEX idx_chat_message_reads_company_id ON chat_message_reads(company_id);
+CREATE INDEX idx_chat_message_reads_message_id ON chat_message_reads(message_id);
 CREATE INDEX idx_advertisements_company_id ON advertisements(company_id);
 CREATE INDEX idx_advertisements_image_file_id ON advertisements(image_file_id);
 CREATE INDEX idx_ad_analytics_daily_advertisement_id ON ad_analytics_daily(advertisement_id);
@@ -333,6 +346,7 @@ CREATE INDEX idx_support_ticket_responses_ticket_id ON support_ticket_responses(
 
 -- Notification indexes
 CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_notifications_is_read ON notifications(is_read);
 CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read) WHERE is_read = false;
 CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
 CREATE INDEX idx_notifications_read_created ON notifications(is_read, created_at);

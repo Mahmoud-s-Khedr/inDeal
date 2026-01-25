@@ -288,24 +288,18 @@ const setDealStatusWithTimestamp = async (dealId, status, date) => {
 };
 
 const setDealRequestTimestamps = async (requestId, date) => {
-  await pool.query(
-    'UPDATE deal_requests SET created_at = $1, updated_at = $1 WHERE id = $2',
-    [date, requestId]
-  );
+  await pool.query('UPDATE deal_requests SET created_at = $1, updated_at = $1 WHERE id = $2', [
+    date,
+    requestId,
+  ]);
 };
 
 const setReviewTimestamp = async (reviewId, date) => {
-  await pool.query('UPDATE company_reviews SET created_at = $1 WHERE id = $2', [
-    date,
-    reviewId,
-  ]);
+  await pool.query('UPDATE company_reviews SET created_at = $1 WHERE id = $2', [date, reviewId]);
 };
 
 const setGalleryTimestamp = async (galleryId, date) => {
-  await pool.query('UPDATE company_gallery SET uploaded_at = $1 WHERE id = $2', [
-    date,
-    galleryId,
-  ]);
+  await pool.query('UPDATE company_gallery SET uploaded_at = $1 WHERE id = $2', [date, galleryId]);
 };
 
 const setDocumentTimestamp = async (documentId, date) => {
@@ -363,10 +357,7 @@ const setAuditLogTimestamp = async (logId, date) => {
 };
 
 const setSupportChatRoomTimestamp = async (roomId, date) => {
-  await pool.query('UPDATE support_chat_rooms SET started_at = $1 WHERE id = $2', [
-    date,
-    roomId,
-  ]);
+  await pool.query('UPDATE support_chat_rooms SET started_at = $1 WHERE id = $2', [date, roomId]);
 };
 
 const setSupportChatMessageTimestamp = async (messageId, date) => {
@@ -442,10 +433,7 @@ const seedTestData = async () => {
     forcePassword: cfg.forcePasswords,
   });
 
-  await userRepository.insertPasswordHistory(
-    admin.id,
-    await bcrypt.hash(cfg.admin.password, 12)
-  );
+  await userRepository.insertPasswordHistory(admin.id, await bcrypt.hash(cfg.admin.password, 12));
 
   await deviceTokenRepository.upsert(admin.id, `dev-token-${randomId()}`, 'web', {
     model: 'Browser',
@@ -472,10 +460,7 @@ const seedTestData = async () => {
       forcePassword: cfg.forcePasswords,
     });
 
-    await userRepository.insertPasswordHistory(
-      agent.id,
-      await bcrypt.hash(cfg.agent.password, 12)
-    );
+    await userRepository.insertPasswordHistory(agent.id, await bcrypt.hash(cfg.agent.password, 12));
 
     await deviceTokenRepository.upsert(agent.id, `dev-token-${randomId()}`, 'web', {
       model: 'Browser',
@@ -722,6 +707,8 @@ const seedTestData = async () => {
         );
         await setChatRoomTimestamp(room.id, requestDate);
 
+        const seededMessages = [];
+
         for (let m = 0; m < 4; m += 1) {
           const sender = Math.random() > 0.5 ? ownerCompany.agent : applicant.agent;
           const message = await chatRepository.createMessage(null, {
@@ -731,6 +718,16 @@ const seedTestData = async () => {
             attachmentFileId: null,
           });
           await setChatMessageTimestamp(message.id, randomDateBetween(requestDate, new Date()));
+          seededMessages.push(message);
+        }
+
+        if (seededMessages.length > 0) {
+          const readerCompanyId =
+            Math.random() > 0.5 ? ownerCompany.companyId : applicant.companyId;
+          const cutoffMessage = seededMessages[randomInt(0, seededMessages.length - 1)];
+          await chatRepository.markMessagesRead(room.id, readerCompanyId, {
+            messageId: cutoffMessage.id,
+          });
         }
 
         await createNotification(
@@ -822,11 +819,11 @@ const seedTestData = async () => {
   }
 
   for (const company of companies.slice(0, 3)) {
-    const supportRoom = await supportChatRepository.createRoom(
-      company.agent.id,
-      company.companyId
+    const supportRoom = await supportChatRepository.createRoom(company.agent.id, company.companyId);
+    await setSupportChatRoomTimestamp(
+      supportRoom.id,
+      randomDateBetween(company.seededAt, new Date())
     );
-    await setSupportChatRoomTimestamp(supportRoom.id, randomDateBetween(company.seededAt, new Date()));
     await supportChatRepository.assignAdmin(supportRoom.id, admin.id);
 
     const userMessage = await supportChatRepository.createMessage(

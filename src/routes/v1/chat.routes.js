@@ -8,6 +8,7 @@ const {
   listRoomsSchema,
   sendMessageSchema,
   listMessagesSchema,
+  markReadSchema,
 } = require('../../validations/chat.validation');
 
 const router = express.Router();
@@ -40,5 +41,8 @@ router.get('/:roomId/messages', validate(listMessagesSchema), chatController.get
 
 // Send message (REST fallback for when socket is unavailable)
 router.post('/:roomId/messages', validate(sendMessageSchema), chatController.sendMessage);
+
+// Mark messages as read
+router.post('/:roomId/read', validate(markReadSchema), chatController.markRead);
 
 module.exports = router;

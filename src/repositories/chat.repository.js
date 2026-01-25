@@ -65,6 +65,51 @@ const findRoomById = async (roomId) => {
 };
 
 /**
+ * Find room by ID with unread count for a company
+ */
+const findRoomByIdForCompany = async (roomId, companyId) => {
+  const result = await pool.query(
+    `
+        SELECT r.*,
+               ca.name AS company_a_name, ca.logo AS company_a_logo,
+               cb.name AS company_b_name, cb.logo AS company_b_logo,
+               (
+                   SELECT m.message_text
+                   FROM chat_messages m
+                   WHERE m.room_id = r.id
+                   ORDER BY m.sent_at DESC
+                   LIMIT 1
+               ) AS last_message,
+               (
+                   SELECT m.sent_at
+                   FROM chat_messages m
+                   WHERE m.room_id = r.id
+                   ORDER BY m.sent_at DESC
+                   LIMIT 1
+               ) AS last_message_at,
+               (
+                   SELECT COUNT(*)
+                   FROM chat_messages m
+                   JOIN users u ON m.sender_user_id = u.id
+                   JOIN companies sc ON u.id = sc.agent_id
+                   LEFT JOIN chat_message_reads mr
+                     ON mr.message_id = m.id AND mr.company_id = $2
+                   WHERE m.room_id = r.id
+                     AND sc.id <> $2
+                     AND mr.message_id IS NULL
+               ) AS unread_count
+        FROM chat_rooms r
+        JOIN companies ca ON r.company_a_id = ca.id
+        JOIN companies cb ON r.company_b_id = cb.id
+        WHERE r.id = $1
+        LIMIT 1
+        `,
+    [roomId, companyId]
+  );
+  return result.rows[0];
+};
+
+/**
  * Find rooms for a company (as participant)
  */
 const findRoomsByCompanyId = async (companyId, { status, limit = 50, offset = 0 } = {}) => {
@@ -85,7 +130,18 @@ const findRoomsByCompanyId = async (companyId, { status, limit = 50, offset = 0 
                    WHERE m.room_id = r.id 
                    ORDER BY m.sent_at DESC 
                    LIMIT 1
-               ) AS last_message_at
+               ) AS last_message_at,
+               (
+                   SELECT COUNT(*)
+                   FROM chat_messages m
+                   JOIN users u ON m.sender_user_id = u.id
+                   JOIN companies sc ON u.id = sc.agent_id
+                   LEFT JOIN chat_message_reads mr
+                     ON mr.message_id = m.id AND mr.company_id = $1
+                   WHERE m.room_id = r.id
+                     AND sc.id <> $1
+                     AND mr.message_id IS NULL
+               ) AS unread_count
         FROM chat_rooms r
         JOIN companies ca ON r.company_a_id = ca.id
         JOIN companies cb ON r.company_b_id = cb.id
@@ -138,6 +194,21 @@ const isRoomParticipant = async (roomId, companyId) => {
   return result.rows.length > 0;
 };
 
+/**
+ * Find all active room IDs for a company (lightweight query for socket joins)
+ */
+const findActiveRoomIdsByCompanyId = async (companyId) => {
+  const result = await pool.query(
+    `
+        SELECT id FROM chat_rooms
+        WHERE (company_a_id = $1 OR company_b_id = $1)
+          AND status = 'active'
+        `,
+    [companyId]
+  );
+  return result.rows.map((r) => r.id);
+};
+
 // ─────────────────────────────────────────────────────────────
 // CHAT MESSAGE OPERATIONS
 // ─────────────────────────────────────────────────────────────
@@ -161,22 +232,29 @@ const createMessage = async (client, { roomId, senderUserId, messageText, attach
 /**
  * Find messages by room ID with pagination
  */
-const findMessagesByRoomId = async (roomId, { limit = 50, offset = 0, before, after } = {}) => {
+const findMessagesByRoomIdForCompany = async (
+  roomId,
+  companyId,
+  { limit = 50, offset = 0, before, after } = {}
+) => {
   let query = `
         SELECT m.*,
                u.first_name AS sender_first_name, u.last_name AS sender_last_name,
                u.profile_image AS sender_profile_image,
-               c.id AS sender_company_id, c.name AS sender_company_name,
+               c.id AS sender_company_id, c.name AS sender_company_name, c.logo AS sender_company_logo,
                f.file_name AS attachment_file_name, f.file_path AS attachment_file_path,
-               f.file_metadata AS attachment_file_metadata
+               f.file_metadata AS attachment_file_metadata,
+               mr.read_at AS read_at
         FROM chat_messages m
         JOIN users u ON m.sender_user_id = u.id
         JOIN companies c ON u.id = c.agent_id
         LEFT JOIN files f ON m.attachment_file_id = f.id
+        LEFT JOIN chat_message_reads mr
+          ON mr.message_id = m.id AND mr.company_id = $2
         WHERE m.room_id = $1
     `;
-  const params = [roomId];
-  let paramIndex = 2;
+  const params = [roomId, companyId];
+  let paramIndex = 3;
 
   // Optional cursor-based pagination
   if (before) {
@@ -190,7 +268,7 @@ const findMessagesByRoomId = async (roomId, { limit = 50, offset = 0, before, af
     paramIndex++;
   }
 
-  query += ` ORDER BY m.sent_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  query += ` ORDER BY m.id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   params.push(limit, offset);
 
   const result = await pool.query(query, params);
@@ -211,33 +289,98 @@ const countMessagesByRoomId = async (roomId) => {
 /**
  * Find message by ID
  */
-const findMessageById = async (messageId) => {
+const findMessageByIdForCompany = async (messageId, companyId) => {
   const result = await pool.query(
     `
         SELECT m.*,
                u.first_name AS sender_first_name, u.last_name AS sender_last_name,
+               u.profile_image AS sender_profile_image,
+               c.id AS sender_company_id, c.name AS sender_company_name, c.logo AS sender_company_logo,
                f.file_name AS attachment_file_name, f.file_path AS attachment_file_path,
-               f.file_metadata AS attachment_file_metadata
+               f.file_metadata AS attachment_file_metadata,
+               mr.read_at AS read_at
         FROM chat_messages m
         JOIN users u ON m.sender_user_id = u.id
+        JOIN companies c ON u.id = c.agent_id
         LEFT JOIN files f ON m.attachment_file_id = f.id
+        LEFT JOIN chat_message_reads mr
+          ON mr.message_id = m.id AND mr.company_id = $2
         WHERE m.id = $1
         `,
-    [messageId]
+    [messageId, companyId]
   );
   return result.rows[0];
+};
+
+/**
+ * Mark messages as read for a company (optionally up to a message ID)
+ */
+const markMessagesRead = async (roomId, companyId, { messageId } = {}) => {
+  const params = [roomId, companyId];
+  let paramIndex = 3;
+  let clause = '';
+
+  if (messageId) {
+    clause = ` AND m.id <= $${paramIndex}`;
+    params.push(messageId);
+    paramIndex++;
+  }
+
+  const result = await pool.query(
+    `
+        INSERT INTO chat_message_reads (message_id, company_id, read_at)
+        SELECT m.id, $2, NOW()
+        FROM chat_messages m
+        JOIN users u ON m.sender_user_id = u.id
+        JOIN companies c ON u.id = c.agent_id
+        WHERE m.room_id = $1
+          AND c.id <> $2
+          ${clause}
+        ON CONFLICT (message_id, company_id)
+        DO UPDATE SET read_at = EXCLUDED.read_at
+        RETURNING message_id, read_at
+        `,
+    params
+  );
+
+  return result.rows;
+};
+
+/**
+ * Count unread messages for a room and company
+ */
+const countUnreadMessagesByRoomId = async (roomId, companyId) => {
+  const result = await pool.query(
+    `
+        SELECT COUNT(*) AS total
+        FROM chat_messages m
+        JOIN users u ON m.sender_user_id = u.id
+        JOIN companies c ON u.id = c.agent_id
+        LEFT JOIN chat_message_reads mr
+          ON mr.message_id = m.id AND mr.company_id = $2
+        WHERE m.room_id = $1
+          AND c.id <> $2
+          AND mr.message_id IS NULL
+        `,
+    [roomId, companyId]
+  );
+  return parseInt(result.rows[0].total, 10);
 };
 
 module.exports = {
   // Room operations
   findOrCreateRoom,
   findRoomById,
+  findRoomByIdForCompany,
   findRoomsByCompanyId,
+  findActiveRoomIdsByCompanyId,
   updateRoomStatus,
   isRoomParticipant,
   // Message operations
   createMessage,
-  findMessagesByRoomId,
+  findMessagesByRoomIdForCompany,
   countMessagesByRoomId,
-  findMessageById,
+  findMessageByIdForCompany,
+  markMessagesRead,
+  countUnreadMessagesByRoomId,
 };

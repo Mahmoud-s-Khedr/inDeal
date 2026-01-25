@@ -28,7 +28,12 @@ async function run() {
       process.env.DB_NAME || 'NOT SET'
     );
 
-    const migrationPath = path.resolve(__dirname, '../AI_DOCS/migrations/pending_ui_gaps.sql');
+    const cliMigration = process.argv[2];
+    const envMigration = process.env.MIGRATION_FILE;
+    const migrationPath = path.resolve(
+      __dirname,
+      cliMigration || envMigration || '../AI_DOCS/migrations/pending_ui_gaps.sql'
+    );
     console.log(`Loading migration from: ${migrationPath}`);
 
     if (!fs.existsSync(migrationPath)) {

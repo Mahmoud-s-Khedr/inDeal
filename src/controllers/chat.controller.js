@@ -45,25 +45,23 @@ const archiveRoom = catchAsync(async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 
 const sendMessage = catchAsync(async (req, res) => {
-  const message = await chatService.sendMessage(
-    req.params.roomId,
-    req.user.id,
-    getCompanyId(req),
-    {
-      messageText: req.body.messageText,
-      attachmentFileId: req.body.attachmentFileId,
-    }
-  );
+  const message = await chatService.sendMessage(req.params.roomId, req.user.id, getCompanyId(req), {
+    messageText: req.body.messageText,
+    attachmentFileId: req.body.attachmentFileId,
+  });
   sendResponse(res, 201, message, 'Message sent');
 });
 
 const getMessages = catchAsync(async (req, res) => {
-  const result = await chatService.getRoomMessages(
-    req.params.roomId,
-    getCompanyId(req),
-    req.query
-  );
+  const result = await chatService.getRoomMessages(req.params.roomId, getCompanyId(req), req.query);
   sendResponse(res, 200, result, 'Messages fetched');
+});
+
+const markRead = catchAsync(async (req, res) => {
+  const result = await chatService.markRoomRead(req.params.roomId, getCompanyId(req), {
+    messageId: req.body?.messageId,
+  });
+  sendResponse(res, 200, result, 'Messages marked as read');
 });
 
 module.exports = {
@@ -73,4 +71,5 @@ module.exports = {
   archiveRoom,
   sendMessage,
   getMessages,
+  markRead,
 };

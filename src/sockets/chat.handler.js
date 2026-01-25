@@ -1,12 +1,67 @@
 const logger = require('../utils/logger');
 const { verifyToken } = require('../utils/jwt');
 const companyRepository = require('../repositories/company.repository');
-const chatRepository = require('../repositories/chat.repository');
+const chatService = require('../services/chat.service');
+const supportChatRepository = require('../repositories/supportChat.repository');
+const redis = require('../config/redis');
 
-// Store for online users: socketId -> { userId, companyId }
-const onlineUsers = new Map();
-// Store for room subscriptions: roomId -> Set<socketId>
-const roomSubscriptions = new Map();
+// Valkey keys for socket presence and room membership
+const ONLINE_SOCKETS_KEY = 'chat:online:sockets';
+const SOCKET_META_KEY = (socketId) => `chat:socket:${socketId}:meta`;
+const SOCKET_ROOMS_KEY = (socketId) => `chat:socket:${socketId}:rooms`;
+const ROOM_SOCKETS_KEY = (roomId) => `chat:room:${roomId}:sockets`;
+
+// Presence TTL to avoid stale sockets on abrupt disconnects
+const SOCKET_TTL_SECONDS = 24 * 60 * 60;
+
+const nowEpochSeconds = () => Math.floor(Date.now() / 1000);
+
+const trackOnlineSocket = async (socketId, userId, companyId) => {
+  const expiresAt = nowEpochSeconds() + SOCKET_TTL_SECONDS;
+  const pipeline = redis.pipeline();
+  pipeline.zadd(ONLINE_SOCKETS_KEY, expiresAt, socketId);
+  pipeline.hset(SOCKET_META_KEY(socketId), {
+    userId: String(userId),
+    companyId: companyId ? String(companyId) : '',
+  });
+  pipeline.expire(SOCKET_META_KEY(socketId), SOCKET_TTL_SECONDS);
+  pipeline.expire(SOCKET_ROOMS_KEY(socketId), SOCKET_TTL_SECONDS);
+  await pipeline.exec();
+};
+
+const trackRoomJoin = async (socketId, roomId) => {
+  const expiresAt = nowEpochSeconds() + SOCKET_TTL_SECONDS;
+  const pipeline = redis.pipeline();
+  pipeline.zadd(ROOM_SOCKETS_KEY(roomId), expiresAt, socketId);
+  pipeline.sadd(SOCKET_ROOMS_KEY(socketId), String(roomId));
+  pipeline.expire(SOCKET_ROOMS_KEY(socketId), SOCKET_TTL_SECONDS);
+  await pipeline.exec();
+};
+
+const trackRoomLeave = async (socketId, roomId) => {
+  const pipeline = redis.pipeline();
+  pipeline.zrem(ROOM_SOCKETS_KEY(roomId), socketId);
+  pipeline.srem(SOCKET_ROOMS_KEY(socketId), String(roomId));
+  await pipeline.exec();
+};
+
+const cleanupSocketPresence = async (socketId) => {
+  try {
+    const roomIds = await redis.smembers(SOCKET_ROOMS_KEY(socketId));
+    const pipeline = redis.pipeline();
+    pipeline.zrem(ONLINE_SOCKETS_KEY, socketId);
+    pipeline.del(SOCKET_META_KEY(socketId));
+    pipeline.del(SOCKET_ROOMS_KEY(socketId));
+
+    if (roomIds?.length) {
+      roomIds.forEach((roomId) => pipeline.zrem(ROOM_SOCKETS_KEY(roomId), socketId));
+    }
+
+    await pipeline.exec();
+  } catch (error) {
+    logger.error({ err: error, socketId }, 'Failed to cleanup socket presence');
+  }
+};
 
 /**
  * Authenticate socket connection using JWT from handshake
@@ -21,15 +76,15 @@ const authenticateSocket = async (socket, next) => {
       return next(new Error('Authentication required'));
     }
 
-    const decoded = verifyToken(token);
+    const decoded = await verifyToken(token); // ✅ await promise
     if (!decoded) {
-      return next(new Error('Invalid token'));
+      return next(new Error('Authentication failed'));
     }
 
-    // Attach user info to socket
     const company = await companyRepository.findByAgentId(decoded.id);
     socket.userId = decoded.id;
     socket.companyId = company?.id;
+    socket.company = company ? { id: company.id, name: company.name, logo: company.logo } : null;
     socket.user = decoded;
 
     next();
@@ -43,133 +98,129 @@ const authenticateSocket = async (socket, next) => {
  * Register chat socket handlers
  */
 const registerChatHandlers = (io, socket) => {
-  const { userId, companyId } = socket;
+  const { userId, companyId, company } = socket;
 
   // Track online user
-  onlineUsers.set(socket.id, { userId, companyId });
+  trackOnlineSocket(socket.id, userId, companyId).catch((error) =>
+    logger.error({ err: error, socketId: socket.id }, 'Failed to track online socket')
+  );
+
+  // Join user-specific and company-specific rooms for notifications
   socket.join(`user:${userId}`);
-  logger.debug({ socketId: socket.id, userId, companyId }, 'User connected to chat');
+  if (companyId) {
+    socket.join(`company:${companyId}`);
+  }
 
-  /**
-   * Join a chat room
-   * @event chat:join
-   * @param {Object} data - { roomId: number }
-   */
-  socket.on('chat:join', async (data) => {
+  // Auto-join all channels on connect (B2B rooms + active support room)
+  const autoJoinAllChannels = async () => {
+    const result = {
+      b2bRoomIds: [],
+      supportRoomId: null,
+      error: null,
+    };
+
     try {
-      const { roomId } = data;
-
-      // Verify user is participant in room
-      const isParticipant = await chatRepository.isRoomParticipant(roomId, companyId);
-      if (!isParticipant) {
-        socket.emit('chat:error', { message: 'Unauthorized to join this room' });
-        return;
+      // 1. Auto-join all active B2B chat rooms
+      if (companyId) {
+        const b2bRoomIds = await chatService.getActiveRoomIds(companyId);
+        for (const roomId of b2bRoomIds) {
+          socket.join(`room:${roomId}`);
+          await trackRoomJoin(socket.id, roomId);
+        }
+        result.b2bRoomIds = b2bRoomIds;
       }
 
-      const roomName = `room:${roomId}`;
-      socket.join(roomName);
-
-      // Track room subscription
-      if (!roomSubscriptions.has(roomId)) {
-        roomSubscriptions.set(roomId, new Set());
+      // 2. Auto-join active support chat room (if any)
+      const supportRoom = await supportChatRepository.findActiveRoomByUserId(userId);
+      if (supportRoom) {
+        socket.join(`support:room:${supportRoom.id}`);
+        result.supportRoomId = supportRoom.id;
       }
-      roomSubscriptions.get(roomId).add(socket.id);
 
-      socket.emit('chat:joined', { roomId });
-      logger.debug({ socketId: socket.id, roomId }, 'User joined room');
+      socket.emit('chat:ready', result);
+      logger.debug(
+        {
+          socketId: socket.id,
+          userId,
+          companyId,
+          b2bRoomCount: result.b2bRoomIds.length,
+          supportRoomId: result.supportRoomId,
+        },
+        'User auto-joined all channels'
+      );
     } catch (error) {
-      logger.error({ err: error, event: 'chat:join' }, 'Error joining room');
-      socket.emit('chat:error', { message: 'Failed to join room' });
+      logger.error({ err: error, socketId: socket.id }, 'Failed to auto-join channels');
+      result.error = 'Failed to load channels';
+      socket.emit('chat:ready', result);
     }
-  });
+  };
 
-  /**
-   * Leave a chat room
-   * @event chat:leave
-   * @param {Object} data - { roomId: number }
-   */
-  socket.on('chat:leave', (data) => {
-    const { roomId } = data;
-    const roomName = `room:${roomId}`;
-    socket.leave(roomName);
-
-    if (roomSubscriptions.has(roomId)) {
-      roomSubscriptions.get(roomId).delete(socket.id);
-    }
-
-    socket.emit('chat:left', { roomId });
-    logger.debug({ socketId: socket.id, roomId }, 'User left room');
-  });
+  autoJoinAllChannels();
 
   /**
    * Send a message
    * @event chat:message
    * @param {Object} data - { roomId: number, text?: string, attachmentFileId?: number }
+   * Client usage: emit after optional upload; use `text` or `messageText` and/or `attachmentFileId`.
+   * Server behavior: persists message and broadcasts `chat:message` to the room.
    */
   socket.on('chat:message', async (data) => {
     try {
-      const { roomId, text, attachmentFileId } = data;
+      const { roomId, text, messageText, attachmentFileId } = data || {};
 
-      // Validate: must have text or attachment
-      const hasText = text && typeof text === 'string' && text.trim().length > 0;
-      const hasAttachment = attachmentFileId && Number.isInteger(attachmentFileId);
-
-      if (!hasText && !hasAttachment) {
-        socket.emit('chat:error', { message: 'Message must have text or attachment' });
-        return;
-      }
-
-      if (hasText && text.length > 5000) {
-        socket.emit('chat:error', { message: 'Message too long (max 5000 chars)' });
-        return;
-      }
-
-      // Verify user is participant
-      const isParticipant = await chatRepository.isRoomParticipant(roomId, companyId);
-      if (!isParticipant) {
-        socket.emit('chat:error', { message: 'Unauthorized to message this room' });
-        return;
-      }
-
-      // Save message to database
-      const message = await chatRepository.createMessage(null, {
-        roomId,
-        senderUserId: userId,
-        messageText: hasText ? text.trim() : null,
-        attachmentFileId: hasAttachment ? attachmentFileId : null,
+      const messagePayload = await chatService.sendMessage(roomId, userId, companyId, {
+        messageText: messageText ?? text,
+        attachmentFileId,
       });
-
-      // Fetch full message with sender info and attachment
-      const fullMessage = await chatRepository.findMessageById(message.id);
-
-      const messagePayload = {
-        id: fullMessage.id,
-        roomId: fullMessage.room_id,
-        senderUserId: fullMessage.sender_user_id,
-        messageText: fullMessage.message_text,
-        sentAt: fullMessage.sent_at,
-        senderFirstName: fullMessage.sender_first_name,
-        senderLastName: fullMessage.sender_last_name,
-        attachment: fullMessage.attachment_file_id
-          ? {
-            id: fullMessage.attachment_file_id,
-            fileName: fullMessage.attachment_file_name,
-            filePath: fullMessage.attachment_file_path,
-          }
-          : null,
-      };
 
       // Broadcast to all users in the room (including sender for confirmation)
       const roomName = `room:${roomId}`;
       io.to(roomName).emit('chat:message', messagePayload);
 
       logger.debug(
-        { socketId: socket.id, roomId, messageId: message.id, hasAttachment },
+        {
+          socketId: socket.id,
+          roomId,
+          messageId: messagePayload.id,
+          hasAttachment: !!messagePayload.attachment,
+        },
         'Message sent'
       );
     } catch (error) {
       logger.error({ err: error, event: 'chat:message' }, 'Error sending message');
-      socket.emit('chat:error', { message: 'Failed to send message' });
+      socket.emit('chat:error', {
+        message: error.message || 'Failed to send message',
+        code: error.statusCode || 500,
+      });
+    }
+  });
+
+  /**
+   * Mark messages as read
+   * @event chat:read
+   * @param {Object} data - { roomId: number, messageId?: number }
+   * Client usage: emit when opening the room or after reading messages.
+   * Server behavior: updates read receipts and broadcasts `chat:read` with `unreadCount`.
+   */
+  socket.on('chat:read', async (data) => {
+    try {
+      const { roomId, messageId } = data || {};
+      const readResult = await chatService.markRoomRead(roomId, companyId, { messageId });
+
+      const roomName = `room:${roomId}`;
+      io.to(roomName).emit('chat:read', {
+        roomId: readResult.roomId,
+        companyId,
+        company,
+        messageId: readResult.messageId,
+        unreadCount: readResult.unreadCount,
+      });
+    } catch (error) {
+      logger.error({ err: error, event: 'chat:read' }, 'Error marking messages read');
+      socket.emit('chat:error', {
+        message: error.message || 'Failed to mark messages read',
+        code: error.statusCode || 500,
+      });
     }
   });
 
@@ -177,6 +228,8 @@ const registerChatHandlers = (io, socket) => {
    * Typing indicator
    * @event chat:typing
    * @param {Object} data - { roomId: number, isTyping: boolean }
+   * Client usage: emit on input start/stop (debounced) to reduce event volume.
+   * Server behavior: broadcasts to other participants in the room.
    */
   socket.on('chat:typing', (data) => {
     const { roomId, isTyping } = data;
@@ -187,6 +240,7 @@ const registerChatHandlers = (io, socket) => {
       roomId,
       userId,
       companyId,
+      company,
       isTyping,
     });
   });
@@ -195,15 +249,7 @@ const registerChatHandlers = (io, socket) => {
    * Handle disconnect
    */
   socket.on('disconnect', () => {
-    onlineUsers.delete(socket.id);
-
-    // Clean up room subscriptions
-    for (const [roomId, sockets] of roomSubscriptions) {
-      sockets.delete(socket.id);
-      if (sockets.size === 0) {
-        roomSubscriptions.delete(roomId);
-      }
-    }
+    cleanupSocketPresence(socket.id);
 
     logger.debug({ socketId: socket.id, userId }, 'User disconnected from chat');
   });
@@ -233,15 +279,24 @@ const initializeChatSockets = (io) => {
 /**
  * Get online users count (utility for admin/stats)
  */
-const getOnlineUsersCount = () => onlineUsers.size;
+const getOnlineUsersCount = async () => {
+  const now = nowEpochSeconds();
+  await redis.zremrangebyscore(ONLINE_SOCKETS_KEY, 0, now);
+  return redis.zcard(ONLINE_SOCKETS_KEY);
+};
 
 /**
  * Get users in a room (utility)
  */
-const getRoomParticipantCount = (roomId) => roomSubscriptions.get(roomId)?.size || 0;
+const getRoomParticipantCount = async (roomId) => {
+  const now = nowEpochSeconds();
+  await redis.zremrangebyscore(ROOM_SOCKETS_KEY(roomId), 0, now);
+  return redis.zcard(ROOM_SOCKETS_KEY(roomId));
+};
 
 module.exports = {
   initializeChatSockets,
   getOnlineUsersCount,
   getRoomParticipantCount,
+  trackRoomJoin,
 };

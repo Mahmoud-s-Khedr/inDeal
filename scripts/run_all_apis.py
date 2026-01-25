@@ -17,6 +17,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "scripts", "output")
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "all_api_results.json")
 
+print(f"Project root: {PROJECT_ROOT}")
 
 def load_env_file(path):
     if not os.path.exists(path):
@@ -122,14 +123,29 @@ def now_iso():
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+# Global counter for logging
+_call_counter = 0
+
+
 def call_api(results, role, method, base_url, path, token=None, params=None, body=None):
+    global _call_counter
+    _call_counter += 1
     url = base_url + path
     if params:
         url += "?" + parse.urlencode(params, doseq=True)
+    
+    # Log the call
+    print(f"[{_call_counter:04d}] {role:<20} {method:<6} {path}")
+    
     headers = {"Accept": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     resp = request_json(method, url, headers=headers, body=body)
+    
+    # Log result
+    status_icon = "✓" if resp["ok"] else "✗"
+    print(f"       {status_icon} {resp['status']} ({resp['durationMs']}ms)")
+    
     results.append(
         {
             "timestamp": now_iso(),
@@ -231,8 +247,13 @@ def status_family(status_code):
 
 
 def main():
+    print("=" * 60)
+    print("inDeal API Test Runner")
+    print("=" * 60)
+    
     env = load_env()
     base_url = env.get("API_BASE_URL", "http://localhost:3000/api/v1").rstrip("/")
+    print(f"Base URL: {base_url}")
 
     admin_email = env.get("SEED_ADMIN_EMAIL", "admin@indeal.local")
     admin_password = env.get("SEED_ADMIN_PASSWORD", "Password123!")
@@ -244,6 +265,9 @@ def main():
 
     results = []
 
+    print("\n" + "-" * 60)
+    print("PHASE 1: Admin Login")
+    print("-" * 60)
     # Login admin early to resolve agent emails if needed.
     admin_resp = call_api(
         results,
@@ -423,6 +447,7 @@ def main():
             ("PATCH", "/chats/1/archive"),
             ("GET", "/chats/1/messages"),
             ("POST", "/chats/1/messages"),
+            ("POST", "/chats/1/read"),
             ("GET", "/ads/me"),
             ("POST", "/ads"),
             ("GET", "/ads/1"),
@@ -487,13 +512,20 @@ def main():
         for method, path in protected_paths:
             call_api(results, role, method, base_url, path)
 
+    print("\n" + "-" * 60)
+    print("PHASE 2: Agent Logins")
+    print("-" * 60)
     # Login agents
     agent_contexts = []
     for email in agents:
         ctx = login_with_fallback(results, base_url, email, agent_password)
         if ctx.get("token"):
             agent_contexts.append(ctx)
+    print(f"Logged in {len(agent_contexts)} agents")
 
+    print("\n" + "-" * 60)
+    print("PHASE 3: Fetch Agent Companies")
+    print("-" * 60)
     # Fetch each agent's company
     for ctx in agent_contexts:
         resp = call_api(results, f"agent:{ctx['email']}", "GET", base_url, "/companies/me", token=ctx["token"])
@@ -505,6 +537,9 @@ def main():
         if isinstance(user_data, dict) and "id" in user_data:
             ctx["user_id"] = user_data.get("id")
 
+    print("\n" + "-" * 60)
+    print("PHASE 4: Create Deals")
+    print("-" * 60)
     # Pre-create a deal per agent
     for ctx in agent_contexts:
         resp = call_api(
@@ -603,8 +638,12 @@ def main():
         if requester and item.get("request_id"):
             requester["withdraw_request_id"] = item["request_id"]
 
+    print("\n" + "-" * 60)
+    print("PHASE 5: Main Agent Flow")
+    print("-" * 60)
     # Main agent flow
     for idx, ctx in enumerate(agent_contexts):
+        print(f"\n  Agent {idx + 1}/{len(agent_contexts)}: {ctx['email']}")
         role = f"agent:{ctx['email']}"
         token = ctx["token"]
 
@@ -863,6 +902,15 @@ def main():
             body={"messageText": "Hello from API runner"},
         )
         call_api(results, role, "GET", base_url, f"/chats/{ctx['room_id']}/messages", token=token)
+        call_api(
+            results,
+            role,
+            "POST",
+            base_url,
+            f"/chats/{ctx['room_id']}/read",
+            token=token,
+            body={"messageId": None},  # Mark all as read
+        )
         call_api(results, role, "PATCH", base_url, f"/chats/{ctx['room_id']}/archive", token=token)
 
         # Ads
@@ -1005,6 +1053,9 @@ def main():
             body={"token": f"agent-device-{ctx['email']}"},
         )
 
+    print("\n" + "-" * 60)
+    print("PHASE 6: Admin Endpoints")
+    print("-" * 60)
     # Admin calls
     admin_role = "admin"
     admin_ctx = agent_contexts[0] if agent_contexts else {}
@@ -1264,9 +1315,15 @@ def main():
         token=admin_token,
     )
 
+    print("\n" + "-" * 60)
+    print("PHASE 7: Unknown User (Public + Auth Tests)")
+    print("-" * 60)
     # Final: unknown user run
     call_unknown()
 
+    print("\n" + "-" * 60)
+    print("SAVING RESULTS")
+    print("-" * 60)
     ensure_output_dir()
     with open(OUTPUT_FILE, "w", encoding="utf-8") as fh:
         json.dump({"generatedAt": now_iso(), "results": results}, fh, ensure_ascii=False, indent=2)
@@ -1281,7 +1338,9 @@ def main():
         with open(family_path, "w", encoding="utf-8") as fh:
             json.dump({"generatedAt": now_iso(), "results": items}, fh, ensure_ascii=False, indent=2)
 
-    print(f"Saved {len(results)} responses to {OUTPUT_FILE}")
+    print("\n" + "=" * 60)
+    print(f"COMPLETE: Saved {len(results)} responses to {OUTPUT_FILE}")
+    print("=" * 60)
 
 
 if __name__ == "__main__":

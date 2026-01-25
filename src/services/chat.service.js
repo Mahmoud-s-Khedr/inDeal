@@ -2,6 +2,7 @@ const AppError = require('../utils/AppError');
 const chatRepository = require('../repositories/chat.repository');
 const companyRepository = require('../repositories/company.repository');
 const fileRepository = require('../repositories/file.repository');
+const socketService = require('./socket.service');
 const logger = require('../utils/logger');
 const { publicUrl } = require('../config/storage');
 
@@ -12,36 +13,27 @@ const { publicUrl } = require('../config/storage');
 const sanitizeRoom = (room, myCompanyId = null) => {
   if (!room) return null;
 
-  // Determine the "other" company for this user
-  let otherCompanyId, otherCompanyName, otherCompanyLogo;
+  // Determine the "other" company for this user (the one they're chatting with)
+  let otherCompany = null;
   if (myCompanyId) {
-    if (room.company_a_id === myCompanyId) {
-      otherCompanyId = room.company_b_id;
-      otherCompanyName = room.company_b_name;
-      otherCompanyLogo = room.company_b_logo;
-    } else {
-      otherCompanyId = room.company_a_id;
-      otherCompanyName = room.company_a_name;
-      otherCompanyLogo = room.company_a_logo;
-    }
+    const isCompanyA = room.company_a_id === myCompanyId;
+    otherCompany = {
+      id: isCompanyA ? room.company_b_id : room.company_a_id,
+      name: isCompanyA ? room.company_b_name : room.company_a_name,
+      logo: isCompanyA ? room.company_b_logo : room.company_a_logo,
+    };
   }
 
   return {
     id: room.id,
     companyAId: room.company_a_id,
     companyBId: room.company_b_id,
-    companyAName: room.company_a_name,
-    companyBName: room.company_b_name,
-    companyALogo: room.company_a_logo,
-    companyBLogo: room.company_b_logo,
+    otherCompany,
     status: room.status,
     createdAt: room.created_at,
     lastMessage: room.last_message,
     lastMessageAt: room.last_message_at,
-    // Convenience fields for UI
-    otherCompanyId,
-    otherCompanyName,
-    otherCompanyLogo,
+    unreadCount: room.unread_count !== undefined ? Number(room.unread_count) : 0,
   };
 };
 
@@ -59,27 +51,64 @@ const sanitizeMessage = (message) => {
     attachment = {
       id: message.attachment_file_id,
       fileName: message.attachment_file_name,
-      filePath: message.attachment_file_path,
       publicUrl: buildPublicUrl(message.attachment_file_path),
-      mimeType: message.attachment_file_metadata?.mimeType,
-      size: message.attachment_file_metadata?.size,
+      mimeType: message.attachment_file_metadata?.mimeType || null,
+      size: message.attachment_file_metadata?.size || null,
     };
   }
 
   return {
     id: message.id,
     roomId: message.room_id,
-    senderUserId: message.sender_user_id,
     messageText: message.message_text,
     sentAt: message.sent_at,
+    readAt: message.read_at || null,
+    isRead: !!message.read_at,
     attachment,
-    // Joined sender info
-    senderFirstName: message.sender_first_name,
-    senderLastName: message.sender_last_name,
-    senderProfileImage: message.sender_profile_image,
-    senderCompanyId: message.sender_company_id,
-    senderCompanyName: message.sender_company_name,
+    agent: {
+      id: message.sender_user_id,
+      firstName: message.sender_first_name,
+      lastName: message.sender_last_name,
+      profileImage: message.sender_profile_image,
+    },
+    company: {
+      id: message.sender_company_id,
+      name: message.sender_company_name,
+      logo: message.sender_company_logo,
+    },
   };
+};
+
+const normalizeMessageText = (messageText) => {
+  if (typeof messageText !== 'string') return null;
+  const trimmed = messageText.trim();
+  return trimmed.length ? trimmed : null;
+};
+
+const normalizeAttachmentId = (attachmentFileId) => {
+  if (attachmentFileId === null || attachmentFileId === undefined) return null;
+  const parsed = Number(attachmentFileId);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new AppError('Invalid attachmentFileId', 400);
+  }
+  return parsed;
+};
+
+const ensureRoomActive = async (roomId, companyId) => {
+  const room = await chatRepository.findRoomById(roomId);
+  if (!room) {
+    throw new AppError('Chat room not found', 404);
+  }
+
+  if (room.company_a_id !== companyId && room.company_b_id !== companyId) {
+    throw new AppError('Unauthorized to access this chat room', 403);
+  }
+
+  if (room.status !== 'active') {
+    throw new AppError('Chat room is not active', 400);
+  }
+
+  return room;
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -114,10 +143,17 @@ const createOrGetRoom = async (myCompanyId, targetCompanyId) => {
       roomId: room.id,
       companies: [myCompanyId, targetCompanyId],
     });
+
+    // Notify both companies about the new room so they auto-subscribe
+    socketService.notifyRoomCreated({
+      id: room.id,
+      company_a_id: myCompanyId,
+      company_b_id: targetCompanyId,
+    });
   }
 
   // Fetch full room details with company names
-  const fullRoom = await chatRepository.findRoomById(room.id);
+  const fullRoom = await chatRepository.findRoomByIdForCompany(room.id, myCompanyId);
   return { room: sanitizeRoom(fullRoom, myCompanyId), created };
 };
 
@@ -125,7 +161,7 @@ const createOrGetRoom = async (myCompanyId, targetCompanyId) => {
  * Get a room by ID (with authorization check)
  */
 const getRoomById = async (roomId, companyId) => {
-  const room = await chatRepository.findRoomById(roomId);
+  const room = await chatRepository.findRoomByIdForCompany(roomId, companyId);
   if (!room) {
     throw new AppError('Chat room not found', 404);
   }
@@ -171,25 +207,31 @@ const archiveRoom = async (roomId, companyId) => {
  * Send a message to a room (REST fallback)
  */
 const sendMessage = async (roomId, userId, companyId, { messageText, attachmentFileId }) => {
-  // Verify room and authorization
-  const isParticipant = await chatRepository.isRoomParticipant(roomId, companyId);
-  if (!isParticipant) {
-    throw new AppError('Unauthorized to send message to this room', 403);
-  }
+  await ensureRoomActive(roomId, companyId);
+
+  const normalizedText = normalizeMessageText(messageText);
+  const normalizedAttachmentId = normalizeAttachmentId(attachmentFileId);
 
   // Validate that at least one of text or attachment is provided
-  if (!messageText && !attachmentFileId) {
+  if (!normalizedText && !normalizedAttachmentId) {
     throw new AppError('Message must have text or attachment', 400);
   }
 
+  if (normalizedText && normalizedText.length > 5000) {
+    throw new AppError('Message too long (max 5000 chars)', 400);
+  }
+
   // Verify file ownership if attachment provided
-  if (attachmentFileId) {
-    const file = await fileRepository.findById(attachmentFileId);
+  if (normalizedAttachmentId) {
+    const file = await fileRepository.findById(normalizedAttachmentId);
     if (!file) {
       throw new AppError('Attachment file not found', 404);
     }
+    if (file.deletedAt) {
+      throw new AppError('Attachment file not available', 400);
+    }
     // Optionally verify uploader matches user
-    if (file.file_metadata?.uploaderId && file.file_metadata.uploaderId !== String(userId)) {
+    if (file.fileMetadata?.uploaderId && file.fileMetadata.uploaderId !== String(userId)) {
       throw new AppError('Unauthorized to use this file', 403);
     }
   }
@@ -197,19 +239,19 @@ const sendMessage = async (roomId, userId, companyId, { messageText, attachmentF
   const message = await chatRepository.createMessage(null, {
     roomId,
     senderUserId: userId,
-    messageText,
-    attachmentFileId,
+    messageText: normalizedText,
+    attachmentFileId: normalizedAttachmentId,
   });
 
   logger.info('Message sent', {
     messageId: message.id,
     roomId,
     userId,
-    hasAttachment: !!attachmentFileId,
+    hasAttachment: !!normalizedAttachmentId,
   });
 
   // Fetch full message with sender info
-  const fullMessage = await chatRepository.findMessageById(message.id);
+  const fullMessage = await chatRepository.findMessageByIdForCompany(message.id, companyId);
   return sanitizeMessage(fullMessage);
 };
 
@@ -223,20 +265,96 @@ const getRoomMessages = async (roomId, companyId, filters = {}) => {
     throw new AppError('Unauthorized to view messages in this room', 403);
   }
 
+  const useCursor = !!(filters.before || filters.after);
+  if (filters.before && filters.after) {
+    throw new AppError('Use either before or after cursor, not both', 400);
+  }
+
+  const normalizedFilters = {
+    ...filters,
+    offset: useCursor ? 0 : filters.offset || 0,
+  };
+
   const [messages, total] = await Promise.all([
-    chatRepository.findMessagesByRoomId(roomId, filters),
+    chatRepository.findMessagesByRoomIdForCompany(roomId, companyId, normalizedFilters),
     chatRepository.countMessagesByRoomId(roomId),
   ]);
+
+  const lastMessage = messages[messages.length - 1];
+  const nextCursor = useCursor && lastMessage ? lastMessage.id : null;
+  const hasMore = useCursor
+    ? messages.length === (normalizedFilters.limit || 50)
+    : (normalizedFilters.offset || 0) + messages.length < total;
 
   return {
     messages: messages.map(sanitizeMessage),
     pagination: {
+      mode: useCursor ? 'cursor' : 'offset',
       total,
-      limit: filters.limit || 50,
-      offset: filters.offset || 0,
-      hasMore: (filters.offset || 0) + messages.length < total,
+      limit: normalizedFilters.limit || 50,
+      offset: normalizedFilters.offset || 0,
+      hasMore,
+      nextCursor,
     },
   };
+};
+
+/**
+ * Join a chat room (validates room exists, user is participant, and room is active)
+ * Used by socket handlers for the chat:join event
+ */
+const joinRoom = async (roomId, companyId) => {
+  const room = await chatRepository.findRoomById(roomId);
+  if (!room) {
+    throw new AppError('Chat room not found', 404);
+  }
+
+  // Verify user is participant in room
+  if (room.company_a_id !== companyId && room.company_b_id !== companyId) {
+    throw new AppError('Unauthorized to join this room', 403);
+  }
+
+  if (room.status !== 'active') {
+    throw new AppError('Chat room is not active', 400);
+  }
+
+  return { roomId: room.id, status: room.status };
+};
+
+/**
+ * Mark messages in a room as read for a company
+ */
+const markRoomRead = async (roomId, companyId, { messageId } = {}) => {
+  // Verify room exists and participant
+  const isParticipant = await chatRepository.isRoomParticipant(roomId, companyId);
+  if (!isParticipant) {
+    throw new AppError('Unauthorized to access this chat room', 403);
+  }
+
+  const normalizedMessageId = messageId ? Number(messageId) : null;
+  if (normalizedMessageId && (!Number.isInteger(normalizedMessageId) || normalizedMessageId <= 0)) {
+    throw new AppError('Invalid messageId', 400);
+  }
+
+  const readRows = await chatRepository.markMessagesRead(roomId, companyId, {
+    messageId: normalizedMessageId,
+  });
+
+  const unreadCount = await chatRepository.countUnreadMessagesByRoomId(roomId, companyId);
+
+  return {
+    roomId: Number(roomId),
+    messageId: normalizedMessageId || null,
+    readCount: readRows.length,
+    unreadCount,
+  };
+};
+
+/**
+ * Get all active room IDs for a company (for socket auto-join)
+ */
+const getActiveRoomIds = async (companyId) => {
+  return chatRepository.findActiveRoomIdsByCompanyId(companyId);
 };
 
 module.exports = {
@@ -244,6 +362,10 @@ module.exports = {
   getRoomById,
   getMyRooms,
   archiveRoom,
+  joinRoom,
+  getActiveRoomIds,
   sendMessage,
   getRoomMessages,
+  markRoomRead,
+  sanitizeMessage,
 };

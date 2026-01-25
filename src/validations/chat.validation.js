@@ -61,11 +61,27 @@ const listMessagesSchema = z.object({
   params: z.object({
     roomId: z.coerce.number().int().positive(),
   }),
-  query: z.object({
-    limit: z.coerce.number().int().min(1).max(100).default(50),
-    offset: z.coerce.number().int().min(0).default(0),
-    before: z.coerce.number().int().positive().optional(), // cursor: message ID
-    after: z.coerce.number().int().positive().optional(),
+  query: z
+    .object({
+      limit: z.coerce.number().int().min(1).max(100).default(50),
+      offset: z.coerce.number().int().min(0).default(0),
+      before: z.coerce.number().int().positive().optional(), // cursor: message ID
+      after: z.coerce.number().int().positive().optional(),
+    })
+    .refine((data) => !(data.before && data.after), {
+      message: 'Use either before or after cursor, not both',
+    })
+    .refine((data) => !(data.before || data.after) || data.offset === 0, {
+      message: 'Offset must be 0 when using cursor pagination',
+    }),
+});
+
+const markReadSchema = z.object({
+  params: z.object({
+    roomId: z.coerce.number().int().positive(),
+  }),
+  body: z.object({
+    messageId: z.coerce.number().int().positive().optional(),
   }),
 });
 
@@ -77,4 +93,5 @@ module.exports = {
   updateRoomStatusSchema,
   sendMessageSchema,
   listMessagesSchema,
+  markReadSchema,
 };
