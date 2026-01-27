@@ -1,4 +1,9 @@
 const { pool } = require('../config/db');
+const AppError = require('../utils/AppError');
+const galleryRepository = require('./companyGallery.repository');
+const reviewRepository = require('./companyReview.repository');
+const companyDocumentRepository = require('./companyDocument.repository');
+const contributionRepository = require('./companyContribution.repository');
 
 const run = (client) => client || pool;
 
@@ -57,6 +62,31 @@ const findByAgentId = async (agentId) => {
 const findById = async (companyId) => {
   const result = await pool.query('SELECT * FROM companies WHERE id = $1 LIMIT 1', [companyId]);
   return result.rows[0];
+};
+
+const findCompanyProfileById = async (companyId) => {
+  const companyQuery = `
+    SELECT c.*, 
+           u.id as agent_id_user, u.first_name, u.last_name, u.job_title, u.username,
+           u.email as agent_email
+    FROM companies c
+    JOIN users u ON c.agent_id = u.id
+    WHERE c.id = $1
+  `;
+  const companyResult = await pool.query(companyQuery, [companyId]);
+  const company = companyResult.rows[0];
+  if (!company) {
+    throw new AppError('Company not found', 404);
+  }
+
+  const [gallery, reviews, documents, contributions] = await Promise.all([
+    galleryRepository.listByCompanyId(company.id),
+    reviewRepository.listByCompanyId(company.id),
+    companyDocumentRepository.listByCompanyId(company.id),
+    contributionRepository.listByCompanyId(company.id),
+  ]);
+
+  return { company, gallery, reviews, documents, contributions };
 };
 
 const listByStatus = async (status) => {
@@ -324,6 +354,7 @@ module.exports = {
   createCompany,
   findByAgentId,
   findById,
+  findCompanyProfileById,
   listByStatus,
   listAll,
   searchCompanies,

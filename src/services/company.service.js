@@ -41,9 +41,10 @@ const sanitizeCompany = (company) => {
 
   if (company.first_name) {
     result.agent = {
+      id: company.agent_id_user,
       firstName: company.first_name,
       lastName: company.last_name,
-      email: company.email,
+      email: company.agent_email,
       jobTitle: company.job_title,
       username: company.username,
     };
@@ -207,13 +208,8 @@ const updateMyProfile = async (agentId, payload) => {
 };
 
 const getCompanyProfile = async (companyId) => {
-  const company = await getCompanyOrThrowById(companyId);
-  const [gallery, reviews, contributions, documents] = await Promise.all([
-    galleryRepository.listByCompanyId(company.id),
-    reviewRepository.listByCompanyId(company.id),
-    contributionRepository.listByCompanyId(company.id),
-    companyDocumentRepository.listByCompanyId(company.id),
-  ]);
+  const { company, gallery, reviews, contributions, documents } =
+    await companyRepository.findCompanyProfileById(companyId);
   return enrichProfile(company, gallery, reviews, documents, contributions);
 };
 
@@ -794,8 +790,6 @@ const resendForReview = async (agentId) => {
   return { company: sanitizeCompany(updated) };
 };
 
-
-
 module.exports = {
   getMyProfile,
   updateMyProfile,
@@ -822,5 +816,4 @@ module.exports = {
   updateContributionMedia,
   deleteContributionMedia,
   reorderContributionMedia,
-
 };
