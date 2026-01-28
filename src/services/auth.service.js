@@ -14,6 +14,16 @@ const fileRepository = require('../repositories/file.repository');
 
 const fileService = require('./file.service');
 
+const getFileUrl = async (fileId) => {
+  if (!fileId) return null;
+  try {
+    const file = await fileService.getFileById(fileId);
+    return file.publicUrl;
+  } catch (err) {
+    return null;
+  }
+};
+
 const sanitizeUser = (user) => {
   if (!user) return null;
 
@@ -53,14 +63,14 @@ const sanitizeCompany = (company) => {
   };
 };
 
-const sanitizeDocument = (doc) => {
+const sanitizeDocument = (doc, fileUrl = null) => {
   if (!doc) return null;
 
   return {
     id: doc.id,
     companyId: doc.company_id,
     fileId: doc.file_id,
-    docType: doc.doc_type,
+    fileUrl,
     description: doc.description,
     uploadedAt: doc.uploaded_at,
   };
@@ -396,7 +406,12 @@ const register = async (payload) => {
     const token = signToken(newUser.id);
     const companyPayload = sanitizeCompany(newCompany);
     if (createdDocuments.length) {
-      companyPayload.documents = createdDocuments.map(sanitizeDocument);
+      companyPayload.documents = await Promise.all(
+        createdDocuments.map(async (doc) => {
+          const fileUrl = await getFileUrl(doc.file_id);
+          return sanitizeDocument(doc, fileUrl);
+        })
+      );
     }
 
     dispatchVerificationEmail(newUser);
@@ -441,17 +456,11 @@ const resubmit = async (userId, payload) => {
     // Update company details if provided
     let updatedCompany = company;
     if (payload.company) {
-      updatedCompany = await companyRepository.updateCompanyById(
-        company.id,
-        payload.company
-      );
+      updatedCompany = await companyRepository.updateCompanyById(company.id, payload.company);
     }
 
     // Set status to pending
-    updatedCompany = await companyRepository.updateCompanyStatus(
-      company.id,
-      'pending'
-    );
+    updatedCompany = await companyRepository.updateCompanyStatus(company.id, 'pending');
 
     // Add new documents
     let createdDocuments = [];
@@ -471,18 +480,12 @@ const resubmit = async (userId, payload) => {
 
     const companyPayload = sanitizeCompany(updatedCompany);
     if (createdDocuments.length) {
-      // We might want to return all documents or just the new ones.
-      // For now, let's fetch all documents to return a complete state or just return what we have.
-      // The register response returns proper structure. Let's return the complete object.
-      // But fetching all docs might be extra. Let's return the new ones merged or just the company object with new docs.
-      // Typically the UI will reload the profile.
-      // Let's stick to returning the updated company object.
-      // But to be consistent with register, we can attach documents.
-      // However, we didn't fetch old documents here.
-      // Let's just return the new documents in the response or let the repository handle listing if needed.
-      // For simplicity and performance, let's return the updated company and the NEW documents.
-      // The user can refetch if they want full list.
-      companyPayload.documents = createdDocuments.map(sanitizeDocument);
+      companyPayload.documents = await Promise.all(
+        createdDocuments.map(async (doc) => {
+          const fileUrl = await getFileUrl(doc.file_id);
+          return sanitizeDocument(doc, fileUrl);
+        })
+      );
     }
 
     return {

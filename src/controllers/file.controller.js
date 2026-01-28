@@ -13,6 +13,12 @@ const createUploadUrl = catchAsync(async (req, res) => {
   sendResponse(res, 201, signedUpload, 'Signed upload URL generated');
 });
 
+const getFileById = catchAsync(async (req, res) => {
+  const file = await fileService.getFileById(req.params.id);
+  sendResponse(res, 200, file, 'File retrieved successfully');
+});
+
 module.exports = {
   createUploadUrl,
+  getFileById,
 };

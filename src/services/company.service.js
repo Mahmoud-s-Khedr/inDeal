@@ -7,12 +7,23 @@ const companyDocumentRepository = require('../repositories/companyDocument.repos
 const contributionRepository = require('../repositories/companyContribution.repository');
 const contributionMediaRepository = require('../repositories/companyContributionMedia.repository');
 const dealRequestRepository = require('../repositories/dealRequest.repository');
+const fileService = require('./file.service');
 const config = require('../config/env');
 const logger = require('../utils/logger');
 const { sendMail } = require('../config/mailer');
 const notificationService = require('./notification.service');
 const { NOTIFICATION_TYPES } = require('../constants/notificationTypes');
 const { validateCompanyCompleteness } = require('../utils/validationHelper');
+
+const getFileUrl = async (fileId) => {
+  if (!fileId) return null;
+  try {
+    const file = await fileService.getFileById(fileId);
+    return file.publicUrl;
+  } catch (err) {
+    return null;
+  }
+};
 
 const sanitizeCompany = (company) => {
   if (!company) return null;
@@ -53,10 +64,11 @@ const sanitizeCompany = (company) => {
   return result;
 };
 
-const sanitizeGalleryItem = (item) => ({
+const sanitizeGalleryItem = (item, imageUrl = null) => ({
   id: item.id,
   companyId: item.company_id,
   imageFileId: item.image_file_id,
+  imageUrl,
   description: item.description,
   uploadedAt: item.uploaded_at,
 });
@@ -72,26 +84,26 @@ const sanitizeReview = (review) => ({
   createdAt: review.created_at,
 });
 
-const sanitizeDocument = (doc) => ({
+const sanitizeDocument = (doc, fileUrl = null) => ({
   id: doc.id,
   companyId: doc.company_id,
   fileId: doc.file_id,
+  fileUrl,
   docType: doc.doc_type,
   title: doc.title,
   issuer: doc.issuer,
-  url: doc.url,
   description: doc.description,
   issueDate: doc.issue_date,
   expiryDate: doc.expiry_date,
   uploadedAt: doc.uploaded_at,
 });
 
-const sanitizeContribution = (item) => ({
+const sanitizeContribution = (item, mediaFileUrl = null) => ({
   id: item.id,
   companyId: item.company_id,
   mediaFileId: item.media_file_id,
+  mediaFileUrl,
   mediaType: item.media_type,
-  mediaUrl: item.media_url,
   type: item.type,
   title: item.title,
   description: item.description,
@@ -106,12 +118,11 @@ const sanitizeContribution = (item) => ({
   updatedAt: item.updated_at,
 });
 
-const sanitizeContributionMedia = (item) => ({
+const sanitizeContributionMedia = (item, fileUrl = null) => ({
   id: item.id,
   contributionId: item.contributionId,
   fileId: item.fileId,
-  mediaType: item.mediaType,
-  mediaUrl: item.mediaUrl,
+  fileUrl,
   sortOrder: item.sortOrder,
   caption: item.caption,
   createdAt: item.createdAt,
@@ -220,13 +231,19 @@ const addGalleryItem = async (agentId, payload) => {
     imageFileId: payload.imageFileId,
     description: payload.description,
   });
-  return sanitizeGalleryItem(item);
+  const imageUrl = await getFileUrl(item.image_file_id);
+  return sanitizeGalleryItem(item, imageUrl);
 };
 
 const listMyGallery = async (agentId) => {
   const company = await getCompanyOrThrowByAgent(agentId);
   const items = await galleryRepository.listByCompanyId(company.id);
-  return items.map(sanitizeGalleryItem);
+  return Promise.all(
+    items.map(async (item) => {
+      const imageUrl = await getFileUrl(item.image_file_id);
+      return sanitizeGalleryItem(item, imageUrl);
+    })
+  );
 };
 
 const updateMyGalleryItem = async (agentId, galleryItemId, payload) => {
@@ -249,7 +266,8 @@ const updateMyGalleryItem = async (agentId, galleryItemId, payload) => {
     description: payload.description,
   });
 
-  return sanitizeGalleryItem(updated);
+  const imageUrl = await getFileUrl(updated.image_file_id);
+  return sanitizeGalleryItem(updated, imageUrl);
 };
 
 const deleteMyGalleryItem = async (agentId, galleryItemId) => {
@@ -268,13 +286,19 @@ const deleteMyGalleryItem = async (agentId, galleryItemId) => {
   }
 
   const deleted = await galleryRepository.deleteGalleryItem(numericId);
-  return sanitizeGalleryItem(deleted);
+  const imageUrl = await getFileUrl(deleted.image_file_id);
+  return sanitizeGalleryItem(deleted, imageUrl);
 };
 
 const listGallery = async (companyId) => {
   const company = await getCompanyOrThrowById(companyId);
   const items = await galleryRepository.listByCompanyId(company.id);
-  return items.map(sanitizeGalleryItem);
+  return Promise.all(
+    items.map(async (item) => {
+      const imageUrl = await getFileUrl(item.image_file_id);
+      return sanitizeGalleryItem(item, imageUrl);
+    })
+  );
 };
 
 const listReviews = async (companyId) => {
@@ -360,7 +384,12 @@ const createReview = async (agentId, companyId, payload) => {
 const listMyDocuments = async (agentId) => {
   const company = await getCompanyOrThrowByAgent(agentId);
   const docs = await companyDocumentRepository.listByCompanyId(company.id);
-  return docs.map(sanitizeDocument);
+  return Promise.all(
+    docs.map(async (doc) => {
+      const fileUrl = await getFileUrl(doc.file_id);
+      return sanitizeDocument(doc, fileUrl);
+    })
+  );
 };
 
 const createMyDocument = async (agentId, payload) => {
@@ -376,7 +405,8 @@ const createMyDocument = async (agentId, payload) => {
     issueDate: payload.issueDate,
     expiryDate: payload.expiryDate,
   });
-  return sanitizeDocument(doc);
+  const fileUrl = await getFileUrl(doc.file_id);
+  return sanitizeDocument(doc, fileUrl);
 };
 
 const updateMyDocument = async (agentId, documentId, payload) => {
@@ -441,7 +471,8 @@ const updateMyDocument = async (agentId, documentId, payload) => {
   }
 
   const updated = await companyDocumentRepository.updateDocument(numericId, updates);
-  return sanitizeDocument(updated);
+  const fileUrl = await getFileUrl(updated.file_id);
+  return sanitizeDocument(updated, fileUrl);
 };
 
 const deleteMyDocument = async (agentId, documentId) => {
@@ -460,13 +491,19 @@ const deleteMyDocument = async (agentId, documentId) => {
   }
 
   const deleted = await companyDocumentRepository.deleteDocument(numericId);
-  return sanitizeDocument(deleted);
+  const fileUrl = await getFileUrl(deleted.file_id);
+  return sanitizeDocument(deleted, fileUrl);
 };
 
 const listMyContributions = async (agentId) => {
   const company = await getCompanyOrThrowByAgent(agentId);
   const items = await contributionRepository.listByCompanyId(company.id);
-  return items.map(sanitizeContribution);
+  return Promise.all(
+    items.map(async (item) => {
+      const mediaFileUrl = await getFileUrl(item.media_file_id);
+      return sanitizeContribution(item, mediaFileUrl);
+    })
+  );
 };
 
 const createMyContribution = async (agentId, payload) => {
@@ -492,7 +529,8 @@ const createMyContribution = async (agentId, payload) => {
     title: payload.title,
     description: payload.description,
   });
-  return sanitizeContribution(item);
+  const mediaFileUrl = await getFileUrl(item.media_file_id);
+  return sanitizeContribution(item, mediaFileUrl);
 };
 
 const updateMyContribution = async (agentId, contributionId, payload) => {
@@ -582,7 +620,8 @@ const updateMyContribution = async (agentId, contributionId, payload) => {
 
   const updated = await contributionRepository.updateContribution(numericId, contributionUpdates);
 
-  return sanitizeContribution(updated);
+  const mediaFileUrl = await getFileUrl(updated.media_file_id);
+  return sanitizeContribution(updated, mediaFileUrl);
 };
 
 const deleteMyContribution = async (agentId, contributionId) => {
@@ -601,7 +640,8 @@ const deleteMyContribution = async (agentId, contributionId) => {
   }
 
   const deleted = await contributionRepository.deleteContribution(numericId);
-  return sanitizeContribution(deleted);
+  const mediaFileUrl = await getFileUrl(deleted.media_file_id);
+  return sanitizeContribution(deleted, mediaFileUrl);
 };
 
 // ============= Contribution Media CRUD =============
@@ -626,7 +666,12 @@ const verifyContributionOwnership = async (agentId, contributionId) => {
 const listContributionMedia = async (agentId, contributionId) => {
   await verifyContributionOwnership(agentId, contributionId);
   const media = await contributionMediaRepository.listByContributionId(Number(contributionId));
-  return media.map(sanitizeContributionMedia);
+  return Promise.all(
+    media.map(async (item) => {
+      const fileUrl = await getFileUrl(item.fileId);
+      return sanitizeContributionMedia(item, fileUrl);
+    })
+  );
 };
 
 const addContributionMedia = async (agentId, contributionId, payload) => {
@@ -639,7 +684,8 @@ const addContributionMedia = async (agentId, contributionId, payload) => {
     caption: payload.caption,
     sortOrder: payload.sortOrder,
   });
-  return sanitizeContributionMedia(media);
+  const fileUrl = await getFileUrl(media.fileId);
+  return sanitizeContributionMedia(media, fileUrl);
 };
 
 const updateContributionMedia = async (agentId, contributionId, mediaId, payload) => {
@@ -661,7 +707,8 @@ const updateContributionMedia = async (agentId, contributionId, mediaId, payload
     caption: payload.caption,
     sort_order: payload.sortOrder,
   });
-  return sanitizeContributionMedia(updated);
+  const fileUrl = await getFileUrl(updated.fileId);
+  return sanitizeContributionMedia(updated, fileUrl);
 };
 
 const deleteContributionMedia = async (agentId, contributionId, mediaId) => {
@@ -677,13 +724,19 @@ const deleteContributionMedia = async (agentId, contributionId, mediaId) => {
   }
 
   const deleted = await contributionMediaRepository.deleteMedia(numericMediaId);
-  return sanitizeContributionMedia(deleted);
+  const fileUrl = await getFileUrl(deleted.fileId);
+  return sanitizeContributionMedia(deleted, fileUrl);
 };
 
 const reorderContributionMedia = async (agentId, contributionId, orderedIds) => {
   await verifyContributionOwnership(agentId, contributionId);
   const media = await contributionMediaRepository.reorderMedia(Number(contributionId), orderedIds);
-  return media.map(sanitizeContributionMedia);
+  return Promise.all(
+    media.map(async (item) => {
+      const fileUrl = await getFileUrl(item.fileId);
+      return sanitizeContributionMedia(item, fileUrl);
+    })
+  );
 };
 // validateCompanyCompleteness is imported from utils/validationHelper
 

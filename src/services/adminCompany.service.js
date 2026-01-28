@@ -6,9 +6,20 @@ const contributionRepository = require('../repositories/companyContribution.repo
 const reviewRepository = require('../repositories/companyReview.repository');
 const userRepository = require('../repositories/user.repository');
 const fileRepository = require('../repositories/file.repository');
+const fileService = require('./file.service');
 const { publicUrl } = require('../config/storage');
 const logger = require('../utils/logger');
 const { sendMail } = require('../config/mailer');
+
+const getFileUrl = async (fileId) => {
+  if (!fileId) return null;
+  try {
+    const file = await fileService.getFileById(fileId);
+    return file.publicUrl;
+  } catch (err) {
+    return null;
+  }
+};
 
 const sanitizeCompany = (company) => {
   if (!company) return null;
@@ -41,32 +52,33 @@ const sanitizeCompany = (company) => {
   };
 };
 
-const sanitizeDocument = (doc) => ({
+const sanitizeDocument = (doc, fileUrl = null) => ({
   id: doc.id,
   companyId: doc.company_id,
   fileId: doc.file_id,
+  fileUrl,
   docType: doc.doc_type,
   title: doc.title,
   issuer: doc.issuer,
-  url: doc.url,
   description: doc.description,
   uploadedAt: doc.uploaded_at,
 });
 
-const sanitizeGalleryItem = (item) => ({
+const sanitizeGalleryItem = (item, imageUrl = null) => ({
   id: item.id,
   companyId: item.company_id,
   imageFileId: item.image_file_id,
+  imageUrl,
   description: item.description,
   uploadedAt: item.uploaded_at,
 });
 
-const sanitizeContribution = (item) => ({
+const sanitizeContribution = (item, mediaFileUrl = null) => ({
   id: item.id,
   companyId: item.company_id,
   mediaFileId: item.media_file_id,
+  mediaFileUrl,
   mediaType: item.media_type,
-  mediaUrl: item.media_url,
   type: item.type,
   title: item.title,
   description: item.description,
@@ -107,25 +119,12 @@ const populateDocumentsWithFiles = async (documents) => {
     return [];
   }
 
-  const fileIds = [...new Set(documents.map((doc) => doc.file_id).filter(Boolean))];
-  const files = fileIds.length ? await fileRepository.findByIds(fileIds) : [];
-  const fileMap = new Map(files.map((file) => [file.id, file]));
-
-  return documents.map((doc) => {
-    const sanitized = sanitizeDocument(doc);
-    const file = fileMap.get(doc.file_id);
-    if (file) {
-      sanitized.file = {
-        id: file.id,
-        fileName: file.fileName,
-        filePath: file.filePath,
-        publicUrl: buildPublicUrl(file.filePath),
-        fileMetadata: file.fileMetadata,
-        uploadedAt: file.uploadedAt,
-      };
-    }
-    return sanitized;
-  });
+  return Promise.all(
+    documents.map(async (doc) => {
+      const fileUrl = await getFileUrl(doc.file_id);
+      return sanitizeDocument(doc, fileUrl);
+    })
+  );
 };
 
 const listPendingCompanies = async () => {
@@ -346,7 +345,12 @@ const listCompanyGallery = async (companyId) => {
     throw new AppError('Company not found', 404);
   }
   const items = await galleryRepository.listByCompanyId(numericId);
-  return items.map(sanitizeGalleryItem);
+  return Promise.all(
+    items.map(async (item) => {
+      const imageUrl = await getFileUrl(item.image_file_id);
+      return sanitizeGalleryItem(item, imageUrl);
+    })
+  );
 };
 
 const createCompanyGalleryItem = async (companyId, payload) => {
@@ -361,7 +365,8 @@ const createCompanyGalleryItem = async (companyId, payload) => {
     imageFileId: payload.imageFileId,
     description: payload.description,
   });
-  return sanitizeGalleryItem(item);
+  const imageUrl = await getFileUrl(item.image_file_id);
+  return sanitizeGalleryItem(item, imageUrl);
 };
 
 const updateCompanyGalleryItem = async (companyId, galleryItemId, payload) => {
@@ -389,7 +394,8 @@ const updateCompanyGalleryItem = async (companyId, galleryItemId, payload) => {
     description: payload.description,
   });
 
-  return sanitizeGalleryItem(updated);
+  const imageUrl = await getFileUrl(updated.image_file_id);
+  return sanitizeGalleryItem(updated, imageUrl);
 };
 
 const deleteCompanyGalleryItem = async (companyId, galleryItemId) => {
@@ -413,7 +419,8 @@ const deleteCompanyGalleryItem = async (companyId, galleryItemId) => {
   }
 
   const deleted = await galleryRepository.deleteGalleryItem(numericGalleryItemId);
-  return sanitizeGalleryItem(deleted);
+  const imageUrl = await getFileUrl(deleted.image_file_id);
+  return sanitizeGalleryItem(deleted, imageUrl);
 };
 
 const listCompanyDocuments = async (companyId) => {
@@ -545,7 +552,12 @@ const listCompanyContributions = async (companyId) => {
     throw new AppError('Company not found', 404);
   }
   const items = await contributionRepository.listByCompanyId(numericId);
-  return items.map(sanitizeContribution);
+  return Promise.all(
+    items.map(async (item) => {
+      const mediaFileUrl = await getFileUrl(item.media_file_id);
+      return sanitizeContribution(item, mediaFileUrl);
+    })
+  );
 };
 
 const createCompanyContribution = async (companyId, payload) => {
@@ -564,7 +576,8 @@ const createCompanyContribution = async (companyId, payload) => {
     title: payload.title,
     description: payload.description,
   });
-  return sanitizeContribution(item);
+  const mediaFileUrl = await getFileUrl(item.media_file_id);
+  return sanitizeContribution(item, mediaFileUrl);
 };
 
 const updateCompanyContribution = async (companyId, contributionId, payload) => {
@@ -648,7 +661,8 @@ const updateCompanyContribution = async (companyId, contributionId, payload) => 
     contributionUpdates
   );
 
-  return sanitizeContribution(updated);
+  const mediaFileUrl = await getFileUrl(updated.media_file_id);
+  return sanitizeContribution(updated, mediaFileUrl);
 };
 
 const deleteCompanyContribution = async (companyId, contributionId) => {
@@ -672,7 +686,8 @@ const deleteCompanyContribution = async (companyId, contributionId) => {
   }
 
   const deleted = await contributionRepository.deleteContribution(numericContributionId);
-  return sanitizeContribution(deleted);
+  const mediaFileUrl = await getFileUrl(deleted.media_file_id);
+  return sanitizeContribution(deleted, mediaFileUrl);
 };
 
 module.exports = {

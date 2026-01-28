@@ -1,10 +1,21 @@
 const bcrypt = require('bcryptjs');
 const AppError = require('../utils/AppError');
 const userRepository = require('../repositories/user.repository');
+const fileService = require('./file.service');
 const { pool } = require('../config/db');
 const config = require('../config/env');
 
-const sanitizeUser = (user) => {
+const getFileUrl = async (fileId) => {
+  if (!fileId) return null;
+  try {
+    const file = await fileService.getFileById(fileId);
+    return file.publicUrl;
+  } catch (err) {
+    return null;
+  }
+};
+
+const sanitizeUser = (user, profileImageUrl = null) => {
   if (!user) return null;
 
   return {
@@ -14,6 +25,7 @@ const sanitizeUser = (user) => {
     email: user.email,
     jobTitle: user.job_title,
     profileImageFileId: user.profile_image,
+    profileImageUrl,
     preferences: user.preferences || null,
     createdAt: user.created_at,
     updatedAt: user.updated_at,
@@ -25,7 +37,8 @@ const getMe = async (userId) => {
   if (!user) {
     throw new AppError('User not found', 404);
   }
-  return sanitizeUser(user);
+  const profileImageUrl = await getFileUrl(user.profile_image);
+  return sanitizeUser(user, profileImageUrl);
 };
 
 const mergePreferences = (existing, patch) => {
@@ -57,7 +70,8 @@ const updateMe = async (userId, payload) => {
     preferences,
   });
 
-  return sanitizeUser(updated);
+  const profileImageUrl = await getFileUrl(updated.profile_image);
+  return sanitizeUser(updated, profileImageUrl);
 };
 
 const updatePassword = async (userId, payload) => {
@@ -115,7 +129,8 @@ const updateProfileImage = async (userId, payload) => {
     profile_image: payload.profileImageFileId,
   });
 
-  return sanitizeUser(updated);
+  const profileImageUrl = await getFileUrl(updated.profile_image);
+  return sanitizeUser(updated, profileImageUrl);
 };
 
 module.exports = {

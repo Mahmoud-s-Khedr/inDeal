@@ -1,0 +1,29 @@
+meta {
+  name: get url of a file
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/files/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+  Content-Type: application/json
+}
+
+vars:pre-request {
+  id: 2
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

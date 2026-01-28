@@ -118,6 +118,26 @@ const createUploadUrl = async ({ fileName, fileType, fileSize, uploaderId }) => 
   };
 };
 
+const getFileById = async (fileId) => {
+  if (!fileId) {
+    throw new AppError('File ID is required', 400);
+  }
+
+  const file = await fileRepository.findById(fileId);
+
+  if (!file) {
+    throw new AppError('File not found', 404);
+  }
+
+  // Return 404 if file is soft-deleted
+  if (file.deletedAt) {
+    throw new AppError('File not found', 404);
+  }
+
+  return sanitizeFile(file);
+};
+
 module.exports = {
   createUploadUrl,
+  getFileById,
 };

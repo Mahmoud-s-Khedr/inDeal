@@ -13,6 +13,13 @@ const createUploadUrlSchema = z.object({
   }),
 });
 
+const getFileSchema = z.object({
+  params: z.object({
+    id: z.coerce.number().int().positive('File ID must be a positive integer'),
+  }),
+});
+
 module.exports = {
   createUploadUrlSchema,
+  getFileSchema,
 };
