@@ -59,6 +59,7 @@ const updateCompanySchema = z.object({
       phone: z.string().max(20).optional(),
       email: z.string().email().max(100).optional(),
       website: z.string().url().max(100).optional(),
+      logoFileId: z.coerce.number().int().positive().optional(),
       companyType: z.enum(companyTypeEnumValues).optional(),
       companyIndustry: z.enum(industryEnumValues).optional(),
       manufacturingStrategy: z.enum(manufacturingStrategyEnumValues).optional(),
@@ -481,8 +482,6 @@ const reorderContributionMediaSchema = z.object({
   }),
 });
 
-
-
 module.exports = {
   updateCompanySchema,
   addGalleryItemSchema,
@@ -501,5 +500,4 @@ module.exports = {
   addContributionMediaSchema,
   updateContributionMediaSchema,
   reorderContributionMediaSchema,
-
 };

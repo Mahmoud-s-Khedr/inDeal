@@ -25,7 +25,7 @@ const getFileUrl = async (fileId) => {
   }
 };
 
-const sanitizeCompany = (company) => {
+const sanitizeCompany = (company, logoUrl = null) => {
   if (!company) return null;
 
   const result = {
@@ -38,6 +38,7 @@ const sanitizeCompany = (company) => {
     email: company.email,
     website: company.website,
     logoFileId: company.logo || null,
+    logoUrl,
     companyType: company.company_type,
     companyIndustry: company.company_industry,
     manufacturingStrategy: company.manufacturing_strategy,
@@ -128,8 +129,9 @@ const sanitizeContributionMedia = (item, fileUrl = null) => ({
   createdAt: item.createdAt,
 });
 
-const enrichProfile = (company, gallery = [], reviews = [], documents, contributions) => {
-  const sanitizedCompany = sanitizeCompany(company);
+const enrichProfile = async (company, gallery = [], reviews = [], documents, contributions) => {
+  const logoUrl = await getFileUrl(company.logo);
+  const sanitizedCompany = sanitizeCompany(company, logoUrl);
   const sanitizedGallery = gallery.map(sanitizeGalleryItem);
   const sanitizedReviews = reviews.map(sanitizeReview);
   const sanitizedDocuments = Array.isArray(documents) ? documents.map(sanitizeDocument) : undefined;
@@ -203,6 +205,7 @@ const updateMyProfile = async (agentId, payload) => {
     phone: payload.phone,
     email: payload.email,
     website: payload.website,
+    logo: payload.logoFileId,
     company_type: payload.companyType,
     company_industry: payload.companyIndustry,
     manufacturing_strategy: payload.manufacturingStrategy,
@@ -217,7 +220,8 @@ const updateMyProfile = async (agentId, payload) => {
   if (!updated) {
     throw new AppError('Company profile not found', 404);
   }
-  return sanitizeCompany(updated);
+  const logoUrl = await getFileUrl(updated.logo);
+  return sanitizeCompany(updated, logoUrl);
 };
 
 const getCompanyProfile = async (companyId) => {
@@ -330,8 +334,15 @@ const searchCompanies = async (filters = {}) => {
     companyRepository.countCompanies(normalizedFilters),
   ]);
 
+  const itemsWithLogos = await Promise.all(
+    items.map(async (item) => {
+      const logoUrl = await getFileUrl(item.logo);
+      return sanitizeCompany(item, logoUrl);
+    })
+  );
+
   return {
-    items: items.map(sanitizeCompany),
+    items: itemsWithLogos,
     total,
     limit,
     offset,
@@ -842,7 +853,8 @@ const resendForReview = async (agentId) => {
     });
   }
 
-  return { company: sanitizeCompany(updated) };
+  const logoUrl = await getFileUrl(updated.logo);
+  return { company: sanitizeCompany(updated, logoUrl) };
 };
 
 module.exports = {
