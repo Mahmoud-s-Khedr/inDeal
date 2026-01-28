@@ -208,7 +208,9 @@ const updateMyProfile = async (agentId, payload) => {
     manufacturing_strategy: payload.manufacturingStrategy,
     contacts: payload.contacts,
     locations: payload.locations,
-    social_media_links: payload.socialMediaLinks,
+    social_media_links: payload.socialMediaLinks
+      ? JSON.stringify(payload.socialMediaLinks)
+      : undefined,
   };
 
   const updated = await companyRepository.updateCompanyByAgent(agentId, dbUpdates);
