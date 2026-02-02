@@ -5,8 +5,8 @@ const { io } = require('socket.io-client');
 
 dotenv.config();
 
-const API_BASE = process.env.API_BASE || 'http://localhost:3000/api/v1';
-const SOCKET_URL = process.env.SOCKET_URL || 'http://localhost:3000';
+const API_BASE = process.env.API_BASE || 'https://api-test.indealeg.com/api/v1';
+const SOCKET_URL = process.env.SOCKET_URL || 'wss://api-test.indealeg.com';
 const OUTPUT_PATH =
   process.env.SOCKET_TEST_OUTPUT || path.resolve(__dirname, 'output', 'socket_test_results.json');
 
@@ -342,6 +342,8 @@ const connectSocket = async (token, role) => {
     timeout: 10000,
     reconnection: false,
   });
+
+  console.log(`[socket] Connecting socket for ${role}...`);
 
   const start = Date.now();
 

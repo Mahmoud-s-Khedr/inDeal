@@ -460,7 +460,7 @@ const resubmit = async (userId, payload) => {
     }
 
     // Set status to pending
-    updatedCompany = await companyRepository.updateCompanyStatus(company.id, 'pending');
+    updatedCompany = await companyRepository.updateCompanyStatus(company.id, 'underReview');
 
     // Add new documents
     let createdDocuments = [];

@@ -1,0 +1,1649 @@
+{
+  "generatedAt": "2026-01-29T23:54:37.383Z",
+  "results": [
+    {
+      "timestamp": "2026-01-29T23:54:22.926Z",
+      "role": "admin",
+      "action": "auth.admin.login",
+      "ok": true,
+      "status": 200,
+      "durationMs": 737
+    },
+    {
+      "timestamp": "2026-01-29T23:54:23.223Z",
+      "role": "admin",
+      "action": "admin.companies.list",
+      "ok": true,
+      "status": 200,
+      "durationMs": 296
+    },
+    {
+      "timestamp": "2026-01-29T23:54:23.312Z",
+      "role": "admin",
+      "action": "admin.companies.detail",
+      "ok": true,
+      "status": 200,
+      "durationMs": 89
+    },
+    {
+      "timestamp": "2026-01-29T23:54:23.387Z",
+      "role": "admin",
+      "action": "admin.companies.detail",
+      "ok": true,
+      "status": 200,
+      "durationMs": 75
+    },
+    {
+      "timestamp": "2026-01-29T23:54:23.453Z",
+      "role": "admin",
+      "action": "admin.companies.detail",
+      "ok": true,
+      "status": 200,
+      "durationMs": 66
+    },
+    {
+      "timestamp": "2026-01-29T23:54:23.524Z",
+      "role": "admin",
+      "action": "admin.companies.detail",
+      "ok": true,
+      "status": 200,
+      "durationMs": 71
+    },
+    {
+      "timestamp": "2026-01-29T23:54:23.618Z",
+      "role": "admin",
+      "action": "admin.companies.detail",
+      "ok": true,
+      "status": 200,
+      "durationMs": 94
+    },
+    {
+      "timestamp": "2026-01-29T23:54:23.690Z",
+      "role": "admin",
+      "action": "admin.companies.detail",
+      "ok": true,
+      "status": 200,
+      "durationMs": 72
+    },
+    {
+      "timestamp": "2026-01-29T23:54:23.793Z",
+      "role": "admin",
+      "action": "admin.companies.detail",
+      "ok": true,
+      "status": 200,
+      "durationMs": 103
+    },
+    {
+      "timestamp": "2026-01-29T23:54:24.398Z",
+      "role": "0c51482079@webxio.pro",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 605,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:24.461Z",
+      "role": "updated_0c51482079@webxio.pro",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 63,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:24.461Z",
+      "role": "0c51482079@webxio.pro",
+      "action": "auth.login.skip",
+      "ok": false,
+      "error": "Login failed for 0c51482079@webxio.pro: 401"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:25.070Z",
+      "role": "75f9ac7231@webxio.pro",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 609,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:25.131Z",
+      "role": "updated_75f9ac7231@webxio.pro",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 61,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:25.131Z",
+      "role": "75f9ac7231@webxio.pro",
+      "action": "auth.login.skip",
+      "ok": false,
+      "error": "Login failed for 75f9ac7231@webxio.pro: 401"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:25.786Z",
+      "role": "e5e51ffef6@webxio.pro",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 655,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:25.849Z",
+      "role": "updated_e5e51ffef6@webxio.pro",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 63,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:25.849Z",
+      "role": "e5e51ffef6@webxio.pro",
+      "action": "auth.login.skip",
+      "ok": false,
+      "error": "Login failed for e5e51ffef6@webxio.pro: 401"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:26.390Z",
+      "role": "d3f62a7116@webxio.pro",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 541,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:26.457Z",
+      "role": "updated_d3f62a7116@webxio.pro",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 67,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:26.457Z",
+      "role": "d3f62a7116@webxio.pro",
+      "action": "auth.login.skip",
+      "ok": false,
+      "error": "Login failed for d3f62a7116@webxio.pro: 401"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:27.118Z",
+      "role": "pexopif359@okexbit.com",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 661,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:27.181Z",
+      "role": "updated_pexopif359@okexbit.com",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 63,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:27.181Z",
+      "role": "pexopif359@okexbit.com",
+      "action": "auth.login.skip",
+      "ok": false,
+      "error": "Login failed for pexopif359@okexbit.com: 401"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:27.746Z",
+      "role": "abdelazizmohamed.freelance@gmail.com",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 565,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:27.807Z",
+      "role": "updated_abdelazizmohamed.freelance@gmail.com",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 60,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:27.807Z",
+      "role": "abdelazizmohamed.freelance@gmail.com",
+      "action": "auth.login.skip",
+      "ok": false,
+      "error": "Login failed for abdelazizmohamed.freelance@gmail.com: 401"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:28.449Z",
+      "role": "abdelazizmo2022@gmail.com",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 642,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:28.511Z",
+      "role": "updated_abdelazizmo2022@gmail.com",
+      "action": "auth.login",
+      "ok": false,
+      "status": 401,
+      "durationMs": 62,
+      "error": "Invalid credentials"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:28.511Z",
+      "role": "abdelazizmo2022@gmail.com",
+      "action": "auth.login.skip",
+      "ok": false,
+      "error": "Login failed for abdelazizmo2022@gmail.com: 401"
+    },
+    {
+      "timestamp": "2026-01-29T23:54:29.166Z",
+      "role": "agent1@indeal.test",
+      "action": "auth.login",
+      "ok": true,
+      "status": 200,
+      "durationMs": 655
+    },
+    {
+      "timestamp": "2026-01-29T23:54:29.710Z",
+      "role": "agent2@indeal.test",
+      "action": "auth.login",
+      "ok": true,
+      "status": 200,
+      "durationMs": 544
+    },
+    {
+      "timestamp": "2026-01-29T23:54:30.395Z",
+      "role": "agent3@indeal.test",
+      "action": "auth.login",
+      "ok": true,
+      "status": 200,
+      "durationMs": 684
+    },
+    {
+      "timestamp": "2026-01-29T23:54:30.967Z",
+      "role": "agent4@indeal.test",
+      "action": "auth.login",
+      "ok": true,
+      "status": 200,
+      "durationMs": 572
+    },
+    {
+      "timestamp": "2026-01-29T23:54:31.727Z",
+      "role": "agent5@indeal.test",
+      "action": "auth.login",
+      "ok": true,
+      "status": 200,
+      "durationMs": 760
+    },
+    {
+      "timestamp": "2026-01-29T23:54:32.341Z",
+      "role": "agent6@indeal.test",
+      "action": "auth.login",
+      "ok": true,
+      "status": 200,
+      "durationMs": 614
+    },
+    {
+      "timestamp": "2026-01-29T23:54:32.954Z",
+      "role": "agent7@indeal.test",
+      "action": "auth.login",
+      "ok": true,
+      "status": 200,
+      "durationMs": 613
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.032Z",
+      "role": "agent1@indeal.test",
+      "action": "companies.me",
+      "ok": true,
+      "status": 200,
+      "durationMs": 78
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.114Z",
+      "role": "agent2@indeal.test",
+      "action": "companies.me",
+      "ok": true,
+      "status": 200,
+      "durationMs": 82
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.203Z",
+      "role": "agent3@indeal.test",
+      "action": "companies.me",
+      "ok": true,
+      "status": 200,
+      "durationMs": 89
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.273Z",
+      "role": "agent4@indeal.test",
+      "action": "companies.me",
+      "ok": true,
+      "status": 200,
+      "durationMs": 70
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.340Z",
+      "role": "agent5@indeal.test",
+      "action": "companies.me",
+      "ok": true,
+      "status": 200,
+      "durationMs": 67
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.411Z",
+      "role": "agent6@indeal.test",
+      "action": "companies.me",
+      "ok": true,
+      "status": 200,
+      "durationMs": 71
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.480Z",
+      "role": "agent7@indeal.test",
+      "action": "companies.me",
+      "ok": true,
+      "status": 200,
+      "durationMs": 69
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.559Z",
+      "role": "agent1@indeal.test",
+      "action": "chats.create",
+      "ok": true,
+      "status": 200,
+      "durationMs": 79
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.652Z",
+      "role": "agent1@indeal.test",
+      "action": "chats.create",
+      "ok": true,
+      "status": 200,
+      "durationMs": 93
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.727Z",
+      "role": "agent1@indeal.test",
+      "action": "chats.create",
+      "ok": true,
+      "status": 200,
+      "durationMs": 75
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.802Z",
+      "role": "agent1@indeal.test",
+      "action": "chats.create",
+      "ok": true,
+      "status": 200,
+      "durationMs": 75
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.871Z",
+      "role": "agent1@indeal.test",
+      "action": "chats.create",
+      "ok": true,
+      "status": 200,
+      "durationMs": 69
+    },
+    {
+      "timestamp": "2026-01-29T23:54:33.937Z",
+      "role": "agent1@indeal.test",
+      "action": "chats.create",
+      "ok": true,
+      "status": 200,
+      "durationMs": 66
+    },
+    {
+      "timestamp": "2026-01-29T23:54:34.197Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.connect",
+      "ok": true,
+      "durationMs": 252
+    },
+    {
+      "timestamp": "2026-01-29T23:54:34.210Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.chat:ready",
+      "ok": true,
+      "payload": {
+        "b2bRoomIds": [1, 2, 8, 13, 29, 30, 31, 32],
+        "supportRoomId": 1,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:34.460Z",
+      "role": "agent2@indeal.test",
+      "action": "socket.connect",
+      "ok": true,
+      "durationMs": 249
+    },
+    {
+      "timestamp": "2026-01-29T23:54:34.464Z",
+      "role": "agent2@indeal.test",
+      "action": "socket.chat:ready",
+      "ok": true,
+      "payload": {
+        "b2bRoomIds": [4, 6, 21, 29],
+        "supportRoomId": 2,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:34.704Z",
+      "role": "agent3@indeal.test",
+      "action": "socket.connect",
+      "ok": true,
+      "durationMs": 238
+    },
+    {
+      "timestamp": "2026-01-29T23:54:34.708Z",
+      "role": "agent3@indeal.test",
+      "action": "socket.chat:ready",
+      "ok": true,
+      "payload": {
+        "b2bRoomIds": [5, 30],
+        "supportRoomId": 3,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:34.953Z",
+      "role": "agent4@indeal.test",
+      "action": "socket.connect",
+      "ok": true,
+      "durationMs": 244
+    },
+    {
+      "timestamp": "2026-01-29T23:54:34.962Z",
+      "role": "agent4@indeal.test",
+      "action": "socket.chat:ready",
+      "ok": true,
+      "payload": {
+        "b2bRoomIds": [1, 3, 18, 20],
+        "supportRoomId": null,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:35.202Z",
+      "role": "agent5@indeal.test",
+      "action": "socket.connect",
+      "ok": true,
+      "durationMs": 239
+    },
+    {
+      "timestamp": "2026-01-29T23:54:35.207Z",
+      "role": "agent5@indeal.test",
+      "action": "socket.chat:ready",
+      "ok": true,
+      "payload": {
+        "b2bRoomIds": [4, 31],
+        "supportRoomId": null,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:35.431Z",
+      "role": "agent6@indeal.test",
+      "action": "socket.connect",
+      "ok": true,
+      "durationMs": 222
+    },
+    {
+      "timestamp": "2026-01-29T23:54:35.434Z",
+      "role": "agent6@indeal.test",
+      "action": "socket.chat:ready",
+      "ok": true,
+      "payload": {
+        "b2bRoomIds": [32],
+        "supportRoomId": null,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:35.667Z",
+      "role": "agent7@indeal.test",
+      "action": "socket.connect",
+      "ok": true,
+      "durationMs": 230
+    },
+    {
+      "timestamp": "2026-01-29T23:54:35.671Z",
+      "role": "agent7@indeal.test",
+      "action": "socket.chat:ready",
+      "ok": true,
+      "payload": {
+        "b2bRoomIds": [2, 5, 6],
+        "supportRoomId": null,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:35.672Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.emit.chat:message",
+      "ok": true,
+      "durationMs": 1,
+      "meta": {
+        "roomId": 29
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:35.738Z",
+      "role": "agent2@indeal.test",
+      "action": "socket.recv.chat:message",
+      "ok": true,
+      "payload": {
+        "id": 112,
+        "roomId": 29,
+        "messageText": "Socket test message 2026-01-29T23:54:35.671Z (29)",
+        "sentAt": "2026-01-29T23:54:35.706Z",
+        "readAt": null,
+        "isRead": false,
+        "attachment": null,
+        "agent": {
+          "id": 2,
+          "firstName": "Agent1",
+          "lastName": "Test1",
+          "profileImage": null
+        },
+        "company": {
+          "id": 1,
+          "name": "Acme Industrial Co.",
+          "logo": 1
+        }
+      },
+      "meta": {
+        "roomId": 29
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:35.890Z",
+      "role": "agent2@indeal.test",
+      "action": "socket.emit.chat:typing",
+      "ok": true,
+      "meta": {
+        "roomId": 29
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:35.890Z",
+      "role": "agent2@indeal.test",
+      "action": "socket.emit.chat:read",
+      "ok": true,
+      "meta": {
+        "roomId": 29
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:35.959Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.recv.chat:read",
+      "ok": true,
+      "payload": {
+        "roomId": 29,
+        "companyId": 2,
+        "company": {
+          "id": 2,
+          "name": "Delta Manufacturing",
+          "logo": 5
+        },
+        "messageId": 112,
+        "unreadCount": 0
+      },
+      "meta": {
+        "roomId": 29
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:35.959Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.emit.chat:message",
+      "ok": true,
+      "durationMs": 0,
+      "meta": {
+        "roomId": 30
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.026Z",
+      "role": "agent3@indeal.test",
+      "action": "socket.recv.chat:message",
+      "ok": true,
+      "payload": {
+        "id": 113,
+        "roomId": 30,
+        "messageText": "Socket test message 2026-01-29T23:54:35.959Z (30)",
+        "sentAt": "2026-01-29T23:54:35.994Z",
+        "readAt": null,
+        "isRead": false,
+        "attachment": null,
+        "agent": {
+          "id": 2,
+          "firstName": "Agent1",
+          "lastName": "Test1",
+          "profileImage": null
+        },
+        "company": {
+          "id": 1,
+          "name": "Acme Industrial Co.",
+          "logo": 1
+        }
+      },
+      "meta": {
+        "roomId": 30
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.178Z",
+      "role": "agent3@indeal.test",
+      "action": "socket.emit.chat:typing",
+      "ok": true,
+      "meta": {
+        "roomId": 30
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.178Z",
+      "role": "agent3@indeal.test",
+      "action": "socket.emit.chat:read",
+      "ok": true,
+      "meta": {
+        "roomId": 30
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.257Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.recv.chat:read",
+      "ok": true,
+      "payload": {
+        "roomId": 30,
+        "companyId": 3,
+        "company": {
+          "id": 3,
+          "name": "Nile Logistics Group",
+          "logo": 9
+        },
+        "messageId": 113,
+        "unreadCount": 0
+      },
+      "meta": {
+        "roomId": 30
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.257Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.emit.chat:message",
+      "ok": true,
+      "durationMs": 0,
+      "meta": {
+        "roomId": 1
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.322Z",
+      "role": "agent4@indeal.test",
+      "action": "socket.recv.chat:message",
+      "ok": true,
+      "payload": {
+        "id": 114,
+        "roomId": 1,
+        "messageText": "Socket test message 2026-01-29T23:54:36.257Z (1)",
+        "sentAt": "2026-01-29T23:54:36.291Z",
+        "readAt": null,
+        "isRead": false,
+        "attachment": null,
+        "agent": {
+          "id": 2,
+          "firstName": "Agent1",
+          "lastName": "Test1",
+          "profileImage": null
+        },
+        "company": {
+          "id": 1,
+          "name": "Acme Industrial Co.",
+          "logo": 1
+        }
+      },
+      "meta": {
+        "roomId": 1
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.473Z",
+      "role": "agent4@indeal.test",
+      "action": "socket.emit.chat:typing",
+      "ok": true,
+      "meta": {
+        "roomId": 1
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.473Z",
+      "role": "agent4@indeal.test",
+      "action": "socket.emit.chat:read",
+      "ok": true,
+      "meta": {
+        "roomId": 1
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.541Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.recv.chat:read",
+      "ok": true,
+      "payload": {
+        "roomId": 1,
+        "companyId": 4,
+        "company": {
+          "id": 4,
+          "name": "Cairo Tech Supplies",
+          "logo": 13
+        },
+        "messageId": 114,
+        "unreadCount": 0
+      },
+      "meta": {
+        "roomId": 1
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.542Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.emit.chat:message",
+      "ok": true,
+      "durationMs": 0,
+      "meta": {
+        "roomId": 31
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.606Z",
+      "role": "agent5@indeal.test",
+      "action": "socket.recv.chat:message",
+      "ok": true,
+      "payload": {
+        "id": 115,
+        "roomId": 31,
+        "messageText": "Socket test message 2026-01-29T23:54:36.542Z (31)",
+        "sentAt": "2026-01-29T23:54:36.576Z",
+        "readAt": null,
+        "isRead": false,
+        "attachment": null,
+        "agent": {
+          "id": 2,
+          "firstName": "Agent1",
+          "lastName": "Test1",
+          "profileImage": null
+        },
+        "company": {
+          "id": 1,
+          "name": "Acme Industrial Co.",
+          "logo": 1
+        }
+      },
+      "meta": {
+        "roomId": 31
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.757Z",
+      "role": "agent5@indeal.test",
+      "action": "socket.emit.chat:typing",
+      "ok": true,
+      "meta": {
+        "roomId": 31
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.758Z",
+      "role": "agent5@indeal.test",
+      "action": "socket.emit.chat:read",
+      "ok": true,
+      "meta": {
+        "roomId": 31
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.824Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.recv.chat:read",
+      "ok": true,
+      "payload": {
+        "roomId": 31,
+        "companyId": 5,
+        "company": {
+          "id": 5,
+          "name": "Alexandria Wholesale",
+          "logo": 17
+        },
+        "messageId": 115,
+        "unreadCount": 0
+      },
+      "meta": {
+        "roomId": 31
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.824Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.emit.chat:message",
+      "ok": true,
+      "durationMs": 0,
+      "meta": {
+        "roomId": 32
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:36.887Z",
+      "role": "agent6@indeal.test",
+      "action": "socket.recv.chat:message",
+      "ok": true,
+      "payload": {
+        "id": 116,
+        "roomId": 32,
+        "messageText": "Socket test message 2026-01-29T23:54:36.824Z (32)",
+        "sentAt": "2026-01-29T23:54:36.858Z",
+        "readAt": null,
+        "isRead": false,
+        "attachment": null,
+        "agent": {
+          "id": 2,
+          "firstName": "Agent1",
+          "lastName": "Test1",
+          "profileImage": null
+        },
+        "company": {
+          "id": 1,
+          "name": "Acme Industrial Co.",
+          "logo": 1
+        }
+      },
+      "meta": {
+        "roomId": 32
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:37.037Z",
+      "role": "agent6@indeal.test",
+      "action": "socket.emit.chat:typing",
+      "ok": true,
+      "meta": {
+        "roomId": 32
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:37.037Z",
+      "role": "agent6@indeal.test",
+      "action": "socket.emit.chat:read",
+      "ok": true,
+      "meta": {
+        "roomId": 32
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:37.100Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.recv.chat:read",
+      "ok": true,
+      "payload": {
+        "roomId": 32,
+        "companyId": 6,
+        "company": {
+          "id": 6,
+          "name": "Suez Construction Partners",
+          "logo": 21
+        },
+        "messageId": 116,
+        "unreadCount": 0
+      },
+      "meta": {
+        "roomId": 32
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:37.100Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.emit.chat:message",
+      "ok": true,
+      "durationMs": 0,
+      "meta": {
+        "roomId": 2
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:37.167Z",
+      "role": "agent7@indeal.test",
+      "action": "socket.recv.chat:message",
+      "ok": true,
+      "payload": {
+        "id": 117,
+        "roomId": 2,
+        "messageText": "Socket test message 2026-01-29T23:54:37.100Z (2)",
+        "sentAt": "2026-01-29T23:54:37.136Z",
+        "readAt": null,
+        "isRead": false,
+        "attachment": null,
+        "agent": {
+          "id": 2,
+          "firstName": "Agent1",
+          "lastName": "Test1",
+          "profileImage": null
+        },
+        "company": {
+          "id": 1,
+          "name": "Acme Industrial Co.",
+          "logo": 1
+        }
+      },
+      "meta": {
+        "roomId": 2
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:37.319Z",
+      "role": "agent7@indeal.test",
+      "action": "socket.emit.chat:typing",
+      "ok": true,
+      "meta": {
+        "roomId": 2
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:37.319Z",
+      "role": "agent7@indeal.test",
+      "action": "socket.emit.chat:read",
+      "ok": true,
+      "meta": {
+        "roomId": 2
+      }
+    },
+    {
+      "timestamp": "2026-01-29T23:54:37.381Z",
+      "role": "agent1@indeal.test",
+      "action": "socket.recv.chat:read",
+      "ok": true,
+      "payload": {
+        "roomId": 2,
+        "companyId": 7,
+        "company": {
+          "id": 7,
+          "name": "Mansoura Agro Solutions",
+          "logo": 25
+        },
+        "messageId": 117,
+        "unreadCount": 0
+      },
+      "meta": {
+        "roomId": 2
+      }
+    }
+  ],
+  "events": {
+    "agent1@indeal.test": [
+      {
+        "event": "chat:message",
+        "payload": {
+          "id": 112,
+          "roomId": 29,
+          "messageText": "Socket test message 2026-01-29T23:54:35.671Z (29)",
+          "sentAt": "2026-01-29T23:54:35.706Z",
+          "readAt": null,
+          "isRead": false,
+          "attachment": null,
+          "agent": {
+            "id": 2,
+            "firstName": "Agent1",
+            "lastName": "Test1",
+            "profileImage": null
+          },
+          "company": {
+            "id": 1,
+            "name": "Acme Industrial Co.",
+            "logo": 1
+          }
+        },
+        "at": "2026-01-29T23:54:35.737Z"
+      },
+      {
+        "event": "chat:typing",
+        "payload": {
+          "roomId": 29,
+          "userId": 3,
+          "companyId": 2,
+          "company": {
+            "id": 2,
+            "name": "Delta Manufacturing",
+            "logo": 5
+          },
+          "isTyping": true
+        },
+        "at": "2026-01-29T23:54:35.797Z"
+      },
+      {
+        "event": "chat:typing",
+        "payload": {
+          "roomId": 29,
+          "userId": 3,
+          "companyId": 2,
+          "company": {
+            "id": 2,
+            "name": "Delta Manufacturing",
+            "logo": 5
+          },
+          "isTyping": false
+        },
+        "at": "2026-01-29T23:54:35.949Z"
+      },
+      {
+        "event": "chat:read",
+        "payload": {
+          "roomId": 29,
+          "companyId": 2,
+          "company": {
+            "id": 2,
+            "name": "Delta Manufacturing",
+            "logo": 5
+          },
+          "messageId": 112,
+          "unreadCount": 0
+        },
+        "at": "2026-01-29T23:54:35.958Z"
+      },
+      {
+        "event": "chat:message",
+        "payload": {
+          "id": 113,
+          "roomId": 30,
+          "messageText": "Socket test message 2026-01-29T23:54:35.959Z (30)",
+          "sentAt": "2026-01-29T23:54:35.994Z",
+          "readAt": null,
+          "isRead": false,
+          "attachment": null,
+          "agent": {
+            "id": 2,
+            "firstName": "Agent1",
+            "lastName": "Test1",
+            "profileImage": null
+          },
+          "company": {
+            "id": 1,
+            "name": "Acme Industrial Co.",
+            "logo": 1
+          }
+        },
+        "at": "2026-01-29T23:54:36.026Z"
+      },
+      {
+        "event": "chat:typing",
+        "payload": {
+          "roomId": 30,
+          "userId": 4,
+          "companyId": 3,
+          "company": {
+            "id": 3,
+            "name": "Nile Logistics Group",
+            "logo": 9
+          },
+          "isTyping": true
+        },
+        "at": "2026-01-29T23:54:36.089Z"
+      },
+      {
+        "event": "chat:typing",
+        "payload": {
+          "roomId": 30,
+          "userId": 4,
+          "companyId": 3,
+          "company": {
+            "id": 3,
+            "name": "Nile Logistics Group",
+            "logo": 9
+          },
+          "isTyping": false
+        },
+        "at": "2026-01-29T23:54:36.238Z"
+      },
+      {
+        "event": "chat:read",
+        "payload": {
+          "roomId": 30,
+          "companyId": 3,
+          "company": {
+            "id": 3,
+            "name": "Nile Logistics Group",
+            "logo": 9
+          },
+          "messageId": 113,
+          "unreadCount": 0
+        },
+        "at": "2026-01-29T23:54:36.257Z"
+      },
+      {
+        "event": "chat:message",
+        "payload": {
+          "id": 114,
+          "roomId": 1,
+          "messageText": "Socket test message 2026-01-29T23:54:36.257Z (1)",
+          "sentAt": "2026-01-29T23:54:36.291Z",
+          "readAt": null,
+          "isRead": false,
+          "attachment": null,
+          "agent": {
+            "id": 2,
+            "firstName": "Agent1",
+            "lastName": "Test1",
+            "profileImage": null
+          },
+          "company": {
+            "id": 1,
+            "name": "Acme Industrial Co.",
+            "logo": 1
+          }
+        },
+        "at": "2026-01-29T23:54:36.322Z"
+      },
+      {
+        "event": "chat:typing",
+        "payload": {
+          "roomId": 1,
+          "userId": 5,
+          "companyId": 4,
+          "company": {
+            "id": 4,
+            "name": "Cairo Tech Supplies",
+            "logo": 13
+          },
+          "isTyping": true
+        },
+        "at": "2026-01-29T23:54:36.383Z"
+      },
+      {
+        "event": "chat:typing",
+        "payload": {
+          "roomId": 1,
+          "userId": 5,
+          "companyId": 4,
+          "company": {
+            "id": 4,
+            "name": "Cairo Tech Supplies",
+            "logo": 13
+          },
+          "isTyping": false
+        },
+        "at": "2026-01-29T23:54:36.532Z"
+      },
+      {
+        "event": "chat:read",
+        "payload": {
+          "roomId": 1,
+          "companyId": 4,
+          "company": {
+            "id": 4,
+            "name": "Cairo Tech Supplies",
+            "logo": 13
+          },
+          "messageId": 114,
+          "unreadCount": 0
+        },
+        "at": "2026-01-29T23:54:36.541Z"
+      },
+      {
+        "event": "chat:message",
+        "payload": {
+          "id": 115,
+          "roomId": 31,
+          "messageText": "Socket test message 2026-01-29T23:54:36.542Z (31)",
+          "sentAt": "2026-01-29T23:54:36.576Z",
+          "readAt": null,
+          "isRead": false,
+          "attachment": null,
+          "agent": {
+            "id": 2,
+            "firstName": "Agent1",
+            "lastName": "Test1",
+            "profileImage": null
+          },
+          "company": {
+            "id": 1,
+            "name": "Acme Industrial Co.",
+            "logo": 1
+          }
+        },
+        "at": "2026-01-29T23:54:36.606Z"
+      },
+      {
+        "event": "chat:typing",
+        "payload": {
+          "roomId": 31,
+          "userId": 6,
+          "companyId": 5,
+          "company": {
+            "id": 5,
+            "name": "Alexandria Wholesale",
+            "logo": 17
+          },
+          "isTyping": true
+        },
+        "at": "2026-01-29T23:54:36.664Z"
+      },
+      {
+        "event": "chat:typing",
+        "payload": {
+          "roomId": 31,
+          "userId": 6,
+          "companyId": 5,
+          "company": {
+            "id": 5,
+            "name": "Alexandria Wholesale",
+            "logo": 17
+          },
+          "isTyping": false
+        },
+        "at": "2026-01-29T23:54:36.816Z"
+      },
+      {
+        "event": "chat:read",
+        "payload": {
+          "roomId": 31,
+          "companyId": 5,
+          "company": {
+            "id": 5,
+            "name": "Alexandria Wholesale",
+            "logo": 17
+          },
+          "messageId": 115,
+          "unreadCount": 0
+        },
+        "at": "2026-01-29T23:54:36.824Z"
+      },
+      {
+        "event": "chat:message",
+        "payload": {
+          "id": 116,
+          "roomId": 32,
+          "messageText": "Socket test message 2026-01-29T23:54:36.824Z (32)",
+          "sentAt": "2026-01-29T23:54:36.858Z",
+          "readAt": null,
+          "isRead": false,
+          "attachment": null,
+          "agent": {
+            "id": 2,
+            "firstName": "Agent1",
+            "lastName": "Test1",
+            "profileImage": null
+          },
+          "company": {
+            "id": 1,
+            "name": "Acme Industrial Co.",
+            "logo": 1
+          }
+        },
+        "at": "2026-01-29T23:54:36.887Z"
+      },
+      {
+        "event": "chat:typing",
+        "payload": {
+          "roomId": 32,
+          "userId": 7,
+          "companyId": 6,
+          "company": {
+            "id": 6,
+            "name": "Suez Construction Partners",
+            "logo": 21
+          },
+          "isTyping": true
+        },
+        "at": "2026-01-29T23:54:36.941Z"
+      },
+      {
+        "event": "chat:typing",
+        "payload": {
+          "roomId": 32,
+          "userId": 7,
+          "companyId": 6,
+          "company": {
+            "id": 6,
+            "name": "Suez Construction Partners",
+            "logo": 21
+          },
+          "isTyping": false
+        },
+        "at": "2026-01-29T23:54:37.093Z"
+      },
+      {
+        "event": "chat:read",
+        "payload": {
+          "roomId": 32,
+          "companyId": 6,
+          "company": {
+            "id": 6,
+            "name": "Suez Construction Partners",
+            "logo": 21
+          },
+          "messageId": 116,
+          "unreadCount": 0
+        },
+        "at": "2026-01-29T23:54:37.100Z"
+      },
+      {
+        "event": "chat:message",
+        "payload": {
+          "id": 117,
+          "roomId": 2,
+          "messageText": "Socket test message 2026-01-29T23:54:37.100Z (2)",
+          "sentAt": "2026-01-29T23:54:37.136Z",
+          "readAt": null,
+          "isRead": false,
+          "attachment": null,
+          "agent": {
+            "id": 2,
+            "firstName": "Agent1",
+            "lastName": "Test1",
+            "profileImage": null
+          },
+          "company": {
+            "id": 1,
+            "name": "Acme Industrial Co.",
+            "logo": 1
+          }
+        },
+        "at": "2026-01-29T23:54:37.167Z"
+      },
+      {
+        "event": "chat:typing",
+        "payload": {
+          "roomId": 2,
+          "userId": 8,
+          "companyId": 7,
+          "company": {
+            "id": 7,
+            "name": "Mansoura Agro Solutions",
+            "logo": 25
+          },
+          "isTyping": true
+        },
+        "at": "2026-01-29T23:54:37.222Z"
+      },
+      {
+        "event": "chat:typing",
+        "payload": {
+          "roomId": 2,
+          "userId": 8,
+          "companyId": 7,
+          "company": {
+            "id": 7,
+            "name": "Mansoura Agro Solutions",
+            "logo": 25
+          },
+          "isTyping": false
+        },
+        "at": "2026-01-29T23:54:37.374Z"
+      },
+      {
+        "event": "chat:read",
+        "payload": {
+          "roomId": 2,
+          "companyId": 7,
+          "company": {
+            "id": 7,
+            "name": "Mansoura Agro Solutions",
+            "logo": 25
+          },
+          "messageId": 117,
+          "unreadCount": 0
+        },
+        "at": "2026-01-29T23:54:37.381Z"
+      }
+    ],
+    "agent2@indeal.test": [
+      {
+        "event": "chat:message",
+        "payload": {
+          "id": 112,
+          "roomId": 29,
+          "messageText": "Socket test message 2026-01-29T23:54:35.671Z (29)",
+          "sentAt": "2026-01-29T23:54:35.706Z",
+          "readAt": null,
+          "isRead": false,
+          "attachment": null,
+          "agent": {
+            "id": 2,
+            "firstName": "Agent1",
+            "lastName": "Test1",
+            "profileImage": null
+          },
+          "company": {
+            "id": 1,
+            "name": "Acme Industrial Co.",
+            "logo": 1
+          }
+        },
+        "at": "2026-01-29T23:54:35.738Z"
+      },
+      {
+        "event": "chat:read",
+        "payload": {
+          "roomId": 29,
+          "companyId": 2,
+          "company": {
+            "id": 2,
+            "name": "Delta Manufacturing",
+            "logo": 5
+          },
+          "messageId": 112,
+          "unreadCount": 0
+        },
+        "at": "2026-01-29T23:54:35.960Z"
+      }
+    ],
+    "agent3@indeal.test": [
+      {
+        "event": "chat:message",
+        "payload": {
+          "id": 113,
+          "roomId": 30,
+          "messageText": "Socket test message 2026-01-29T23:54:35.959Z (30)",
+          "sentAt": "2026-01-29T23:54:35.994Z",
+          "readAt": null,
+          "isRead": false,
+          "attachment": null,
+          "agent": {
+            "id": 2,
+            "firstName": "Agent1",
+            "lastName": "Test1",
+            "profileImage": null
+          },
+          "company": {
+            "id": 1,
+            "name": "Acme Industrial Co.",
+            "logo": 1
+          }
+        },
+        "at": "2026-01-29T23:54:36.026Z"
+      },
+      {
+        "event": "chat:read",
+        "payload": {
+          "roomId": 30,
+          "companyId": 3,
+          "company": {
+            "id": 3,
+            "name": "Nile Logistics Group",
+            "logo": 9
+          },
+          "messageId": 113,
+          "unreadCount": 0
+        },
+        "at": "2026-01-29T23:54:36.256Z"
+      }
+    ],
+    "agent4@indeal.test": [
+      {
+        "event": "chat:message",
+        "payload": {
+          "id": 114,
+          "roomId": 1,
+          "messageText": "Socket test message 2026-01-29T23:54:36.257Z (1)",
+          "sentAt": "2026-01-29T23:54:36.291Z",
+          "readAt": null,
+          "isRead": false,
+          "attachment": null,
+          "agent": {
+            "id": 2,
+            "firstName": "Agent1",
+            "lastName": "Test1",
+            "profileImage": null
+          },
+          "company": {
+            "id": 1,
+            "name": "Acme Industrial Co.",
+            "logo": 1
+          }
+        },
+        "at": "2026-01-29T23:54:36.322Z"
+      },
+      {
+        "event": "chat:read",
+        "payload": {
+          "roomId": 1,
+          "companyId": 4,
+          "company": {
+            "id": 4,
+            "name": "Cairo Tech Supplies",
+            "logo": 13
+          },
+          "messageId": 114,
+          "unreadCount": 0
+        },
+        "at": "2026-01-29T23:54:36.542Z"
+      }
+    ],
+    "agent5@indeal.test": [
+      {
+        "event": "chat:message",
+        "payload": {
+          "id": 115,
+          "roomId": 31,
+          "messageText": "Socket test message 2026-01-29T23:54:36.542Z (31)",
+          "sentAt": "2026-01-29T23:54:36.576Z",
+          "readAt": null,
+          "isRead": false,
+          "attachment": null,
+          "agent": {
+            "id": 2,
+            "firstName": "Agent1",
+            "lastName": "Test1",
+            "profileImage": null
+          },
+          "company": {
+            "id": 1,
+            "name": "Acme Industrial Co.",
+            "logo": 1
+          }
+        },
+        "at": "2026-01-29T23:54:36.606Z"
+      },
+      {
+        "event": "chat:read",
+        "payload": {
+          "roomId": 31,
+          "companyId": 5,
+          "company": {
+            "id": 5,
+            "name": "Alexandria Wholesale",
+            "logo": 17
+          },
+          "messageId": 115,
+          "unreadCount": 0
+        },
+        "at": "2026-01-29T23:54:36.824Z"
+      }
+    ],
+    "agent6@indeal.test": [
+      {
+        "event": "chat:message",
+        "payload": {
+          "id": 116,
+          "roomId": 32,
+          "messageText": "Socket test message 2026-01-29T23:54:36.824Z (32)",
+          "sentAt": "2026-01-29T23:54:36.858Z",
+          "readAt": null,
+          "isRead": false,
+          "attachment": null,
+          "agent": {
+            "id": 2,
+            "firstName": "Agent1",
+            "lastName": "Test1",
+            "profileImage": null
+          },
+          "company": {
+            "id": 1,
+            "name": "Acme Industrial Co.",
+            "logo": 1
+          }
+        },
+        "at": "2026-01-29T23:54:36.887Z"
+      },
+      {
+        "event": "chat:read",
+        "payload": {
+          "roomId": 32,
+          "companyId": 6,
+          "company": {
+            "id": 6,
+            "name": "Suez Construction Partners",
+            "logo": 21
+          },
+          "messageId": 116,
+          "unreadCount": 0
+        },
+        "at": "2026-01-29T23:54:37.100Z"
+      }
+    ],
+    "agent7@indeal.test": [
+      {
+        "event": "chat:message",
+        "payload": {
+          "id": 117,
+          "roomId": 2,
+          "messageText": "Socket test message 2026-01-29T23:54:37.100Z (2)",
+          "sentAt": "2026-01-29T23:54:37.136Z",
+          "readAt": null,
+          "isRead": false,
+          "attachment": null,
+          "agent": {
+            "id": 2,
+            "firstName": "Agent1",
+            "lastName": "Test1",
+            "profileImage": null
+          },
+          "company": {
+            "id": 1,
+            "name": "Acme Industrial Co.",
+            "logo": 1
+          }
+        },
+        "at": "2026-01-29T23:54:37.167Z"
+      }
+    ]
+  }
+}

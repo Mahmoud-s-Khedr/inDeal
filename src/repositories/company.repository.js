@@ -248,6 +248,13 @@ const countCompanies = async ({
   return parseInt(result.rows[0].total, 10);
 };
 
+const DB_COLUMN_MAPPING = {
+  companyType: 'company_type',
+  companyIndustry: 'company_industry',
+  manufacturingStrategy: 'manufacturing_strategy',
+  agentId: 'agent_id',
+};
+
 const updateCompanyByAgent = async (agentId, updates) => {
   const fields = [];
   const values = [];
@@ -255,12 +262,15 @@ const updateCompanyByAgent = async (agentId, updates) => {
 
   Object.entries(updates).forEach(([key, value]) => {
     if (value === undefined) return;
+
+    let dbColumn = DB_COLUMN_MAPPING[key] || key;
     let columnValue = value;
+
     if (key === 'contacts' || key === 'locations') {
       columnValue = value ? JSON.stringify(value) : null;
-      fields.push(`${key} = $${index}::jsonb`);
+      fields.push(`${dbColumn} = $${index}::jsonb`);
     } else {
-      fields.push(`${key} = $${index}`);
+      fields.push(`${dbColumn} = $${index}`);
     }
     values.push(columnValue);
     index += 1;
@@ -292,12 +302,15 @@ const updateCompanyById = async (companyId, updates) => {
 
   Object.entries(updates).forEach(([key, value]) => {
     if (value === undefined) return;
+
+    let dbColumn = DB_COLUMN_MAPPING[key] || key;
     let columnValue = value;
+
     if (key === 'contacts' || key === 'locations') {
       columnValue = value ? JSON.stringify(value) : null;
-      fields.push(`${key} = $${index}::jsonb`);
+      fields.push(`${dbColumn} = $${index}::jsonb`);
     } else {
-      fields.push(`${key} = $${index}`);
+      fields.push(`${dbColumn} = $${index}`);
     }
     values.push(columnValue);
     index += 1;

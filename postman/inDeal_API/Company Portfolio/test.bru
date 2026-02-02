@@ -1,0 +1,29 @@
+meta {
+  name: test
+  type: http
+  seq: 24
+}
+
+post {
+  url: https://api-test.indealeg.com/api/v1/companies/me/documents
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+  Content-Type: application/json
+}
+
+body:json {
+  {"fileId": 1,
+  "docType": "certificate",
+  "title": "ISO 9001 Certificate",
+  "issuer": "International Organization for Standardization",
+  "description": "ISO certificate"}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
