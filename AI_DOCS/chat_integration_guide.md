@@ -172,9 +172,9 @@ class ChatClient {
     // NEW ROOM CREATED - Someone started a chat with you
     // ─────────────────────────────────────────────────────────
 
-    this.socket.on('chat:room:new', ({ roomId, room }) => {
-      console.log('📬 New chat room:', roomId);
-      this.b2bRoomIds.push(roomId);
+    this.socket.on('chat:room:new', (room) => {
+      console.log('📬 New chat room:', room.id);
+      this.b2bRoomIds.push(room.id);
 
       // Add to chat list UI, show notification
       this.onNewRoom?.(room);
@@ -372,8 +372,8 @@ class ChatService {
     });
 
     // Handle new rooms
-    this.socket.on('chat:room:new', ({ roomId, room }) => {
-      this.b2bRoomIds.push(roomId);
+    this.socket.on('chat:room:new', (room) => {
+      this.b2bRoomIds.push(room.id);
       this.onNewRoom?.(room);
     });
 
@@ -520,7 +520,7 @@ function renderAttachment(attachment) {
 | Event                  | Payload                                                                                  | Description                | When to Handle                        |
 | ---------------------- | ---------------------------------------------------------------------------------------- | -------------------------- | ------------------------------------- |
 | `chat:ready`           | `{ b2bRoomIds: number[], supportRoomId: number \| null }`                                | Auto-subscription complete | Store room IDs, enable send           |
-| `chat:room:new`        | `{ roomId, room }`                                                                       | New room created with you  | Add to chat list, show notification   |
+| `chat:room:new`        | Room object (same schema as `GET /chats/:roomId`)                                        | New room created with you  | Add to chat list, show notification   |
 | `chat:message`         | Message object                                                                           | New message received       | Display in chat UI                    |
 | `chat:typing`          | `{ roomId, userId, isTyping }`                                                           | Typing indicator           | Show/hide typing UI                   |
 | `chat:read`            | `{ roomId, companyId, messageId?, unreadCount }`                                         | Read receipt               | Update "seen" status                  |
@@ -1012,13 +1012,9 @@ class ChatService {
     // ─────────────────────────────────────────────────────────
 
     _socket!.on('chat:room:new', (data) {
-      final roomId = data['roomId'] as int;
-      _b2bRoomIds.add(roomId);
-
-      if (data['room'] != null) {
-        final room = ChatRoom.fromJson(Map<String, dynamic>.from(data['room']));
-        onNewRoomReceived?.call(room);
-      }
+      final room = ChatRoom.fromJson(Map<String, dynamic>.from(data));
+      _b2bRoomIds.add(room.id);
+      onNewRoomReceived?.call(room);
     });
 
     // ─────────────────────────────────────────────────────────

@@ -925,7 +925,7 @@ const socket = io('wss://api.indeal.com', {
 | Event           | Payload                                                   | When Emitted                                                   | How to Handle                                          |
 | --------------- | --------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------ |
 | `chat:ready`    | `{ b2bRoomIds: number[], supportRoomId: number \| null }` | Immediately after connection, once auto-subscription completes | Store room IDs locally; safe to start sending messages |
-| `chat:room:new` | `{ roomId: number, room: object }`                        | When another user creates a room with you via REST API         | Add room to chat list UI; socket already subscribed    |
+| `chat:room:new` | Room object (same schema as `GET /chats/:roomId`)         | When another user creates a room with you via REST API         | Add room to chat list UI; socket already subscribed    |
 | `chat:message`  | Full message object (see below)                           | When any message is sent to a room you're in                   | Display in chat UI; update last message in room list   |
 | `chat:typing`   | `{ roomId, userId, isTyping }`                            | When other user starts/stops typing                            | Show/hide typing indicator                             |
 | `chat:read`     | `{ roomId, companyId, messageId?, unreadCount }`          | When other party reads messages                                | Update read receipts UI; show "seen" status            |

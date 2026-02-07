@@ -29,11 +29,27 @@ const notifyUser = (userId, notification) => {
  * Subscribe a user to a new B2B chat room (called when room is created mid-session)
  * Finds all sockets for the user and joins them to the room
  */
-const subscribeUserToRoom = async (userId, roomId) => {
+const subscribeUserToRoom = async (userId, roomIdOrRoom, maybeRoom) => {
   if (!io) {
     logger.warn('Socket.io not initialized, skipping room subscription');
     return;
   }
+
+  const isRoomObject = roomIdOrRoom && typeof roomIdOrRoom === 'object';
+  const roomIdRaw = isRoomObject ? roomIdOrRoom.id : roomIdOrRoom;
+  const roomId = Number(roomIdRaw);
+  if (!Number.isInteger(roomId) || roomId <= 0) {
+    logger.warn({ userId, roomId: roomIdRaw }, 'Invalid roomId for room subscription');
+    return;
+  }
+
+  const roomPayload =
+    (isRoomObject ? roomIdOrRoom : maybeRoom) &&
+    typeof (isRoomObject ? roomIdOrRoom : maybeRoom) === 'object'
+      ? isRoomObject
+        ? roomIdOrRoom
+        : maybeRoom
+      : { id: roomId };
 
   const userRoom = `user:${userId}`;
   const chatRoom = `room:${roomId}`;
@@ -43,7 +59,8 @@ const subscribeUserToRoom = async (userId, roomId) => {
 
   for (const socket of sockets) {
     socket.join(chatRoom);
-    socket.emit('chat:room:new', { roomId });
+    // `chat:room:new` payload is the room object (same schema as GET /chats/:roomId)
+    socket.emit('chat:room:new', roomPayload);
     logger.debug({ socketId: socket.id, userId, roomId }, 'User subscribed to new room');
   }
 
@@ -54,16 +71,48 @@ const subscribeUserToRoom = async (userId, roomId) => {
  * Notify both parties when a new B2B chat room is created
  * Automatically subscribes both companies' connected users to the room
  */
-const notifyRoomCreated = async (room) => {
+const notifyRoomCreated = async (data) => {
   if (!io) {
     logger.warn('Socket.io not initialized, skipping room created notification');
     return;
   }
 
-  // Support both snake_case (from DB) and camelCase
-  const companyAId = room.company_a_id || room.companyAId;
-  const companyBId = room.company_b_id || room.companyBId;
-  const roomId = room.id;
+  // Supports both legacy input (single room object) and per-company payloads.
+  const roomId = Number(data.roomId || data.id || data?.roomForCompanyA?.id || data?.room?.id);
+  const companyAId = Number(
+    data.companyAId ||
+      data.company_a_id ||
+      data?.roomForCompanyA?.companyAId ||
+      data?.room?.companyAId
+  );
+  const companyBId = Number(
+    data.companyBId ||
+      data.company_b_id ||
+      data?.roomForCompanyB?.companyBId ||
+      data?.room?.companyBId
+  );
+
+  if (!Number.isInteger(roomId) || roomId <= 0) {
+    logger.warn({ roomId }, 'Invalid roomId for room created notification');
+    return;
+  }
+  if (
+    !Number.isInteger(companyAId) ||
+    companyAId <= 0 ||
+    !Number.isInteger(companyBId) ||
+    companyBId <= 0
+  ) {
+    logger.warn(
+      { companyAId, companyBId, roomId },
+      'Invalid company ids for room created notification'
+    );
+    return;
+  }
+
+  const roomForCompanyA =
+    data.roomForCompanyA || data.room || (data && typeof data === 'object' ? data : { id: roomId });
+  const roomForCompanyB =
+    data.roomForCompanyB || data.room || (data && typeof data === 'object' ? data : { id: roomId });
   const chatRoom = `room:${roomId}`;
 
   // Subscribe all sockets from both companies to the new room
@@ -77,9 +126,10 @@ const notifyRoomCreated = async (room) => {
     socket.join(chatRoom);
   }
 
-  // Emit notification to both company rooms
-  io.to(`company:${companyAId}`).emit('chat:room:new', { roomId, room });
-  io.to(`company:${companyBId}`).emit('chat:room:new', { roomId, room });
+  // Emit notification to both company rooms.
+  // `chat:room:new` payload is the room object (same schema as GET /chats/:roomId).
+  io.to(`company:${companyAId}`).emit('chat:room:new', roomForCompanyA);
+  io.to(`company:${companyBId}`).emit('chat:room:new', roomForCompanyB);
 
   logger.info(
     {

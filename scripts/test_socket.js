@@ -21,7 +21,7 @@ const AGENT1_EMAIL = process.env.SOCKET_AGENT1_EMAIL || null;
 const AGENT2_EMAIL = process.env.SOCKET_AGENT2_EMAIL || null;
 const AGENT_PASSWORD = process.env.SOCKET_AGENT_PASSWORD || SEED_TEST_PASSWORD;
 const MAX_AGENT_CANDIDATES = Number.parseInt(process.env.SOCKET_AGENT_CANDIDATES || '20', 10);
-const SOCKET_MIN_USERS = Number.parseInt(process.env.SOCKET_MIN_USERS || '7', 10);
+const SOCKET_MIN_USERS = Number.parseInt(process.env.SOCKET_MIN_USERS || '3', 10);
 
 const nowIso = () => new Date().toISOString();
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

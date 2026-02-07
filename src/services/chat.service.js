@@ -138,23 +138,37 @@ const createOrGetRoom = async (myCompanyId, targetCompanyId) => {
     targetCompanyId
   );
 
+  let fullRoomForMe = null;
+
   if (created) {
     logger.info('Chat room created', {
       roomId: room.id,
       companies: [myCompanyId, targetCompanyId],
     });
 
-    // Notify both companies about the new room so they auto-subscribe
+    const [fullRoomForCreator, fullRoomForTarget] = await Promise.all([
+      chatRepository.findRoomByIdForCompany(room.id, myCompanyId),
+      chatRepository.findRoomByIdForCompany(room.id, targetCompanyId),
+    ]);
+
+    fullRoomForMe = fullRoomForCreator;
+
+    // Notify both companies about the new room so they auto-subscribe.
+    // Payload must match GET /chats/:roomId schema (per-company otherCompany + unreadCount).
     socketService.notifyRoomCreated({
-      id: room.id,
-      company_a_id: myCompanyId,
-      company_b_id: targetCompanyId,
+      roomId: room.id,
+      companyAId: myCompanyId,
+      companyBId: targetCompanyId,
+      roomForCompanyA: sanitizeRoom(fullRoomForCreator, myCompanyId),
+      roomForCompanyB: sanitizeRoom(fullRoomForTarget, targetCompanyId),
     });
   }
 
-  // Fetch full room details with company names
-  const fullRoom = await chatRepository.findRoomByIdForCompany(room.id, myCompanyId);
-  return { room: sanitizeRoom(fullRoom, myCompanyId), created };
+  // Fetch full room details with company names (if not already fetched)
+  if (!fullRoomForMe) {
+    fullRoomForMe = await chatRepository.findRoomByIdForCompany(room.id, myCompanyId);
+  }
+  return { room: sanitizeRoom(fullRoomForMe, myCompanyId), created };
 };
 
 /**
