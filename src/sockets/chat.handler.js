@@ -173,9 +173,18 @@ const registerChatHandlers = (io, socket) => {
         attachmentFileId,
       });
 
-      // Broadcast to all users in the room (including sender for confirmation)
-      const roomName = `room:${roomId}`;
-      io.to(roomName).emit('chat:message', messagePayload);
+      // Build per-company payloads so isRead reflects the other participant
+      const room = await chatService.getRoomById(roomId, companyId);
+      const senderCompanyId = companyId;
+      const otherCompanyId = room.otherCompany?.id;
+
+      const msgForSender = await chatService.getMessageById(messagePayload.id, senderCompanyId);
+      io.to(`company:${senderCompanyId}`).emit('chat:message', msgForSender);
+
+      if (otherCompanyId) {
+        const msgForOther = await chatService.getMessageById(messagePayload.id, otherCompanyId);
+        io.to(`company:${otherCompanyId}`).emit('chat:message', msgForOther);
+      }
 
       logger.debug(
         {

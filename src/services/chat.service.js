@@ -360,6 +360,17 @@ const getActiveRoomIds = async (companyId) => {
   return chatRepository.findActiveRoomIdsByCompanyId(companyId);
 };
 
+/**
+ * Fetch a single message scoped to the viewer company (used for per-company payloads)
+ */
+const getMessageById = async (messageId, companyId) => {
+  const message = await chatRepository.findMessageByIdForCompany(messageId, companyId);
+  if (!message) {
+    throw new AppError('Message not found', 404);
+  }
+  return sanitizeMessage(message);
+};
+
 module.exports = {
   createOrGetRoom,
   getRoomById,
@@ -371,4 +382,5 @@ module.exports = {
   getRoomMessages,
   markRoomRead,
   sanitizeMessage,
+  getMessageById,
 };
