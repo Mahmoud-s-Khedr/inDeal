@@ -62,8 +62,8 @@ const sanitizeMessage = (message) => {
     roomId: message.room_id,
     messageText: message.message_text,
     sentAt: message.sent_at,
-    readAt: message.read_at || null,
-    isRead: !!message.read_at,
+    readAt: message.other_read_at || null,
+    isRead: !!message.other_read_at,
     attachment,
     agent: {
       id: message.sender_user_id,
@@ -242,6 +242,9 @@ const sendMessage = async (roomId, userId, companyId, { messageText, attachmentF
     messageText: normalizedText,
     attachmentFileId: normalizedAttachmentId,
   });
+
+  // Mark the message as read by the sender's company so recipients see "other read" immediately
+  await chatRepository.markMessageReadForCompany(message.id, companyId);
 
   logger.info('Message sent', {
     messageId: message.id,

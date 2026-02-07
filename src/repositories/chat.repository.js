@@ -238,19 +238,32 @@ const findMessagesByRoomIdForCompany = async (
   { limit = 50, offset = 0, before, after } = {}
 ) => {
   let query = `
+        WITH room_ctx AS (
+          SELECT id,
+                 company_a_id,
+                 company_b_id,
+                 CASE
+                   WHEN company_a_id = $2 THEN company_b_id
+                   WHEN company_b_id = $2 THEN company_a_id
+                   ELSE NULL
+                 END AS other_company_id
+          FROM chat_rooms
+          WHERE id = $1
+        )
         SELECT m.*,
                u.first_name AS sender_first_name, u.last_name AS sender_last_name,
                u.profile_image AS sender_profile_image,
                c.id AS sender_company_id, c.name AS sender_company_name, c.logo AS sender_company_logo,
                f.file_name AS attachment_file_name, f.file_path AS attachment_file_path,
                f.file_metadata AS attachment_file_metadata,
-               mr.read_at AS read_at
+               mr_other.read_at AS other_read_at
         FROM chat_messages m
+        JOIN room_ctx rc ON rc.id = m.room_id
         JOIN users u ON m.sender_user_id = u.id
         JOIN companies c ON u.id = c.agent_id
         LEFT JOIN files f ON m.attachment_file_id = f.id
-        LEFT JOIN chat_message_reads mr
-          ON mr.message_id = m.id AND mr.company_id = $2
+        LEFT JOIN chat_message_reads mr_other
+          ON mr_other.message_id = m.id AND mr_other.company_id = rc.other_company_id
         WHERE m.room_id = $1
     `;
   const params = [roomId, companyId];
@@ -292,19 +305,30 @@ const countMessagesByRoomId = async (roomId) => {
 const findMessageByIdForCompany = async (messageId, companyId) => {
   const result = await pool.query(
     `
+        WITH room_ctx AS (
+          SELECT id,
+                 CASE
+                   WHEN company_a_id = $2 THEN company_b_id
+                   WHEN company_b_id = $2 THEN company_a_id
+                   ELSE NULL
+                 END AS other_company_id
+          FROM chat_rooms
+          WHERE id = (SELECT room_id FROM chat_messages WHERE id = $1)
+        )
         SELECT m.*,
                u.first_name AS sender_first_name, u.last_name AS sender_last_name,
                u.profile_image AS sender_profile_image,
                c.id AS sender_company_id, c.name AS sender_company_name, c.logo AS sender_company_logo,
                f.file_name AS attachment_file_name, f.file_path AS attachment_file_path,
                f.file_metadata AS attachment_file_metadata,
-               mr.read_at AS read_at
+               mr_other.read_at AS other_read_at
         FROM chat_messages m
+        JOIN room_ctx rc ON rc.id = m.room_id
         JOIN users u ON m.sender_user_id = u.id
         JOIN companies c ON u.id = c.agent_id
         LEFT JOIN files f ON m.attachment_file_id = f.id
-        LEFT JOIN chat_message_reads mr
-          ON mr.message_id = m.id AND mr.company_id = $2
+        LEFT JOIN chat_message_reads mr_other
+          ON mr_other.message_id = m.id AND mr_other.company_id = rc.other_company_id
         WHERE m.id = $1
         `,
     [messageId, companyId]
@@ -347,6 +371,23 @@ const markMessagesRead = async (roomId, companyId, { messageId } = {}) => {
 };
 
 /**
+ * Mark a single message as read for a specific company (used to auto-mark sender messages)
+ */
+const markMessageReadForCompany = async (messageId, companyId) => {
+  const result = await pool.query(
+    `
+        INSERT INTO chat_message_reads (message_id, company_id, read_at)
+        VALUES ($1, $2, NOW())
+        ON CONFLICT (message_id, company_id)
+        DO UPDATE SET read_at = EXCLUDED.read_at
+        RETURNING message_id, read_at
+        `,
+    [messageId, companyId]
+  );
+  return result.rows[0];
+};
+
+/**
  * Count unread messages for a room and company
  */
 const countUnreadMessagesByRoomId = async (roomId, companyId) => {
@@ -382,5 +423,6 @@ module.exports = {
   countMessagesByRoomId,
   findMessageByIdForCompany,
   markMessagesRead,
+  markMessageReadForCompany,
   countUnreadMessagesByRoomId,
 };
