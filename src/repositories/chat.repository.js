@@ -73,20 +73,13 @@ const findRoomByIdForCompany = async (roomId, companyId) => {
         SELECT r.*,
                ca.name AS company_a_name, ca.logo AS company_a_logo,
                cb.name AS company_b_name, cb.logo AS company_b_logo,
-               (
-                   SELECT m.message_text
-                   FROM chat_messages m
-                   WHERE m.room_id = r.id
-                   ORDER BY m.sent_at DESC
-                   LIMIT 1
-               ) AS last_message,
-               (
-                   SELECT m.sent_at
-                   FROM chat_messages m
-                   WHERE m.room_id = r.id
-                   ORDER BY m.sent_at DESC
-                   LIMIT 1
-               ) AS last_message_at,
+         lm.message_text AS last_message,
+         lm.sent_at AS last_message_at,
+         lm.id AS last_message_id,
+         lm.attachment_file_id AS last_attachment_file_id,
+         lm.attachment_file_name AS last_attachment_file_name,
+         lm.attachment_file_path AS last_attachment_file_path,
+         lm.attachment_file_metadata AS last_attachment_file_metadata,
                (
                    SELECT COUNT(*)
                    FROM chat_messages m
@@ -101,6 +94,20 @@ const findRoomByIdForCompany = async (roomId, companyId) => {
         FROM chat_rooms r
         JOIN companies ca ON r.company_a_id = ca.id
         JOIN companies cb ON r.company_b_id = cb.id
+        LEFT JOIN LATERAL (
+          SELECT m.id,
+                 m.message_text,
+                 m.sent_at,
+                 m.attachment_file_id,
+                 f.file_name AS attachment_file_name,
+                 f.file_path AS attachment_file_path,
+                 f.file_metadata AS attachment_file_metadata
+          FROM chat_messages m
+          LEFT JOIN files f ON f.id = m.attachment_file_id
+          WHERE m.room_id = r.id
+          ORDER BY m.sent_at DESC, m.id DESC
+          LIMIT 1
+        ) lm ON TRUE
         WHERE r.id = $1
         LIMIT 1
         `,
@@ -117,20 +124,13 @@ const findRoomsByCompanyId = async (companyId, { status, limit = 50, offset = 0 
         SELECT r.*,
                ca.name AS company_a_name, ca.logo AS company_a_logo,
                cb.name AS company_b_name, cb.logo AS company_b_logo,
-               (
-                   SELECT m.message_text 
-                   FROM chat_messages m 
-                   WHERE m.room_id = r.id 
-                   ORDER BY m.sent_at DESC 
-                   LIMIT 1
-               ) AS last_message,
-               (
-                   SELECT m.sent_at 
-                   FROM chat_messages m 
-                   WHERE m.room_id = r.id 
-                   ORDER BY m.sent_at DESC 
-                   LIMIT 1
-               ) AS last_message_at,
+         lm.message_text AS last_message,
+         lm.sent_at AS last_message_at,
+         lm.id AS last_message_id,
+         lm.attachment_file_id AS last_attachment_file_id,
+         lm.attachment_file_name AS last_attachment_file_name,
+         lm.attachment_file_path AS last_attachment_file_path,
+         lm.attachment_file_metadata AS last_attachment_file_metadata,
                (
                    SELECT COUNT(*)
                    FROM chat_messages m
@@ -145,6 +145,20 @@ const findRoomsByCompanyId = async (companyId, { status, limit = 50, offset = 0 
         FROM chat_rooms r
         JOIN companies ca ON r.company_a_id = ca.id
         JOIN companies cb ON r.company_b_id = cb.id
+        LEFT JOIN LATERAL (
+          SELECT m.id,
+                 m.message_text,
+                 m.sent_at,
+                 m.attachment_file_id,
+                 f.file_name AS attachment_file_name,
+                 f.file_path AS attachment_file_path,
+                 f.file_metadata AS attachment_file_metadata
+          FROM chat_messages m
+          LEFT JOIN files f ON f.id = m.attachment_file_id
+          WHERE m.room_id = r.id
+          ORDER BY m.sent_at DESC, m.id DESC
+          LIMIT 1
+        ) lm ON TRUE
         WHERE (r.company_a_id = $1 OR r.company_b_id = $1)
     `;
   const params = [companyId];

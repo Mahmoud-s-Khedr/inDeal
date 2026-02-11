@@ -864,6 +864,31 @@ class ChatAttachment {
   }
 }
 
+class ChatLastMessage {
+  final int id;
+  final String? sentAt;
+  final String? messageText;
+  final ChatAttachment? attachment;
+
+  ChatLastMessage({
+    required this.id,
+    this.sentAt,
+    this.messageText,
+    this.attachment,
+  });
+
+  factory ChatLastMessage.fromJson(Map<String, dynamic> json) {
+    return ChatLastMessage(
+      id: json['id'],
+      sentAt: json['sentAt'],
+      messageText: json['messageText'],
+      attachment: json['attachment'] != null
+        ? ChatAttachment.fromJson(json['attachment'])
+        : null,
+    );
+  }
+}
+
 class ChatRoom {
   final int id;
   final int companyAId;
@@ -872,6 +897,7 @@ class ChatRoom {
   final String status;
   final String? lastMessage;
   final String? lastMessageAt;
+  final ChatLastMessage? lastMessageObject;
   final int unreadCount;
 
   ChatRoom({
@@ -882,6 +908,7 @@ class ChatRoom {
     required this.status,
     this.lastMessage,
     this.lastMessageAt,
+    this.lastMessageObject,
     required this.unreadCount,
   });
 
@@ -896,6 +923,9 @@ class ChatRoom {
       status: json['status'] ?? 'active',
       lastMessage: json['lastMessage'],
       lastMessageAt: json['lastMessageAt'],
+      lastMessageObject: json['lastMessageObject'] != null
+        ? ChatLastMessage.fromJson(json['lastMessageObject'])
+        : null,
       unreadCount: json['unreadCount'] ?? 0,
     );
   }

@@ -10,6 +10,11 @@ const { publicUrl } = require('../config/storage');
 // HELPER FUNCTIONS
 // ─────────────────────────────────────────────────────────────
 
+function buildPublicUrl(filePath) {
+  if (!publicUrl || !filePath) return null;
+  return `${publicUrl.replace(/\/$/, '')}/${filePath}`;
+}
+
 const sanitizeRoom = (room, myCompanyId = null) => {
   if (!room) return null;
 
@@ -24,6 +29,26 @@ const sanitizeRoom = (room, myCompanyId = null) => {
     };
   }
 
+  const hasLastAttachment = !!room.last_attachment_file_id;
+  const lastAttachment = hasLastAttachment
+    ? {
+        id: room.last_attachment_file_id,
+        fileName: room.last_attachment_file_name,
+        publicUrl: buildPublicUrl(room.last_attachment_file_path),
+        mimeType: room.last_attachment_file_metadata?.mimeType || null,
+        size: room.last_attachment_file_metadata?.size || null,
+      }
+    : null;
+
+  const lastMessageObject = room.last_message_id
+    ? {
+        id: room.last_message_id,
+        sentAt: room.last_message_at,
+        messageText: room.last_message,
+        attachment: lastAttachment,
+      }
+    : null;
+
   return {
     id: room.id,
     companyAId: room.company_a_id,
@@ -31,15 +56,11 @@ const sanitizeRoom = (room, myCompanyId = null) => {
     otherCompany,
     status: room.status,
     createdAt: room.created_at,
-    lastMessage: room.last_message,
+    lastMessage: room.last_message || room.last_attachment_file_name || null,
     lastMessageAt: room.last_message_at,
+    lastMessageObject,
     unreadCount: room.unread_count !== undefined ? Number(room.unread_count) : 0,
   };
-};
-
-const buildPublicUrl = (filePath) => {
-  if (!publicUrl || !filePath) return null;
-  return `${publicUrl.replace(/\/$/, '')}/${filePath}`;
 };
 
 const sanitizeMessage = (message) => {

@@ -697,10 +697,21 @@ List all chat rooms for the authenticated user's company.
     "createdAt": "2026-01-15T08:00:00Z",
     "lastMessage": "Thanks for your offer",
     "lastMessageAt": "2026-01-19T10:30:00Z",
+    "lastMessageObject": {
+      "id": 123,
+      "sentAt": "2026-01-19T10:30:00Z",
+      "messageText": "Thanks for your offer",
+      "attachment": null
+    },
     "unreadCount": 2
   }
 ]
 ```
+
+Notes:
+
+- `lastMessage` is a convenience preview string.
+- `lastMessageObject` contains the full latest message content (including attachment metadata). If the latest message has no text but has an attachment, `lastMessage` may be the attachment file name.
 
 ---
 
@@ -739,6 +750,7 @@ Create a new chat room with another company, or retrieve the existing room if on
   "createdAt": "2026-01-25T10:00:00Z",
   "lastMessage": null,
   "lastMessageAt": null,
+  "lastMessageObject": null,
   "unreadCount": 0
 }
 ```
