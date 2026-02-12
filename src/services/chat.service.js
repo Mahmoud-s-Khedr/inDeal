@@ -266,8 +266,13 @@ const sendMessage = async (roomId, userId, companyId, { messageText, attachmentF
       throw new AppError('Attachment file not available', 400);
     }
     // Optionally verify uploader matches user
-    if (file.fileMetadata?.uploaderId && file.fileMetadata.uploaderId !== String(userId)) {
-      throw new AppError('Unauthorized to use this file', 403);
+    const uploaderId = file.fileMetadata?.uploaderId;
+    if (uploaderId !== null && uploaderId !== undefined) {
+      const normalizedUploaderId = String(uploaderId);
+      const normalizedUserId = String(userId);
+      if (normalizedUploaderId !== normalizedUserId) {
+        throw new AppError('Unauthorized to use this file', 403);
+      }
     }
   }
 
