@@ -43,6 +43,7 @@ const sanitizeRoom = (room, myCompanyId = null) => {
   const lastMessageObject = room.last_message_id
     ? {
         id: room.last_message_id,
+        senderId: room.last_message_sender_id || null,
         sentAt: room.last_message_at,
         messageText: room.last_message,
         attachment: lastAttachment,

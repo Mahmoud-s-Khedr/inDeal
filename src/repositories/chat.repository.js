@@ -95,7 +95,8 @@ const findRoomByIdForCompany = async (roomId, companyId) => {
         JOIN companies ca ON r.company_a_id = ca.id
         JOIN companies cb ON r.company_b_id = cb.id
         LEFT JOIN LATERAL (
-          SELECT m.id,
+             SELECT m.id,
+               m.sender_user_id AS last_message_sender_id,
                  m.message_text,
                  m.sent_at,
                  m.attachment_file_id,
@@ -146,7 +147,8 @@ const findRoomsByCompanyId = async (companyId, { status, limit = 50, offset = 0 
         JOIN companies ca ON r.company_a_id = ca.id
         JOIN companies cb ON r.company_b_id = cb.id
         LEFT JOIN LATERAL (
-          SELECT m.id,
+             SELECT m.id,
+               m.sender_user_id AS last_message_sender_id,
                  m.message_text,
                  m.sent_at,
                  m.attachment_file_id,
