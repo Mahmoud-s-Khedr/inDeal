@@ -21,7 +21,7 @@ const getFileUrl = async (fileId) => {
   }
 };
 
-const sanitizeCompany = (company) => {
+const sanitizeCompany = (company, logoUrl = null) => {
   if (!company) return null;
 
   return {
@@ -38,6 +38,7 @@ const sanitizeCompany = (company) => {
     status: company.status,
     contacts: company.contacts,
     locations: company.locations,
+    logoUrl,
     createdAt: company.created_at,
     updatedAt: company.updated_at,
     agent: company.first_name
@@ -129,13 +130,27 @@ const populateDocumentsWithFiles = async (documents) => {
 
 const listPendingCompanies = async () => {
   const pendingCompanies = await companyRepository.listByStatus('underReview');
-  const documentsByCompany = await Promise.all(
-    pendingCompanies.map((company) => companyDocumentRepository.listByCompanyId(company.id))
-  );
-  const documentsWithFiles = await Promise.all(documentsByCompany.map(populateDocumentsWithFiles));
+
+  // Parallel fetch of documents and logos
+  const [documentsWithFiles, companiesWithLogos] = await Promise.all([
+    // Documents
+    Promise.all(
+      pendingCompanies.map(async (company) => {
+        const docs = await companyDocumentRepository.listByCompanyId(company.id);
+        return populateDocumentsWithFiles(docs);
+      })
+    ),
+    // Logos
+    Promise.all(
+      pendingCompanies.map(async (company) => {
+        const logoUrl = await getFileUrl(company.logo);
+        return { ...company, logoUrl };
+      })
+    ),
+  ]);
 
   return pendingCompanies.map((company, index) => ({
-    company: sanitizeCompany(company),
+    company: sanitizeCompany(company, companiesWithLogos[index].logoUrl),
     documents: documentsWithFiles[index],
   }));
 };
@@ -150,7 +165,12 @@ const parseCompanyId = (value) => {
 
 const listAllCompanies = async () => {
   const companies = await companyRepository.listAll();
-  return companies.map(sanitizeCompany);
+  return Promise.all(
+    companies.map(async (company) => {
+      const logoUrl = await getFileUrl(company.logo);
+      return sanitizeCompany(company, logoUrl);
+    })
+  );
 };
 
 const getCompanyDetail = async (companyId) => {
@@ -160,14 +180,15 @@ const getCompanyDetail = async (companyId) => {
     throw new AppError('Company not found', 404);
   }
 
-  const [documents, agent] = await Promise.all([
+  const [documents, agent, logoUrl] = await Promise.all([
     companyDocumentRepository.listByCompanyId(numericId),
     userRepository.findById(company.agent_id),
+    getFileUrl(company.logo),
   ]);
   const documentsWithFiles = await populateDocumentsWithFiles(documents);
 
   return {
-    company: sanitizeCompany(company),
+    company: sanitizeCompany(company, logoUrl),
     documents: documentsWithFiles,
     agent: sanitizeUser(agent),
   };
@@ -193,7 +214,8 @@ const reviewCompanyStatus = async (companyId, status) => {
   }
 
   if (existing.status === status) {
-    return sanitizeCompany(existing);
+    const logoUrl = await getFileUrl(existing.logo);
+    return sanitizeCompany(existing, logoUrl);
   }
 
   const updated = await companyRepository.updateCompanyStatus(numericId, status);
@@ -252,7 +274,8 @@ const reviewCompanyStatus = async (companyId, status) => {
     }
   }
 
-  return sanitizeCompany(updated);
+  const logoUrl = await getFileUrl(updated.logo);
+  return sanitizeCompany(updated, logoUrl);
 };
 
 const approveCompany = async (companyId) => reviewCompanyStatus(companyId, 'active');
@@ -285,8 +308,9 @@ const changeCompanyAgent = async (companyId, agentId) => {
   }
 
   const updated = await companyRepository.updateCompanyAgent(numericCompanyId, numericAgentId);
+  const logoUrl = await getFileUrl(updated.logo);
   return {
-    company: sanitizeCompany(updated),
+    company: sanitizeCompany(updated, logoUrl),
     agent: sanitizeUser(agent),
   };
 };
@@ -312,7 +336,8 @@ const updateCompany = async (companyId, payload) => {
   };
 
   const updated = await companyRepository.updateCompanyById(numericId, dbUpdates);
-  return sanitizeCompany(updated);
+  const logoUrl = await getFileUrl(updated.logo);
+  return sanitizeCompany(updated, logoUrl);
 };
 
 const updateCompanySummary = async (companyId, summary) => {
@@ -325,7 +350,8 @@ const updateCompanySummary = async (companyId, summary) => {
   const updated = await companyRepository.updateCompanyById(numericId, {
     description: summary,
   });
-  return sanitizeCompany(updated);
+  const logoUrl = await getFileUrl(updated.logo);
+  return sanitizeCompany(updated, logoUrl);
 };
 
 const listCompanyReviews = async (companyId) => {

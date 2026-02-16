@@ -132,12 +132,34 @@ const sanitizeContributionMedia = (item, fileUrl = null) => ({
 const enrichProfile = async (company, gallery = [], reviews = [], documents, contributions) => {
   const logoUrl = await getFileUrl(company.logo);
   const sanitizedCompany = sanitizeCompany(company, logoUrl);
-  const sanitizedGallery = gallery.map(sanitizeGalleryItem);
+
+  const sanitizedGallery = await Promise.all(
+    gallery.map(async (item) => {
+      const imageUrl = await getFileUrl(item.image_file_id);
+      return sanitizeGalleryItem(item, imageUrl);
+    })
+  );
+
   const sanitizedReviews = reviews.map(sanitizeReview);
-  const sanitizedDocuments = Array.isArray(documents) ? documents.map(sanitizeDocument) : undefined;
-  const sanitizedContributions = Array.isArray(contributions)
-    ? contributions.map(sanitizeContribution)
+
+  const sanitizedDocuments = Array.isArray(documents)
+    ? await Promise.all(
+        documents.map(async (doc) => {
+          const fileUrl = await getFileUrl(doc.file_id);
+          return sanitizeDocument(doc, fileUrl);
+        })
+      )
     : undefined;
+
+  const sanitizedContributions = Array.isArray(contributions)
+    ? await Promise.all(
+        contributions.map(async (item) => {
+          const mediaFileUrl = await getFileUrl(item.media_file_id);
+          return sanitizeContribution(item, mediaFileUrl);
+        })
+      )
+    : undefined;
+
   const averageRating =
     sanitizedReviews.length > 0
       ? sanitizedReviews.reduce((sum, item) => sum + item.rating, 0) / sanitizedReviews.length
