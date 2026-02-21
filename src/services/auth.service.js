@@ -323,15 +323,27 @@ const dispatchVerificationEmail = (user) => {
 const issueAccessToken = async ({ userId, ipAddress, userAgent }) => {
   const sessionType = sessionService.inferSessionType(userAgent);
   const jti = sessionService.generateJti();
-  await sessionService.createOrReplaceSession({
+  if (!config.session.multiDeviceEnabled) {
+    await sessionService.createOrReplaceSession({
+      userId,
+      sessionType,
+      jti,
+      ipAddress,
+      userAgent,
+    });
+    return signToken(userId, { jti, st: sessionType });
+  }
+
+  const sid = sessionService.generateSessionId();
+  await sessionService.createSession({
     userId,
     sessionType,
+    sid,
     jti,
     ipAddress,
     userAgent,
   });
-  const token = signToken(userId, { jti, st: sessionType });
-  return token;
+  return signToken(userId, { jti, st: sessionType, sid });
 };
 
 const checkPasswordAgainstHistory = async (userId, newPassword, currentPasswordHash = null) => {
@@ -732,9 +744,23 @@ const resendVerificationEmail = async ({ email }) => {
   return { message: 'Verification email sent' };
 };
 
-const logoutAll = async (userId) => {
-  await sessionService.deleteAllSessions(userId);
-  return { message: 'Logged out successfully' };
+const logoutCurrentSession = async ({ userId, sid, sessionType, isLegacyToken }) => {
+  if (sid) {
+    await sessionService.deleteSessionBySid(sid, userId, sessionType);
+    return { message: 'Logged out current session successfully' };
+  }
+
+  if (isLegacyToken && config.session.legacyFallbackEnabled) {
+    await sessionService.deleteAllSessionsForUser(userId);
+    return { message: 'Logged out successfully (legacy token)' };
+  }
+
+  throw new AppError('Session identifier is missing', 401);
+};
+
+const logoutAllSessions = async (userId) => {
+  await sessionService.deleteAllSessionsForUser(userId);
+  return { message: 'Logged out from all sessions successfully' };
 };
 
 module.exports = {
@@ -749,5 +775,6 @@ module.exports = {
   resetPassword,
   verifyEmail,
   resendVerificationEmail,
-  logoutAll,
+  logoutCurrentSession,
+  logoutAllSessions,
 };

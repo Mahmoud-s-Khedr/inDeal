@@ -43,6 +43,12 @@ const envSchema = z.object({
 
   SESSION_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
   SESSION_ROTATE_LEEWAY_SECONDS: z.coerce.number().int().nonnegative().default(300),
+  SESSION_MULTI_DEVICE_ENABLED: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .default(true),
+  SESSION_LEGACY_FALLBACK_ENABLED: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .default(true),
 
   R2_BUCKET_NAME: z.string().default('indeal-assets'),
   R2_ACCESS_KEY_ID: z.string().optional(),
@@ -152,6 +158,8 @@ module.exports = {
   session: {
     refreshTtlDays: env.SESSION_REFRESH_TTL_DAYS,
     rotateLeewaySeconds: env.SESSION_ROTATE_LEEWAY_SECONDS,
+    multiDeviceEnabled: env.SESSION_MULTI_DEVICE_ENABLED,
+    legacyFallbackEnabled: env.SESSION_LEGACY_FALLBACK_ENABLED,
   },
   storage: {
     bucket: env.R2_BUCKET_NAME,

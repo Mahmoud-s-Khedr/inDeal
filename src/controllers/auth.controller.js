@@ -37,7 +37,7 @@ const adminLogin = catchAsync(async (req, res) => {
 });
 
 const logout = catchAsync(async (req, res) => {
-  const result = await authService.logoutAll(req.user.id);
+  const result = await authService.logoutAllSessions(req.user.id);
   delete res.locals.accessToken;
   sendResponse(res, 200, result, result.message);
 });
