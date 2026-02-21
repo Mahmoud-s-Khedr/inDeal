@@ -3,6 +3,7 @@ const { verifyToken, signToken } = require('../utils/jwt');
 const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
 const { pool } = require('../config/db');
+const config = require('../config/env');
 const logger = require('../utils/logger');
 const companyRepository = require('../repositories/company.repository');
 const sessionService = require('../services/session.service');
@@ -85,20 +86,41 @@ const protect = catchAsync(async (req, res, next) => {
     });
   }
 
-  const newJti = sessionService.generateJti();
-  await sessionService.rotateSession({
+  const nowSec = Math.floor(Date.now() / 1000);
+  const expSec = Number(decoded.exp);
+  const secondsToExpiry = Number.isFinite(expSec) ? expSec - nowSec : null;
+  const shouldRotate =
+    tokenState.expired ||
+    !Number.isFinite(expSec) ||
+    secondsToExpiry <= config.jwt.rotateBeforeExpSeconds;
+
+  logger.debug('Auth token rotation decision', {
     userId: currentUser.id,
     sessionType,
-    currentSession: session,
-    newJti,
-    ipAddress: req.ip,
-    userAgent: req.get('user-agent'),
+    shouldRotate,
+    secondsToExpiry,
+    expiredToken: tokenState.expired,
+    rotateBeforeExpSeconds: config.jwt.rotateBeforeExpSeconds,
   });
 
-  res.locals.accessToken = signToken(currentUser.id, {
-    jti: newJti,
-    st: sessionType,
-  });
+  if (shouldRotate) {
+    const newJti = sessionService.generateJti();
+    await sessionService.rotateSession({
+      userId: currentUser.id,
+      sessionType,
+      currentSession: session,
+      newJti,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    res.locals.accessToken = signToken(currentUser.id, {
+      jti: newJti,
+      st: sessionType,
+    });
+  } else {
+    res.locals.accessToken = token;
+  }
 
   req.user = currentUser;
   if (currentUser.role === 'agent') {

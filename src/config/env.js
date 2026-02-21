@@ -39,6 +39,7 @@ const envSchema = z.object({
 
   JWT_SECRET: z.string().default('change_this_secret_key_in_production'),
   JWT_EXPIRES_IN: z.string().default('5m'),
+  JWT_ROTATE_BEFORE_EXP_SECONDS: z.coerce.number().int().positive().default(60),
 
   SESSION_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
   SESSION_ROTATE_LEEWAY_SECONDS: z.coerce.number().int().nonnegative().default(300),
@@ -146,6 +147,7 @@ module.exports = {
   jwt: {
     secret: env.JWT_SECRET,
     expiresIn: env.JWT_EXPIRES_IN,
+    rotateBeforeExpSeconds: env.JWT_ROTATE_BEFORE_EXP_SECONDS,
   },
   session: {
     refreshTtlDays: env.SESSION_REFRESH_TTL_DAYS,

@@ -98,7 +98,8 @@ inDeal/
 
 - `POST /api/v1/auth/register` — accepts `{ user, company }` payloads to create an agent user and pending company profile in a single transaction; `company.documents` must reference uploaded file IDs (via `/files/upload-url`) so admins can review supporting paperwork.
 - `POST /api/v1/auth/login` — verifies email/password and returns a JWT plus the associated company record.
-- Requests are validated with Zod schemas (`src/validations/auth.validation.js`) and responses include `{ token, user, company }`.
+- Protected routes return a `token` in the response payload. The backend only rotates it when the current token is near expiry (configured by `JWT_ROTATE_BEFORE_EXP_SECONDS`, default `60` seconds); otherwise it echoes the same bearer token.
+- Requests are validated with Zod schemas (`src/validations/auth.validation.js`) and auth responses include `{ token, user, company }`.
 
 ## 🏢 Company Portfolio API
 
