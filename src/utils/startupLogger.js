@@ -101,9 +101,7 @@ const logStartupConfig = () => {
       fromEmail: config.resend.fromEmail,
     },
     session: {
-      accessTtlMinutes: config.session.accessTtlMinutes,
       refreshTtlDays: config.session.refreshTtlDays,
-      enforceLatestJti: config.session.enforceLatestJti,
     },
     features: {
       forgotPasswordEnabled: config.forgotPassword.enabled,

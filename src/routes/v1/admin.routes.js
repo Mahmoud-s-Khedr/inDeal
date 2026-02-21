@@ -3,6 +3,7 @@ const protect = require('../../middlewares/authMiddleware');
 const requireRoles = require('../../middlewares/roleMiddleware');
 const validate = require('../../middlewares/validateMiddleware');
 const adminCompanyController = require('../../controllers/adminCompany.controller');
+const adminDashboardController = require('../../controllers/adminDashboard.controller');
 const adminUserController = require('../../controllers/adminUser.controller');
 const dealController = require('../../controllers/deal.controller');
 const {
@@ -18,6 +19,8 @@ const {
   createCompanyDocumentSchema,
   updateCompanyDocumentSchema,
   documentParamsSchema,
+  registrationDocumentParamsSchema,
+  updateCompanyRegistrationDocumentSchema,
   createCompanyContributionSchema,
   updateCompanyContributionSchema,
   contributionParamsSchema,
@@ -32,6 +35,7 @@ const router = express.Router();
 
 router.use(protect, requireRoles('admin'));
 
+router.get('/dashboard/cards', adminDashboardController.getDashboardCards);
 router.get('/companies', adminCompanyController.listCompanies);
 router.get('/companies/pending', adminCompanyController.listPendingCompanies);
 // ═══════════════════════════════════════════════════════════════
@@ -123,6 +127,21 @@ router.put(
   '/companies/:id/documents/:documentId',
   validate(updateCompanyDocumentSchema),
   adminCompanyController.updateCompanyDocument
+);
+router.get(
+  '/companies/:id/registration-documents',
+  validate(companyParamsSchema),
+  adminCompanyController.listCompanyRegistrationDocuments
+);
+router.put(
+  '/companies/:id/registration-documents/:registrationDocumentId',
+  validate(updateCompanyRegistrationDocumentSchema),
+  adminCompanyController.updateCompanyRegistrationDocument
+);
+router.delete(
+  '/companies/:id/registration-documents/:registrationDocumentId',
+  validate(registrationDocumentParamsSchema),
+  adminCompanyController.deleteCompanyRegistrationDocument
 );
 router.delete(
   '/companies/:id/documents/:documentId',

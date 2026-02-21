@@ -8,7 +8,10 @@ const createRegistrationUploadUrl = catchAsync(async (req, res) => {
 });
 
 const register = catchAsync(async (req, res) => {
-  const result = await authService.register(req.body);
+  const result = await authService.register(req.body, {
+    ipAddress: req.ip,
+    userAgent: req.get('user-agent'),
+  });
   sendResponse(res, 201, result, 'Registration submitted successfully');
 });
 
@@ -18,13 +21,25 @@ const resubmit = catchAsync(async (req, res) => {
 });
 
 const login = catchAsync(async (req, res) => {
-  const result = await authService.login(req.body);
+  const result = await authService.login(req.body, {
+    ipAddress: req.ip,
+    userAgent: req.get('user-agent'),
+  });
   sendResponse(res, 200, result, 'Login successful');
 });
 
 const adminLogin = catchAsync(async (req, res) => {
-  const result = await authService.adminLogin(req.body);
+  const result = await authService.adminLogin(req.body, {
+    ipAddress: req.ip,
+    userAgent: req.get('user-agent'),
+  });
   sendResponse(res, 200, result, 'Admin login successful');
+});
+
+const logout = catchAsync(async (req, res) => {
+  const result = await authService.logoutAll(req.user.id);
+  delete res.locals.accessToken;
+  sendResponse(res, 200, result, result.message);
 });
 
 const forgotPassword = catchAsync(async (req, res) => {
@@ -194,6 +209,7 @@ module.exports = {
   resendForgotPasswordOtp,
   verifyOtp,
   resetPassword,
+  logout,
   verifyEmail,
   resendVerificationEmail,
 };

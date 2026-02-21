@@ -84,6 +84,11 @@ const listCompanyDocuments = catchAsync(async (req, res) => {
   sendResponse(res, 200, docs, 'Company documents fetched');
 });
 
+const listCompanyRegistrationDocuments = catchAsync(async (req, res) => {
+  const docs = await adminCompanyService.listCompanyRegistrationDocuments(req.params.id);
+  sendResponse(res, 200, docs, 'Registration documents fetched');
+});
+
 const createCompanyDocument = catchAsync(async (req, res) => {
   const doc = await adminCompanyService.createCompanyDocument(req.params.id, req.body);
   sendResponse(res, 201, doc, 'Company document created');
@@ -98,9 +103,26 @@ const updateCompanyDocument = catchAsync(async (req, res) => {
   sendResponse(res, 200, doc, 'Company document updated');
 });
 
+const updateCompanyRegistrationDocument = catchAsync(async (req, res) => {
+  const doc = await adminCompanyService.updateCompanyRegistrationDocument(
+    req.params.id,
+    req.params.registrationDocumentId,
+    req.body
+  );
+  sendResponse(res, 200, doc, 'Registration document updated');
+});
+
 const deleteCompanyDocument = catchAsync(async (req, res) => {
   const doc = await adminCompanyService.deleteCompanyDocument(req.params.id, req.params.documentId);
   sendResponse(res, 200, doc, 'Company document deleted');
+});
+
+const deleteCompanyRegistrationDocument = catchAsync(async (req, res) => {
+  const doc = await adminCompanyService.deleteCompanyRegistrationDocument(
+    req.params.id,
+    req.params.registrationDocumentId
+  );
+  sendResponse(res, 200, doc, 'Registration document deleted');
 });
 
 const listCompanyContributions = catchAsync(async (req, res) => {
@@ -146,9 +168,12 @@ module.exports = {
   updateCompanyGalleryItem,
   deleteCompanyGalleryItem,
   listCompanyDocuments,
+  listCompanyRegistrationDocuments,
   createCompanyDocument,
   updateCompanyDocument,
+  updateCompanyRegistrationDocument,
   deleteCompanyDocument,
+  deleteCompanyRegistrationDocument,
   listCompanyContributions,
   createCompanyContribution,
   updateCompanyContribution,

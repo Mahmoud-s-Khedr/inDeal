@@ -11,15 +11,25 @@ const userRepository = require('../repositories/user.repository');
 const companyRepository = require('../repositories/company.repository');
 const companyDocumentRepository = require('../repositories/companyDocument.repository');
 const fileRepository = require('../repositories/file.repository');
+const sessionService = require('./session.service');
 
 const fileService = require('./file.service');
+const REGISTRATION_DOC_PREFIX = 'registration:';
+const toRegistrationDocType = (docType) => {
+  const normalized = typeof docType === 'string' && docType.trim() ? docType.trim() : 'other';
+  return `${REGISTRATION_DOC_PREFIX}${normalized}`;
+};
+const toExternalDocType = (docType) =>
+  typeof docType === 'string' && docType.startsWith(REGISTRATION_DOC_PREFIX)
+    ? docType.slice(REGISTRATION_DOC_PREFIX.length) || 'other'
+    : docType;
 
 const getFileUrl = async (fileId) => {
   if (!fileId) return null;
   try {
     const file = await fileService.getFileById(fileId);
     return file.publicUrl;
-  } catch (err) {
+  } catch {
     return null;
   }
 };
@@ -71,6 +81,7 @@ const sanitizeDocument = (doc, fileUrl = null) => {
     companyId: doc.company_id,
     fileId: doc.file_id,
     fileUrl,
+    docType: toExternalDocType(doc.doc_type),
     description: doc.description,
     uploadedAt: doc.uploaded_at,
   };
@@ -309,6 +320,20 @@ const dispatchVerificationEmail = (user) => {
   });
 };
 
+const issueAccessToken = async ({ userId, ipAddress, userAgent }) => {
+  const sessionType = sessionService.inferSessionType(userAgent);
+  const jti = sessionService.generateJti();
+  await sessionService.createOrReplaceSession({
+    userId,
+    sessionType,
+    jti,
+    ipAddress,
+    userAgent,
+  });
+  const token = signToken(userId, { jti, st: sessionType });
+  return token;
+};
+
 const checkPasswordAgainstHistory = async (userId, newPassword, currentPasswordHash = null) => {
   const depth = passwordHistorySettings?.depth ?? 5;
   if (depth <= 0) return; // Password history check disabled
@@ -333,7 +358,7 @@ const createRegistrationUploadUrl = async ({ fileName, fileType, fileSize }) => 
   });
 };
 
-const register = async (payload) => {
+const register = async (payload, { ipAddress, userAgent } = {}) => {
   const email = payload.user.email.toLowerCase();
   const username = payload.user.username.trim();
   const documentsPayload = payload.company.documents || [];
@@ -392,7 +417,7 @@ const register = async (payload) => {
         documentsPayload.map((doc) => ({
           companyId: newCompany.id,
           fileId: doc.fileId,
-          docType: doc.docType,
+          docType: toRegistrationDocType(doc.docType),
           description: doc.description,
         }))
       );
@@ -403,7 +428,11 @@ const register = async (payload) => {
 
     await client.query('COMMIT');
 
-    const token = signToken(newUser.id);
+    const token = await issueAccessToken({
+      userId: newUser.id,
+      ipAddress,
+      userAgent,
+    });
     const companyPayload = sanitizeCompany(newCompany);
     if (createdDocuments.length) {
       companyPayload.documents = await Promise.all(
@@ -470,7 +499,7 @@ const resubmit = async (userId, payload) => {
         documentsPayload.map((doc) => ({
           companyId: company.id,
           fileId: doc.fileId,
-          docType: doc.docType,
+          docType: toRegistrationDocType(doc.docType),
           description: doc.description,
         }))
       );
@@ -499,7 +528,7 @@ const resubmit = async (userId, payload) => {
   }
 };
 
-const login = async (payload) => {
+const login = async (payload, { ipAddress, userAgent } = {}) => {
   const email = payload.email.toLowerCase();
   const user = await userRepository.findByEmail(email);
 
@@ -517,7 +546,11 @@ const login = async (payload) => {
   }
 
   const company = await companyRepository.findByAgentId(user.id);
-  const token = signToken(user.id);
+  const token = await issueAccessToken({
+    userId: user.id,
+    ipAddress,
+    userAgent,
+  });
 
   return {
     token,
@@ -526,7 +559,7 @@ const login = async (payload) => {
   };
 };
 
-const adminLogin = async (payload) => {
+const adminLogin = async (payload, { ipAddress, userAgent } = {}) => {
   const email = payload.email.toLowerCase();
   const user = await userRepository.findByEmail(email);
 
@@ -543,7 +576,11 @@ const adminLogin = async (payload) => {
     throw new AppError('Please verify your email before logging in', 403);
   }
 
-  const token = signToken(user.id);
+  const token = await issueAccessToken({
+    userId: user.id,
+    ipAddress,
+    userAgent,
+  });
 
   return {
     token,
@@ -695,6 +732,11 @@ const resendVerificationEmail = async ({ email }) => {
   return { message: 'Verification email sent' };
 };
 
+const logoutAll = async (userId) => {
+  await sessionService.deleteAllSessions(userId);
+  return { message: 'Logged out successfully' };
+};
+
 module.exports = {
   createRegistrationUploadUrl,
   register,
@@ -707,4 +749,5 @@ module.exports = {
   resetPassword,
   verifyEmail,
   resendVerificationEmail,
+  logoutAll,
 };

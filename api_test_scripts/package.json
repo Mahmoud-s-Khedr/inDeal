@@ -14,6 +14,7 @@
     "flow:contributions": "node flows/07-contributions.flow.js",
     "flow:reviews": "node flows/08-reviews.flow.js",
     "flow:admin": "node flows/09-admin.flow.js",
+    "flow:company-route-regression": "node flows/10-company-route-regression.flow.js",
     "flow:all": "node scripts/run-all-flows.js",
     "load-test": "artillery run load-testing/artillery.yml",
     "load-test:registration": "artillery run load-testing/scenarios/registration.yml",

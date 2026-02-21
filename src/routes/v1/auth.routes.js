@@ -22,14 +22,10 @@ router.post(
   authController.createRegistrationUploadUrl
 );
 router.post('/register', validate(registerSchema), authController.register);
-router.post(
-  '/resubmit',
-  protect,
-  validate(resubmitSchema),
-  authController.resubmit
-);
+router.post('/resubmit', protect, validate(resubmitSchema), authController.resubmit);
 router.post('/login', validate(loginSchema), authController.login);
 router.post('/admin/login', validate(loginSchema), authController.adminLogin);
+router.post('/logout', protect, authController.logout);
 router.post('/forgot-password', validate(forgotPasswordSchema), authController.forgotPassword);
 router.post(
   '/resend-forgot-password-otp',

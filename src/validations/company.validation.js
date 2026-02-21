@@ -37,6 +37,23 @@ const industryEnumValues = [
   'other',
 ];
 
+const normalizeEnumInput = (value, enumValues) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+
+  const normalizeKey = (entry) => entry.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const byNormalizedKey = Object.fromEntries(
+    enumValues.map((entry) => [normalizeKey(entry), entry])
+  );
+  return byNormalizedKey[normalizeKey(trimmed)] || trimmed;
+};
+
+const normalizedIndustryEnumSchema = z.preprocess(
+  (value) => normalizeEnumInput(value, industryEnumValues),
+  z.enum(industryEnumValues)
+);
+
 const manufacturingStrategyEnumValues = [
   'makeToStock',
   'makeToOrder',
@@ -61,7 +78,7 @@ const updateCompanySchema = z.object({
       website: z.string().url().max(100).optional(),
       logoFileId: z.coerce.number().int().positive().optional(),
       companyType: z.enum(companyTypeEnumValues).optional(),
-      companyIndustry: z.enum(industryEnumValues).optional(),
+      companyIndustry: normalizedIndustryEnumSchema.optional(),
       manufacturingStrategy: z.enum(manufacturingStrategyEnumValues).optional(),
       contacts: z.array(contactSchema).optional(),
       locations: z.array(z.string().min(1)).optional(),
@@ -103,7 +120,7 @@ const searchCompaniesSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
     companyType: z.enum(companyTypeEnumValues).optional(),
-    companyIndustry: z.enum(industryEnumValues).optional(),
+    companyIndustry: normalizedIndustryEnumSchema.optional(),
     manufacturingStrategy: z.enum(manufacturingStrategyEnumValues).optional(),
     location: z.string().max(100).optional(),
     status: z.enum(companyStatusEnumValues).optional(),
@@ -135,6 +152,12 @@ const updateGalleryItemSchema = z.object({
 const documentIdParamsSchema = z.object({
   params: z.object({
     documentId: z.coerce.number().int().positive(),
+  }),
+});
+
+const registrationDocumentIdParamsSchema = z.object({
+  params: z.object({
+    registrationDocumentId: z.coerce.number().int().positive(),
   }),
 });
 
@@ -261,6 +284,21 @@ const updateDocumentSchema = z.object({
     }),
 });
 
+const updateRegistrationDocumentSchema = z.object({
+  params: z.object({
+    registrationDocumentId: z.coerce.number().int().positive(),
+  }),
+  body: z
+    .object({
+      fileId: z.coerce.number().int().positive().optional(),
+      docType: z.string().max(100).optional(),
+      description: z.string().optional(),
+    })
+    .refine((data) => Object.values(data).some((value) => value !== undefined), {
+      message: 'At least one field must be provided',
+    }),
+});
+
 const contributionTypeValues = ['product', 'project', 'deal', 'partnership'];
 
 const contributionMediaTypeValues = ['image', 'video', 'file', 'url'];
@@ -290,16 +328,17 @@ const createContributionSchema = z.object({
         )
         .optional(),
       details: z.object({}).passthrough().optional(),
+      partnerId: z.coerce.number().int().positive().optional(),
       partnerName: z.string().max(100).optional(),
       contributors: z.array(z.string().min(1)).optional(),
       tags: z.array(z.string().min(1)).optional(),
     })
     .superRefine((data, ctx) => {
-      if (data.type === 'partnership' && !data.partnerName) {
+      if (data.type === 'partnership' && !data.partnerId && !data.partnerName) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'partnerName is required when type is partnership',
-          path: ['partnerName'],
+          message: 'partnerId or partnerName is required when type is partnership',
+          path: ['partnerId'],
         });
       }
 
@@ -335,6 +374,16 @@ const createContributionSchema = z.object({
           path: ['mediaFileId'],
         });
       }
+
+      if (data.type === 'project') {
+        if (!Array.isArray(data.contributors) || data.contributors.length < 1) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'contributors must contain at least one name when type is project',
+            path: ['contributors'],
+          });
+        }
+      }
     }),
 });
 
@@ -360,16 +409,17 @@ const updateContributionSchema = z.object({
         )
         .optional(),
       details: z.object({}).passthrough().optional(),
+      partnerId: z.coerce.number().int().positive().optional(),
       partnerName: z.string().max(100).optional(),
       contributors: z.array(z.string().min(1)).optional(),
       tags: z.array(z.string().min(1)).optional(),
     })
     .superRefine((data, ctx) => {
-      if (data.type === 'partnership' && !data.partnerName) {
+      if (data.type === 'partnership' && !data.partnerId && !data.partnerName) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'partnerName is required when type is partnership',
-          path: ['partnerName'],
+          message: 'partnerId or partnerName is required when type is partnership',
+          path: ['partnerId'],
         });
       }
       // For updates, allow mediaUrl without re-sending mediaType,
@@ -407,6 +457,16 @@ const updateContributionSchema = z.object({
           message: 'mediaFileId is required when setting mediaType to image/video/file',
           path: ['mediaFileId'],
         });
+      }
+
+      if (data.type === 'project') {
+        if (!Array.isArray(data.contributors) || data.contributors.length < 1) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'contributors must contain at least one name when type is project',
+            path: ['contributors'],
+          });
+        }
       }
     })
     .refine((data) => Object.values(data).some((value) => value !== undefined), {
@@ -491,8 +551,10 @@ module.exports = {
   galleryItemParamsSchema,
   updateGalleryItemSchema,
   documentIdParamsSchema,
+  registrationDocumentIdParamsSchema,
   createDocumentSchema,
   updateDocumentSchema,
+  updateRegistrationDocumentSchema,
   contributionIdParamsSchema,
   createContributionSchema,
   updateContributionSchema,

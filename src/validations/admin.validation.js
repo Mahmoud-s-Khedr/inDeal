@@ -95,6 +95,13 @@ const documentParamsSchema = z.object({
   }),
 });
 
+const registrationDocumentParamsSchema = z.object({
+  params: z.object({
+    id: z.coerce.number().int().positive(),
+    registrationDocumentId: z.coerce.number().int().positive(),
+  }),
+});
+
 const createCompanyDocumentSchema = z.object({
   params: companyIdSchema,
   body: z
@@ -215,6 +222,22 @@ const updateCompanyDocumentSchema = z.object({
     }),
 });
 
+const updateCompanyRegistrationDocumentSchema = z.object({
+  params: z.object({
+    id: z.coerce.number().int().positive(),
+    registrationDocumentId: z.coerce.number().int().positive(),
+  }),
+  body: z
+    .object({
+      fileId: z.coerce.number().int().positive().optional(),
+      docType: z.string().max(100).optional(),
+      description: z.string().optional(),
+    })
+    .refine((data) => Object.values(data).some((value) => value !== undefined), {
+      message: 'At least one field must be provided',
+    }),
+});
+
 const contributionTypeValues = ['product', 'project', 'deal', 'partnership'];
 
 const contributionMediaTypeValues = ['image', 'video', 'file', 'url'];
@@ -237,8 +260,19 @@ const createCompanyContributionSchema = z.object({
       mediaType: z.enum(contributionMediaTypeValues).optional(),
       mediaUrl: z.string().url().max(255).optional(),
       details: z.object({}).passthrough().optional(),
+      partnerId: z.coerce.number().int().positive().optional(),
+      partnerName: z.string().max(100).optional(),
+      contributors: z.array(z.string().min(1)).optional(),
     })
     .superRefine((data, ctx) => {
+      if (data.type === 'partnership' && !data.partnerId && !data.partnerName) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'partnerId or partnerName is required when type is partnership',
+          path: ['partnerId'],
+        });
+      }
+
       if (data.mediaUrl !== undefined && data.mediaType !== 'url') {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -271,6 +305,16 @@ const createCompanyContributionSchema = z.object({
           path: ['mediaFileId'],
         });
       }
+
+      if (data.type === 'project') {
+        if (!Array.isArray(data.contributors) || data.contributors.length < 1) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'contributors must contain at least one name when type is project',
+            path: ['contributors'],
+          });
+        }
+      }
     }),
 });
 
@@ -288,8 +332,19 @@ const updateCompanyContributionSchema = z.object({
       mediaType: z.enum(contributionMediaTypeValues).optional(),
       mediaUrl: z.string().url().max(255).optional(),
       details: z.object({}).passthrough().optional(),
+      partnerId: z.coerce.number().int().positive().optional(),
+      partnerName: z.string().max(100).optional(),
+      contributors: z.array(z.string().min(1)).optional(),
     })
     .superRefine((data, ctx) => {
+      if (data.type === 'partnership' && !data.partnerId && !data.partnerName) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'partnerId or partnerName is required when type is partnership',
+          path: ['partnerId'],
+        });
+      }
+
       // For updates, allow mediaUrl without re-sending mediaType,
       // because the validator doesn't know the existing record's mediaType.
       // If mediaType is explicitly provided and it's not 'url', reject.
@@ -325,6 +380,16 @@ const updateCompanyContributionSchema = z.object({
           path: ['mediaFileId'],
         });
       }
+
+      if (data.type === 'project') {
+        if (!Array.isArray(data.contributors) || data.contributors.length < 1) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'contributors must contain at least one name when type is project',
+            path: ['contributors'],
+          });
+        }
+      }
     })
     .refine((data) => Object.values(data).some((value) => value !== undefined), {
       message: 'At least one field must be provided',
@@ -343,6 +408,8 @@ module.exports = {
   createCompanyDocumentSchema,
   updateCompanyDocumentSchema,
   documentParamsSchema,
+  registrationDocumentParamsSchema,
+  updateCompanyRegistrationDocumentSchema,
   createCompanyContributionSchema,
   updateCompanyContributionSchema,
   contributionParamsSchema,

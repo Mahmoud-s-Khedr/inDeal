@@ -38,6 +38,7 @@ const REDACT_PATHS = [
   'res.body.token',
   'res.body.accessToken',
   'res.body.refreshToken',
+  'res.locals.accessToken',
 ];
 
 // Base configuration shared across environments

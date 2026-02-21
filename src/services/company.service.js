@@ -1,6 +1,5 @@
 const AppError = require('../utils/AppError');
 const companyRepository = require('../repositories/company.repository');
-const companyAgentRepository = require('../repositories/companyAgent.repository');
 const galleryRepository = require('../repositories/companyGallery.repository');
 const reviewRepository = require('../repositories/companyReview.repository');
 const companyDocumentRepository = require('../repositories/companyDocument.repository');
@@ -15,12 +14,20 @@ const notificationService = require('./notification.service');
 const { NOTIFICATION_TYPES } = require('../constants/notificationTypes');
 const { validateCompanyCompleteness } = require('../utils/validationHelper');
 
+const REGISTRATION_DOC_PREFIX = 'registration:';
+const isRegistrationDocType = (docType) =>
+  typeof docType === 'string' && docType.startsWith(REGISTRATION_DOC_PREFIX);
+const toExternalDocType = (docType) =>
+  isRegistrationDocType(docType)
+    ? docType.slice(REGISTRATION_DOC_PREFIX.length) || 'other'
+    : docType;
+
 const getFileUrl = async (fileId) => {
   if (!fileId) return null;
   try {
     const file = await fileService.getFileById(fileId);
     return file.publicUrl;
-  } catch (err) {
+  } catch {
     return null;
   }
 };
@@ -90,7 +97,7 @@ const sanitizeDocument = (doc, fileUrl = null) => ({
   companyId: doc.company_id,
   fileId: doc.file_id,
   fileUrl,
-  docType: doc.doc_type,
+  docType: toExternalDocType(doc.doc_type),
   title: doc.title,
   issuer: doc.issuer,
   description: doc.description,
@@ -112,6 +119,7 @@ const sanitizeContribution = (item, mediaFileUrl = null) => ({
   details: item.details,
   locations: item.details?.locations || [],
   socialMediaLinks: item.details?.socialMediaLinks || [],
+  partnerId: item.details?.partnerId,
   partnerName: item.details?.partnerName,
   contributors: item.details?.contributors || [],
   tags: item.details?.tags || [],
@@ -208,12 +216,51 @@ const getCompanyOrThrowById = async (companyId) => {
   return company;
 };
 
+const resolvePartnerReferenceOrThrow = async ({ partnerId, partnerName, companyId }) => {
+  if (partnerId !== undefined && partnerId !== null) {
+    const numericPartnerId = Number(partnerId);
+    if (!Number.isInteger(numericPartnerId) || numericPartnerId <= 0) {
+      throw new AppError('Invalid partnerId', 400);
+    }
+    const partnerCompany = await companyRepository.findById(numericPartnerId);
+    if (!partnerCompany) {
+      throw new AppError('partnerId must match an existing company in the system', 400);
+    }
+    if (partnerCompany.id === companyId) {
+      throw new AppError('partnerId cannot be your own company', 400);
+    }
+    return { partnerId: partnerCompany.id };
+  }
+
+  const normalizedName = partnerName?.trim();
+  if (!normalizedName) {
+    throw new AppError('partnerId or partnerName is required when type is partnership', 400);
+  }
+
+  const partnerCompany = await companyRepository.findByName(normalizedName);
+  if (!partnerCompany) {
+    throw new AppError('partnerName must match an existing company in the system', 400);
+  }
+  if (partnerCompany.id === companyId) {
+    throw new AppError('partnerName cannot be your own company', 400);
+  }
+
+  return { partnerName: partnerCompany.name };
+};
+
+const validateProjectContributors = (type, contributors) => {
+  if (type !== 'project') return;
+  if (!Array.isArray(contributors) || contributors.length < 1) {
+    throw new AppError('contributors must contain at least one name when type is project', 400);
+  }
+};
+
 const getMyProfile = async (agentId) => {
   const company = await getCompanyOrThrowByAgent(agentId);
   const [gallery, reviews, documents, contributions] = await Promise.all([
     galleryRepository.listByCompanyId(company.id),
     reviewRepository.listByCompanyId(company.id),
-    companyDocumentRepository.listByCompanyId(company.id),
+    companyDocumentRepository.listByCompanyId(company.id, { scope: 'public' }),
     contributionRepository.listByCompanyId(company.id),
   ]);
   return enrichProfile(company, gallery, reviews, documents, contributions);
@@ -418,7 +465,20 @@ const createReview = async (agentId, companyId, payload) => {
 
 const listMyDocuments = async (agentId) => {
   const company = await getCompanyOrThrowByAgent(agentId);
-  const docs = await companyDocumentRepository.listByCompanyId(company.id);
+  const docs = await companyDocumentRepository.listByCompanyId(company.id, { scope: 'public' });
+  return Promise.all(
+    docs.map(async (doc) => {
+      const fileUrl = await getFileUrl(doc.file_id);
+      return sanitizeDocument(doc, fileUrl);
+    })
+  );
+};
+
+const listMyRegistrationDocuments = async (agentId) => {
+  const company = await getCompanyOrThrowByAgent(agentId);
+  const docs = await companyDocumentRepository.listByCompanyId(company.id, {
+    scope: 'registration',
+  });
   return Promise.all(
     docs.map(async (doc) => {
       const fileUrl = await getFileUrl(doc.file_id);
@@ -458,10 +518,13 @@ const updateMyDocument = async (agentId, documentId, payload) => {
   if (existing.company_id !== company.id) {
     throw new AppError('You do not have access to this document', 403);
   }
+  if (isRegistrationDocType(existing.doc_type)) {
+    throw new AppError('Registration form documents cannot be edited from this endpoint', 400);
+  }
 
   const providedCertificateFields =
     payload.title !== undefined || payload.issuer !== undefined || payload.url !== undefined;
-  const isExistingCertificate = existing.doc_type === 'certificate';
+  const isExistingCertificate = toExternalDocType(existing.doc_type) === 'certificate';
   const isSettingCertificate = payload.docType === 'certificate';
 
   // Reject certificate metadata updates for non-certificate docs unless explicitly switching to certificate.
@@ -510,6 +573,42 @@ const updateMyDocument = async (agentId, documentId, payload) => {
   return sanitizeDocument(updated, fileUrl);
 };
 
+const updateMyRegistrationDocument = async (agentId, registrationDocumentId, payload) => {
+  const company = await getCompanyOrThrowByAgent(agentId);
+  const numericId = Number(registrationDocumentId);
+  if (!Number.isInteger(numericId) || numericId <= 0) {
+    throw new AppError('Invalid document id', 400);
+  }
+
+  const existing = await companyDocumentRepository.findById(numericId);
+  if (!existing) {
+    throw new AppError('Document not found', 404);
+  }
+  if (existing.company_id !== company.id) {
+    throw new AppError('You do not have access to this document', 403);
+  }
+  if (!isRegistrationDocType(existing.doc_type)) {
+    throw new AppError('Only registration form documents can be edited from this endpoint', 400);
+  }
+
+  const nextDocType =
+    payload.docType === undefined
+      ? existing.doc_type
+      : payload.docType.startsWith(REGISTRATION_DOC_PREFIX)
+        ? payload.docType
+        : `${REGISTRATION_DOC_PREFIX}${payload.docType}`;
+
+  const updates = {
+    file_id: payload.fileId,
+    doc_type: nextDocType,
+    description: payload.description,
+  };
+
+  const updated = await companyDocumentRepository.updateDocument(numericId, updates);
+  const fileUrl = await getFileUrl(updated.file_id);
+  return sanitizeDocument(updated, fileUrl);
+};
+
 const deleteMyDocument = async (agentId, documentId) => {
   const company = await getCompanyOrThrowByAgent(agentId);
   const numericId = Number(documentId);
@@ -523,6 +622,32 @@ const deleteMyDocument = async (agentId, documentId) => {
   }
   if (existing.company_id !== company.id) {
     throw new AppError('You do not have access to this document', 403);
+  }
+  if (isRegistrationDocType(existing.doc_type)) {
+    throw new AppError('Registration form documents cannot be deleted from this endpoint', 400);
+  }
+
+  const deleted = await companyDocumentRepository.deleteDocument(numericId);
+  const fileUrl = await getFileUrl(deleted.file_id);
+  return sanitizeDocument(deleted, fileUrl);
+};
+
+const deleteMyRegistrationDocument = async (agentId, registrationDocumentId) => {
+  const company = await getCompanyOrThrowByAgent(agentId);
+  const numericId = Number(registrationDocumentId);
+  if (!Number.isInteger(numericId) || numericId <= 0) {
+    throw new AppError('Invalid document id', 400);
+  }
+
+  const existing = await companyDocumentRepository.findById(numericId);
+  if (!existing) {
+    throw new AppError('Document not found', 404);
+  }
+  if (existing.company_id !== company.id) {
+    throw new AppError('You do not have access to this document', 403);
+  }
+  if (!isRegistrationDocType(existing.doc_type)) {
+    throw new AppError('Only registration form documents can be deleted from this endpoint', 400);
   }
 
   const deleted = await companyDocumentRepository.deleteDocument(numericId);
@@ -543,16 +668,31 @@ const listMyContributions = async (agentId) => {
 
 const createMyContribution = async (agentId, payload) => {
   const company = await getCompanyOrThrowByAgent(agentId);
+  let resolvedPartner = {};
+  if (payload.type === 'partnership') {
+    resolvedPartner = await resolvePartnerReferenceOrThrow({
+      partnerId: payload.partnerId,
+      partnerName: payload.partnerName,
+      companyId: company.id,
+    });
+  }
+  validateProjectContributors(payload.type, payload.contributors);
 
   // Map top-level UI fields to details JSONB
   const details = {
     ...(payload.details || {}),
   };
-  if (payload.locations) details.locations = payload.locations;
-  if (payload.socialMediaLinks) details.socialMediaLinks = payload.socialMediaLinks;
-  if (payload.partnerName) details.partnerName = payload.partnerName;
-  if (payload.contributors) details.contributors = payload.contributors;
-  if (payload.tags) details.tags = payload.tags;
+  if (payload.locations !== undefined) details.locations = payload.locations;
+  if (payload.socialMediaLinks !== undefined) details.socialMediaLinks = payload.socialMediaLinks;
+  if (resolvedPartner.partnerId !== undefined) {
+    details.partnerId = resolvedPartner.partnerId;
+    delete details.partnerName;
+  } else if (resolvedPartner.partnerName !== undefined) {
+    details.partnerName = resolvedPartner.partnerName;
+    delete details.partnerId;
+  }
+  if (payload.contributors !== undefined) details.contributors = payload.contributors;
+  if (payload.tags !== undefined) details.tags = payload.tags;
 
   const item = await contributionRepository.createContribution({
     companyId: company.id,
@@ -624,15 +764,42 @@ const updateMyContribution = async (agentId, contributionId, payload) => {
   }
 
   // Handle details updates (merge with existing or payload.details)
+  const nextType = payload.type ?? existing.type;
+  const nextContributors = payload.contributors ?? existing.details?.contributors;
+  validateProjectContributors(nextType, nextContributors);
+
+  let nextPartner = {
+    partnerId: payload.partnerId ?? existing.details?.partnerId,
+    partnerName: payload.partnerName ?? existing.details?.partnerName,
+  };
+  if (nextType === 'partnership') {
+    nextPartner = await resolvePartnerReferenceOrThrow({
+      partnerId: nextPartner.partnerId,
+      partnerName: nextPartner.partnerName,
+      companyId: company.id,
+    });
+  }
+
   const nextDetails = {
     ...(existing.details || {}),
     ...(payload.details || {}),
   };
-  if (payload.locations) nextDetails.locations = payload.locations;
-  if (payload.socialMediaLinks) nextDetails.socialMediaLinks = payload.socialMediaLinks;
-  if (payload.partnerName) nextDetails.partnerName = payload.partnerName;
-  if (payload.contributors) nextDetails.contributors = payload.contributors;
-  if (payload.tags) nextDetails.tags = payload.tags;
+  if (payload.locations !== undefined) nextDetails.locations = payload.locations;
+  if (payload.socialMediaLinks !== undefined) {
+    nextDetails.socialMediaLinks = payload.socialMediaLinks;
+  }
+  if (nextType !== 'partnership') {
+    delete nextDetails.partnerName;
+    delete nextDetails.partnerId;
+  } else if (nextPartner.partnerId !== undefined) {
+    nextDetails.partnerId = nextPartner.partnerId;
+    delete nextDetails.partnerName;
+  } else {
+    nextDetails.partnerName = nextPartner.partnerName;
+    delete nextDetails.partnerId;
+  }
+  if (payload.contributors !== undefined) nextDetails.contributors = payload.contributors;
+  if (payload.tags !== undefined) nextDetails.tags = payload.tags;
 
   const contributionUpdates = {
     media_file_id: payload.mediaFileId,
@@ -675,6 +842,9 @@ const deleteMyContribution = async (agentId, contributionId) => {
   }
 
   const deleted = await contributionRepository.deleteContribution(numericId);
+  if (!deleted) {
+    throw new AppError('Contribution not found', 404);
+  }
   const mediaFileUrl = await getFileUrl(deleted.media_file_id);
   return sanitizeContribution(deleted, mediaFileUrl);
 };
@@ -893,9 +1063,12 @@ module.exports = {
   updateMyGalleryItem,
   deleteMyGalleryItem,
   listMyDocuments,
+  listMyRegistrationDocuments,
   createMyDocument,
   updateMyDocument,
+  updateMyRegistrationDocument,
   deleteMyDocument,
+  deleteMyRegistrationDocument,
   listMyContributions,
   createMyContribution,
   updateMyContribution,

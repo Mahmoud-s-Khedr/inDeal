@@ -76,6 +76,28 @@ const createMyDocument = catchAsync(async (req, res) => {
   sendResponse(res, 201, doc, 'Company document created');
 });
 
+const listMyRegistrationDocuments = catchAsync(async (req, res) => {
+  const docs = await companyService.listMyRegistrationDocuments(req.user.id);
+  sendResponse(res, 200, docs, 'Registration documents fetched');
+});
+
+const updateMyRegistrationDocument = catchAsync(async (req, res) => {
+  const doc = await companyService.updateMyRegistrationDocument(
+    req.user.id,
+    req.params.registrationDocumentId,
+    req.body
+  );
+  sendResponse(res, 200, doc, 'Registration document updated');
+});
+
+const deleteMyRegistrationDocument = catchAsync(async (req, res) => {
+  const doc = await companyService.deleteMyRegistrationDocument(
+    req.user.id,
+    req.params.registrationDocumentId
+  );
+  sendResponse(res, 200, doc, 'Registration document deleted');
+});
+
 const updateMyDocument = catchAsync(async (req, res) => {
   const doc = await companyService.updateMyDocument(req.user.id, req.params.documentId, req.body);
   sendResponse(res, 200, doc, 'Company document updated');
@@ -156,8 +178,6 @@ const reorderContributionMedia = catchAsync(async (req, res) => {
   sendResponse(res, 200, media, 'Contribution media reordered');
 });
 
-
-
 module.exports = {
   getMyProfile,
   updateMyProfile,
@@ -172,7 +192,10 @@ module.exports = {
   updateMyGalleryItem,
   deleteMyGalleryItem,
   listMyDocuments,
+  listMyRegistrationDocuments,
   createMyDocument,
+  updateMyRegistrationDocument,
+  deleteMyRegistrationDocument,
   updateMyDocument,
   deleteMyDocument,
   listMyContributions,
@@ -184,5 +207,4 @@ module.exports = {
   updateContributionMedia,
   deleteContributionMedia,
   reorderContributionMedia,
-
 };

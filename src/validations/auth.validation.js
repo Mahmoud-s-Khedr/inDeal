@@ -43,6 +43,23 @@ const industryEnumValues = [
   'other',
 ];
 
+const normalizeEnumInput = (value, enumValues) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+
+  const normalizeKey = (entry) => entry.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const byNormalizedKey = Object.fromEntries(
+    enumValues.map((entry) => [normalizeKey(entry), entry])
+  );
+  return byNormalizedKey[normalizeKey(trimmed)] || trimmed;
+};
+
+const normalizedIndustryEnumSchema = z.preprocess(
+  (value) => normalizeEnumInput(value, industryEnumValues),
+  z.enum(industryEnumValues)
+);
+
 const manufacturingStrategyEnumValues = [
   'makeToStock',
   'makeToOrder',
@@ -67,7 +84,7 @@ const registerSchema = z.object({
       phone: z.string().max(20).optional(),
       website: z.string().url().max(100).optional(),
       companyType: z.enum(companyTypeEnumValues).optional(),
-      companyIndustry: z.enum(industryEnumValues).optional(),
+      companyIndustry: normalizedIndustryEnumSchema.optional(),
       manufacturingStrategy: z.enum(manufacturingStrategyEnumValues).optional(),
       contacts: z.array(contactSchema).optional(),
       locations: z.array(z.string().min(1)).optional(),
@@ -141,15 +158,13 @@ const resubmitSchema = z.object({
         phone: z.string().max(20).optional(),
         website: z.string().url().max(100).optional(),
         companyType: z.enum(companyTypeEnumValues).optional(),
-        companyIndustry: z.enum(industryEnumValues).optional(),
+        companyIndustry: normalizedIndustryEnumSchema.optional(),
         manufacturingStrategy: z.enum(manufacturingStrategyEnumValues).optional(),
         contacts: z.array(contactSchema).optional(),
         locations: z.array(z.string().min(1)).optional(),
       })
       .optional(),
-    documents: z
-      .array(documentSchema)
-      .min(1, 'At least one document must be provided'),
+    documents: z.array(documentSchema).min(1, 'At least one document must be provided'),
   }),
 });
 

@@ -30,6 +30,8 @@ Complete API reference for `/api/v1` endpoints. All responses use the standard J
 ## Auth
 
 All auth endpoints are public unless noted.
+Client migration and frontend/mobile rollout notes for recent API changes:
+`AI_DOCS/mobile-frontend-api-changes.md`
 
 ### POST `/auth/register/upload-url`
 
@@ -315,6 +317,26 @@ Delete document.
 
 ---
 
+### GET `/companies/me/registration-documents` 🔐
+
+List registration-form documents only (`docType` internally stored as `registration:*`).
+
+---
+
+### PUT `/companies/me/registration-documents/:registrationDocumentId` 🔐
+
+Update registration-form document only.
+
+**Request Body (at least one):** `{ "fileId": 4, "docType": "license", "description": "..." }`
+
+---
+
+### DELETE `/companies/me/registration-documents/:registrationDocumentId` 🔐
+
+Delete registration-form document only.
+
+---
+
 ### GET `/companies/me/contributions` 🔐
 
 List contributions.
@@ -345,13 +367,18 @@ Create contribution.
   "mediaFileId": 5,
   "mediaType": "image|video|file|url",
   "mediaUrl": "https://youtube.com/...",
+  "partnerId": 12,
+  "partnerName": "Partner Co",
+  "contributors": ["Alice"],
   "tags": ["Tag1", "Tag2"],
-  "details": { "price": 100, "partnerName": "Partner Co", "contributors": [...] }
+  "details": { "price": 100 }
 }
 ```
 
 > If `mediaType=url`: require `mediaUrl`, forbid `mediaFileId`.
 > If `mediaType=image|video|file`: require `mediaFileId`.
+> If `type=partnership`: require one of `partnerId` or `partnerName`.
+> If `type=project`: require at least one contributor.
 
 ---
 
@@ -1423,6 +1450,23 @@ Unregister a device token.
 
 All routes require admin role. 🔐👑
 
+### GET `/admin/dashboard/cards`
+
+Get admin dashboard card counts.
+
+**Response:**
+
+```json
+{
+  "cards": {
+    "newRegistrationRequests": { "count": 12 },
+    "pendingAdverts": { "count": 7 },
+    "profileUpdates": { "count": 4 }
+  },
+  "generatedAt": "2026-02-21T00:00:00.000Z"
+}
+```
+
 ### GET `/admin/companies`
 
 List all companies.
@@ -1502,6 +1546,10 @@ Gallery CRUD (same schema as agent endpoints).
 ### GET/POST/PUT/DELETE `/admin/companies/:id/documents[/:documentId]`
 
 Document CRUD (same schema as agent endpoints).
+
+### GET/PUT/DELETE `/admin/companies/:id/registration-documents[/:registrationDocumentId]`
+
+Registration-form document management only (separate from public/general document CRUD endpoints).
 
 ### GET/POST/PUT/DELETE `/admin/companies/:id/contributions[/:contributionId]`
 

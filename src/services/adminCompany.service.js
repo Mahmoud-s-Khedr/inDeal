@@ -5,18 +5,28 @@ const galleryRepository = require('../repositories/companyGallery.repository');
 const contributionRepository = require('../repositories/companyContribution.repository');
 const reviewRepository = require('../repositories/companyReview.repository');
 const userRepository = require('../repositories/user.repository');
-const fileRepository = require('../repositories/file.repository');
 const fileService = require('./file.service');
-const { publicUrl } = require('../config/storage');
 const logger = require('../utils/logger');
 const { sendMail } = require('../config/mailer');
+
+const REGISTRATION_DOC_PREFIX = 'registration:';
+const isRegistrationDocType = (docType) =>
+  typeof docType === 'string' && docType.startsWith(REGISTRATION_DOC_PREFIX);
+const toExternalDocType = (docType) =>
+  isRegistrationDocType(docType)
+    ? docType.slice(REGISTRATION_DOC_PREFIX.length) || 'other'
+    : docType;
+const toRegistrationDocType = (docType) =>
+  isRegistrationDocType(docType)
+    ? docType
+    : `${REGISTRATION_DOC_PREFIX}${typeof docType === 'string' && docType ? docType : 'other'}`;
 
 const getFileUrl = async (fileId) => {
   if (!fileId) return null;
   try {
     const file = await fileService.getFileById(fileId);
     return file.publicUrl;
-  } catch (err) {
+  } catch {
     return null;
   }
 };
@@ -58,10 +68,12 @@ const sanitizeDocument = (doc, fileUrl = null) => ({
   companyId: doc.company_id,
   fileId: doc.file_id,
   fileUrl,
-  docType: doc.doc_type,
+  docType: toExternalDocType(doc.doc_type),
   title: doc.title,
   issuer: doc.issuer,
   description: doc.description,
+  issueDate: doc.issue_date,
+  expiryDate: doc.expiry_date,
   uploadedAt: doc.uploaded_at,
 });
 
@@ -83,6 +95,8 @@ const sanitizeContribution = (item, mediaFileUrl = null) => ({
   type: item.type,
   title: item.title,
   description: item.description,
+  partnerId: item.details?.partnerId,
+  partnerName: item.details?.partnerName,
   details: item.details,
   createdAt: item.created_at,
   updatedAt: item.updated_at,
@@ -110,11 +124,6 @@ const sanitizeUser = (user) => {
   };
 };
 
-const buildPublicUrl = (filePath) => {
-  if (!publicUrl || !filePath) return null;
-  return `${publicUrl.replace(/\/$/, '')}/${filePath}`;
-};
-
 const populateDocumentsWithFiles = async (documents) => {
   if (!documents || !documents.length) {
     return [];
@@ -136,7 +145,9 @@ const listPendingCompanies = async () => {
     // Documents
     Promise.all(
       pendingCompanies.map(async (company) => {
-        const docs = await companyDocumentRepository.listByCompanyId(company.id);
+        const docs = await companyDocumentRepository.listByCompanyId(company.id, {
+          scope: 'registration',
+        });
         return populateDocumentsWithFiles(docs);
       })
     ),
@@ -161,6 +172,45 @@ const parseCompanyId = (value) => {
     throw new AppError('Invalid company id', 400);
   }
   return id;
+};
+
+const resolvePartnerReferenceOrThrow = async ({ partnerId, partnerName, companyId }) => {
+  if (partnerId !== undefined && partnerId !== null) {
+    const numericPartnerId = Number(partnerId);
+    if (!Number.isInteger(numericPartnerId) || numericPartnerId <= 0) {
+      throw new AppError('Invalid partnerId', 400);
+    }
+    const partnerCompany = await companyRepository.findById(numericPartnerId);
+    if (!partnerCompany) {
+      throw new AppError('partnerId must match an existing company in the system', 400);
+    }
+    if (partnerCompany.id === companyId) {
+      throw new AppError('partnerId cannot be your own company', 400);
+    }
+    return { partnerId: partnerCompany.id };
+  }
+
+  const normalizedName = partnerName?.trim();
+  if (!normalizedName) {
+    throw new AppError('partnerId or partnerName is required when type is partnership', 400);
+  }
+
+  const partnerCompany = await companyRepository.findByName(normalizedName);
+  if (!partnerCompany) {
+    throw new AppError('partnerName must match an existing company in the system', 400);
+  }
+  if (partnerCompany.id === companyId) {
+    throw new AppError('partnerName cannot be your own company', 400);
+  }
+
+  return { partnerName: partnerCompany.name };
+};
+
+const validateProjectContributors = (type, contributors) => {
+  if (type !== 'project') return;
+  if (!Array.isArray(contributors) || contributors.length < 1) {
+    throw new AppError('contributors must contain at least one name when type is project', 400);
+  }
 };
 
 const listAllCompanies = async () => {
@@ -455,7 +505,21 @@ const listCompanyDocuments = async (companyId) => {
   if (!company) {
     throw new AppError('Company not found', 404);
   }
-  const documents = await companyDocumentRepository.listByCompanyId(numericId);
+  const documents = await companyDocumentRepository.listByCompanyId(numericId, {
+    scope: 'public',
+  });
+  return await populateDocumentsWithFiles(documents);
+};
+
+const listCompanyRegistrationDocuments = async (companyId) => {
+  const numericId = parseCompanyId(companyId);
+  const company = await companyRepository.findById(numericId);
+  if (!company) {
+    throw new AppError('Company not found', 404);
+  }
+  const documents = await companyDocumentRepository.listByCompanyId(numericId, {
+    scope: 'registration',
+  });
   return await populateDocumentsWithFiles(documents);
 };
 
@@ -474,6 +538,8 @@ const createCompanyDocument = async (companyId, payload) => {
     issuer: payload.issuer,
     url: payload.url,
     description: payload.description,
+    issueDate: payload.issueDate,
+    expiryDate: payload.expiryDate,
   });
 
   const docsWithFiles = await populateDocumentsWithFiles([doc]);
@@ -499,10 +565,13 @@ const updateCompanyDocument = async (companyId, documentId, payload) => {
   if (existingDoc.company_id !== numericCompanyId) {
     throw new AppError('Document does not belong to this company', 400);
   }
+  if (isRegistrationDocType(existingDoc.doc_type)) {
+    throw new AppError('Registration form documents cannot be edited from this endpoint', 400);
+  }
 
   const providedCertificateFields =
     payload.title !== undefined || payload.issuer !== undefined || payload.url !== undefined;
-  const isExistingCertificate = existingDoc.doc_type === 'certificate';
+  const isExistingCertificate = toExternalDocType(existingDoc.doc_type) === 'certificate';
   const isSettingCertificate = payload.docType === 'certificate';
 
   if (providedCertificateFields && !isExistingCertificate && !isSettingCertificate) {
@@ -533,6 +602,8 @@ const updateCompanyDocument = async (companyId, documentId, payload) => {
     issuer: payload.issuer,
     url: payload.url,
     description: payload.description,
+    issueDate: payload.issueDate,
+    expiryDate: payload.expiryDate,
   };
 
   if (payload.docType !== undefined && payload.docType !== 'certificate') {
@@ -543,6 +614,43 @@ const updateCompanyDocument = async (companyId, documentId, payload) => {
 
   const updated = await companyDocumentRepository.updateDocument(numericDocumentId, updates);
 
+  const docsWithFiles = await populateDocumentsWithFiles([updated]);
+  return docsWithFiles[0] || sanitizeDocument(updated);
+};
+
+const updateCompanyRegistrationDocument = async (companyId, registrationDocumentId, payload) => {
+  const numericCompanyId = parseCompanyId(companyId);
+  const numericDocumentId = Number(registrationDocumentId);
+  if (!Number.isInteger(numericDocumentId) || numericDocumentId <= 0) {
+    throw new AppError('Invalid document id', 400);
+  }
+
+  const company = await companyRepository.findById(numericCompanyId);
+  if (!company) {
+    throw new AppError('Company not found', 404);
+  }
+
+  const existingDoc = await companyDocumentRepository.findById(numericDocumentId);
+  if (!existingDoc) {
+    throw new AppError('Document not found', 404);
+  }
+  if (existingDoc.company_id !== numericCompanyId) {
+    throw new AppError('Document does not belong to this company', 400);
+  }
+  if (!isRegistrationDocType(existingDoc.doc_type)) {
+    throw new AppError('Only registration form documents can be edited from this endpoint', 400);
+  }
+
+  const nextDocType =
+    payload.docType === undefined ? existingDoc.doc_type : toRegistrationDocType(payload.docType);
+
+  const updates = {
+    file_id: payload.fileId,
+    doc_type: nextDocType,
+    description: payload.description,
+  };
+
+  const updated = await companyDocumentRepository.updateDocument(numericDocumentId, updates);
   const docsWithFiles = await populateDocumentsWithFiles([updated]);
   return docsWithFiles[0] || sanitizeDocument(updated);
 };
@@ -565,6 +673,36 @@ const deleteCompanyDocument = async (companyId, documentId) => {
   }
   if (existingDoc.company_id !== numericCompanyId) {
     throw new AppError('Document does not belong to this company', 400);
+  }
+  if (isRegistrationDocType(existingDoc.doc_type)) {
+    throw new AppError('Registration form documents cannot be deleted from this endpoint', 400);
+  }
+
+  const deleted = await companyDocumentRepository.deleteDocument(numericDocumentId);
+  return sanitizeDocument(deleted);
+};
+
+const deleteCompanyRegistrationDocument = async (companyId, registrationDocumentId) => {
+  const numericCompanyId = parseCompanyId(companyId);
+  const numericDocumentId = Number(registrationDocumentId);
+  if (!Number.isInteger(numericDocumentId) || numericDocumentId <= 0) {
+    throw new AppError('Invalid document id', 400);
+  }
+
+  const company = await companyRepository.findById(numericCompanyId);
+  if (!company) {
+    throw new AppError('Company not found', 404);
+  }
+
+  const existingDoc = await companyDocumentRepository.findById(numericDocumentId);
+  if (!existingDoc) {
+    throw new AppError('Document not found', 404);
+  }
+  if (existingDoc.company_id !== numericCompanyId) {
+    throw new AppError('Document does not belong to this company', 400);
+  }
+  if (!isRegistrationDocType(existingDoc.doc_type)) {
+    throw new AppError('Only registration form documents can be deleted from this endpoint', 400);
   }
 
   const deleted = await companyDocumentRepository.deleteDocument(numericDocumentId);
@@ -592,12 +730,34 @@ const createCompanyContribution = async (companyId, payload) => {
   if (!company) {
     throw new AppError('Company not found', 404);
   }
+  let resolvedPartner = {};
+  if (payload.type === 'partnership') {
+    resolvedPartner = await resolvePartnerReferenceOrThrow({
+      partnerId: payload.partnerId,
+      partnerName: payload.partnerName,
+      companyId: numericId,
+    });
+  }
+  validateProjectContributors(payload.type, payload.contributors);
+
+  const details = {
+    ...(payload.details || {}),
+  };
+  if (resolvedPartner.partnerId !== undefined) {
+    details.partnerId = resolvedPartner.partnerId;
+    delete details.partnerName;
+  } else if (resolvedPartner.partnerName !== undefined) {
+    details.partnerName = resolvedPartner.partnerName;
+    delete details.partnerId;
+  }
+  if (payload.contributors !== undefined) details.contributors = payload.contributors;
+
   const item = await contributionRepository.createContribution({
     companyId: numericId,
     mediaFileId: payload.mediaFileId,
     mediaType: payload.mediaType,
     mediaUrl: payload.mediaUrl,
-    details: payload.details,
+    details,
     type: payload.type,
     title: payload.title,
     description: payload.description,
@@ -664,11 +824,43 @@ const updateCompanyContribution = async (companyId, contributionId, payload) => 
     }
   }
 
+  const nextType = payload.type ?? existing.type;
+  const nextContributors = payload.contributors ?? existing.details?.contributors;
+  validateProjectContributors(nextType, nextContributors);
+
+  let nextPartner = {
+    partnerId: payload.partnerId ?? existing.details?.partnerId,
+    partnerName: payload.partnerName ?? existing.details?.partnerName,
+  };
+  if (nextType === 'partnership') {
+    nextPartner = await resolvePartnerReferenceOrThrow({
+      partnerId: nextPartner.partnerId,
+      partnerName: nextPartner.partnerName,
+      companyId: numericCompanyId,
+    });
+  }
+
+  const nextDetails = {
+    ...(existing.details || {}),
+    ...(payload.details || {}),
+  };
+  if (nextType !== 'partnership') {
+    delete nextDetails.partnerId;
+    delete nextDetails.partnerName;
+  } else if (nextPartner.partnerId !== undefined) {
+    nextDetails.partnerId = nextPartner.partnerId;
+    delete nextDetails.partnerName;
+  } else {
+    nextDetails.partnerName = nextPartner.partnerName;
+    delete nextDetails.partnerId;
+  }
+  if (payload.contributors !== undefined) nextDetails.contributors = payload.contributors;
+
   const contributionUpdates = {
     media_file_id: payload.mediaFileId,
     media_type: payload.mediaType,
     media_url: payload.mediaUrl,
-    details: payload.details,
+    details: nextDetails,
     type: payload.type,
     title: payload.title,
     description: payload.description,
@@ -732,9 +924,12 @@ module.exports = {
   updateCompanyGalleryItem,
   deleteCompanyGalleryItem,
   listCompanyDocuments,
+  listCompanyRegistrationDocuments,
   createCompanyDocument,
   updateCompanyDocument,
+  updateCompanyRegistrationDocument,
   deleteCompanyDocument,
+  deleteCompanyRegistrationDocument,
   listCompanyContributions,
   createCompanyContribution,
   updateCompanyContribution,

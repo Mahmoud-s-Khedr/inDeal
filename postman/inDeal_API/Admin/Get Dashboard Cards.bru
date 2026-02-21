@@ -1,0 +1,20 @@
+meta {
+  name: Get Dashboard Cards
+  type: http
+  seq: 206
+}
+
+get {
+  url: {{base_url}}/admin/dashboard/cards
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{auth_token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

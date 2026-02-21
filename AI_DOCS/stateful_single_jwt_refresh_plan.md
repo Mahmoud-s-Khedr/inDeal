@@ -145,7 +145,6 @@ Even without a dedicated frontend call, a logout endpoint is useful.
 
 Add env settings:
 
-- `SESSION_ACCESS_TTL_MIN` (e.g., 15)
 - `SESSION_REFRESH_TTL_DAYS` (e.g., 7 or 30)
 
 Transport mode:

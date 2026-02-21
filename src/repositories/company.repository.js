@@ -64,6 +64,19 @@ const findById = async (companyId) => {
   return result.rows[0];
 };
 
+const findByName = async (name) => {
+  const result = await pool.query(
+    `
+      SELECT *
+      FROM companies
+      WHERE lower(name) = lower($1)
+      LIMIT 1
+    `,
+    [name]
+  );
+  return result.rows[0];
+};
+
 const findCompanyProfileById = async (companyId) => {
   const companyQuery = `
     SELECT c.*, 
@@ -82,7 +95,7 @@ const findCompanyProfileById = async (companyId) => {
   const [gallery, reviews, documents, contributions] = await Promise.all([
     galleryRepository.listByCompanyId(company.id),
     reviewRepository.listByCompanyId(company.id),
-    companyDocumentRepository.listByCompanyId(company.id),
+    companyDocumentRepository.listByCompanyId(company.id, { scope: 'public' }),
     contributionRepository.listByCompanyId(company.id),
   ]);
 
@@ -102,6 +115,18 @@ const listByStatus = async (status) => {
     [status]
   );
   return result.rows;
+};
+
+const countByStatus = async (status) => {
+  const result = await pool.query(
+    `
+        SELECT COUNT(*) AS total
+        FROM companies
+        WHERE status = $1
+        `,
+    [status]
+  );
+  return parseInt(result.rows[0].total, 10);
 };
 
 const listAll = async () => {
@@ -367,8 +392,10 @@ module.exports = {
   createCompany,
   findByAgentId,
   findById,
+  findByName,
   findCompanyProfileById,
   listByStatus,
+  countByStatus,
   listAll,
   searchCompanies,
   countCompanies,

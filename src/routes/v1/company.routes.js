@@ -8,8 +8,10 @@ const {
   galleryItemParamsSchema,
   updateGalleryItemSchema,
   documentIdParamsSchema,
+  registrationDocumentIdParamsSchema,
   createDocumentSchema,
   updateDocumentSchema,
+  updateRegistrationDocumentSchema,
   contributionIdParamsSchema,
   createContributionSchema,
   updateContributionSchema,
@@ -20,7 +22,6 @@ const {
   contributionMediaIdParamsSchema,
   updateContributionMediaSchema,
   reorderContributionMediaSchema,
-
 } = require('../../validations/company.validation');
 
 const router = express.Router();
@@ -59,6 +60,19 @@ router.post(
   protect,
   validate(createDocumentSchema),
   companyController.createMyDocument
+);
+router.get('/me/registration-documents', protect, companyController.listMyRegistrationDocuments);
+router.put(
+  '/me/registration-documents/:registrationDocumentId',
+  protect,
+  validate(updateRegistrationDocumentSchema),
+  companyController.updateMyRegistrationDocument
+);
+router.delete(
+  '/me/registration-documents/:registrationDocumentId',
+  protect,
+  validate(registrationDocumentIdParamsSchema),
+  companyController.deleteMyRegistrationDocument
 );
 router.put(
   '/me/documents/:documentId',
@@ -126,7 +140,6 @@ router.delete(
 );
 
 // Company Agents
-
 
 router.get('/:id', validate(companyIdParamsSchema), companyController.getCompanyProfile);
 router.get('/:id/gallery', validate(companyIdParamsSchema), companyController.listGallery);

@@ -5,6 +5,10 @@ const sendResponse = (res, statusCode, data, message = 'Success') => {
     data,
   };
 
+  if (res.locals.accessToken) {
+    payload.token = res.locals.accessToken;
+  }
+
   res.locals.responseData = payload;
   res.status(statusCode).json(payload);
 };

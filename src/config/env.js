@@ -38,14 +38,10 @@ const envSchema = z.object({
   REDIS_USERNAME: z.string().optional(),
 
   JWT_SECRET: z.string().default('change_this_secret_key_in_production'),
-  JWT_EXPIRES_IN: z.string().default('7d'),
+  JWT_EXPIRES_IN: z.string().default('5m'),
 
-  SESSION_ACCESS_TTL_MIN: z.coerce.number().int().positive().default(15),
-  SESSION_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(7),
+  SESSION_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
   SESSION_ROTATE_LEEWAY_SECONDS: z.coerce.number().int().nonnegative().default(300),
-  SESSION_ENFORCE_LATEST_JTI: z
-    .preprocess((val) => val === 'true' || val === true, z.boolean())
-    .default(true),
 
   R2_BUCKET_NAME: z.string().default('indeal-assets'),
   R2_ACCESS_KEY_ID: z.string().optional(),
@@ -152,10 +148,8 @@ module.exports = {
     expiresIn: env.JWT_EXPIRES_IN,
   },
   session: {
-    accessTtlMinutes: env.SESSION_ACCESS_TTL_MIN,
     refreshTtlDays: env.SESSION_REFRESH_TTL_DAYS,
     rotateLeewaySeconds: env.SESSION_ROTATE_LEEWAY_SECONDS,
-    enforceLatestJti: env.SESSION_ENFORCE_LATEST_JTI,
   },
   storage: {
     bucket: env.R2_BUCKET_NAME,

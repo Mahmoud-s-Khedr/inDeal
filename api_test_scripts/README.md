@@ -4,7 +4,7 @@ Node.js scripts to simulate user flows for functional testing and load testing o
 
 ## Features
 
-- **9 User Flow Scripts**: Simulate realistic user journeys through the API
+- **10 User Flow Scripts**: Simulate realistic user journeys through the API
 - **Editable Test Data**: JSON file for custom test values (temp emails, passwords)
 - **Faker-based Data Generation**: Auto-generate realistic test data
 - **Load Testing**: Artillery configurations for stress testing
@@ -51,7 +51,8 @@ api_test_scripts/
 │   ├── 06-gallery.flow.js
 │   ├── 07-contributions.flow.js
 │   ├── 08-reviews.flow.js
-│   └── 09-admin.flow.js
+│   ├── 09-admin.flow.js
+│   └── 10-company-route-regression.flow.js
 ├── scripts/
 │   ├── generate-test-data.js
 │   └── run-all-flows.js
@@ -202,6 +203,16 @@ npm run flow:admin
 - Admin login
 - Lists pending companies
 - Approves/reviews companies
+
+### 10. Company Route Regression
+
+```bash
+npm run flow:company-route-regression
+```
+
+- Creates a temporary contribution
+- Verifies singular route `/api/v1/company/...` returns `404`
+- Verifies valid plural route `/api/v1/companies/...` deletes successfully
 
 ## Running Multiple Flows
 
