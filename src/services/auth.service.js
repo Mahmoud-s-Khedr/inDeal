@@ -431,6 +431,7 @@ const register = async (payload, { ipAddress, userAgent } = {}) => {
           fileId: doc.fileId,
           docType: toRegistrationDocType(doc.docType),
           description: doc.description,
+          expiryDate: doc.expiryDate,
         }))
       );
     }
@@ -513,6 +514,7 @@ const resubmit = async (userId, payload) => {
           fileId: doc.fileId,
           docType: toRegistrationDocType(doc.docType),
           description: doc.description,
+          expiryDate: doc.expiryDate,
         }))
       );
     }

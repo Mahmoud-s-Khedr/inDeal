@@ -27,9 +27,15 @@ const updateProfileImage = catchAsync(async (req, res) => {
   sendResponse(res, 200, me, 'Profile image updated');
 });
 
+const deleteProfileImage = catchAsync(async (req, res) => {
+  const me = await userService.deleteProfileImage(req.user.id);
+  sendResponse(res, 200, me, 'Profile image deleted');
+});
+
 module.exports = {
   getMe,
   updateMe,
   updatePassword,
   updateProfileImage,
+  deleteProfileImage,
 };

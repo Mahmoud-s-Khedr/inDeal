@@ -1,4 +1,5 @@
 const { pool } = require('../config/db');
+const { generateRoomKey } = require('../utils/chatEncryption');
 
 const run = (client) => client || pool;
 
@@ -31,14 +32,15 @@ const findOrCreateRoom = async (client, companyAId, companyBId) => {
     return { room: existing.rows[0], created: false };
   }
 
-  // Create new room
+  // Create new room with a unique AES-256 encryption key
+  const encryptionKey = generateRoomKey();
   const result = await executor.query(
     `
-        INSERT INTO chat_rooms (company_a_id, company_b_id, status)
-        VALUES ($1, $2, 'active')
+        INSERT INTO chat_rooms (company_a_id, company_b_id, status, encryption_key)
+        VALUES ($1, $2, 'active', $3)
         RETURNING *
         `,
-    [smaller, larger]
+    [smaller, larger, encryptionKey]
   );
 
   return { room: result.rows[0], created: true };
@@ -52,10 +54,14 @@ const findRoomById = async (roomId) => {
     `
         SELECT r.*,
                ca.name AS company_a_name, ca.logo AS company_a_logo,
-               cb.name AS company_b_name, cb.logo AS company_b_logo
+               fca.file_path AS company_a_logo_path,
+               cb.name AS company_b_name, cb.logo AS company_b_logo,
+               fcb.file_path AS company_b_logo_path
         FROM chat_rooms r
         JOIN companies ca ON r.company_a_id = ca.id
         JOIN companies cb ON r.company_b_id = cb.id
+        LEFT JOIN files fca ON fca.id = ca.logo
+        LEFT JOIN files fcb ON fcb.id = cb.logo
         WHERE r.id = $1
         LIMIT 1
         `,
@@ -72,10 +78,13 @@ const findRoomByIdForCompany = async (roomId, companyId) => {
     `
         SELECT r.*,
                ca.name AS company_a_name, ca.logo AS company_a_logo,
+               fca.file_path AS company_a_logo_path,
                cb.name AS company_b_name, cb.logo AS company_b_logo,
+               fcb.file_path AS company_b_logo_path,
          lm.message_text AS last_message,
          lm.sent_at AS last_message_at,
          lm.id AS last_message_id,
+         lm.last_message_sender_id,
          lm.attachment_file_id AS last_attachment_file_id,
          lm.attachment_file_name AS last_attachment_file_name,
          lm.attachment_file_path AS last_attachment_file_path,
@@ -94,6 +103,8 @@ const findRoomByIdForCompany = async (roomId, companyId) => {
         FROM chat_rooms r
         JOIN companies ca ON r.company_a_id = ca.id
         JOIN companies cb ON r.company_b_id = cb.id
+        LEFT JOIN files fca ON fca.id = ca.logo
+        LEFT JOIN files fcb ON fcb.id = cb.logo
         LEFT JOIN LATERAL (
              SELECT m.id,
                m.sender_user_id AS last_message_sender_id,
@@ -124,10 +135,13 @@ const findRoomsByCompanyId = async (companyId, { status, limit = 50, offset = 0 
   let query = `
         SELECT r.*,
                ca.name AS company_a_name, ca.logo AS company_a_logo,
+               fca.file_path AS company_a_logo_path,
                cb.name AS company_b_name, cb.logo AS company_b_logo,
+               fcb.file_path AS company_b_logo_path,
          lm.message_text AS last_message,
          lm.sent_at AS last_message_at,
          lm.id AS last_message_id,
+         lm.last_message_sender_id,
          lm.attachment_file_id AS last_attachment_file_id,
          lm.attachment_file_name AS last_attachment_file_name,
          lm.attachment_file_path AS last_attachment_file_path,
@@ -146,6 +160,8 @@ const findRoomsByCompanyId = async (companyId, { status, limit = 50, offset = 0 
         FROM chat_rooms r
         JOIN companies ca ON r.company_a_id = ca.id
         JOIN companies cb ON r.company_b_id = cb.id
+        LEFT JOIN files fca ON fca.id = ca.logo
+        LEFT JOIN files fcb ON fcb.id = cb.logo
         LEFT JOIN LATERAL (
              SELECT m.id,
                m.sender_user_id AS last_message_sender_id,
@@ -258,6 +274,7 @@ const findMessagesByRoomIdForCompany = async (
           SELECT id,
                  company_a_id,
                  company_b_id,
+                 encryption_key,
                  CASE
                    WHEN company_a_id = $2 THEN company_b_id
                    WHEN company_b_id = $2 THEN company_a_id
@@ -267,9 +284,12 @@ const findMessagesByRoomIdForCompany = async (
           WHERE id = $1
         )
         SELECT m.*,
+               rc.encryption_key AS room_encryption_key,
                u.first_name AS sender_first_name, u.last_name AS sender_last_name,
                u.profile_image AS sender_profile_image,
+               fp.file_path AS sender_profile_image_path,
                c.id AS sender_company_id, c.name AS sender_company_name, c.logo AS sender_company_logo,
+               fc.file_path AS sender_company_logo_path,
                f.file_name AS attachment_file_name, f.file_path AS attachment_file_path,
                f.file_metadata AS attachment_file_metadata,
                mr_other.read_at AS other_read_at
@@ -278,6 +298,8 @@ const findMessagesByRoomIdForCompany = async (
         JOIN users u ON m.sender_user_id = u.id
         JOIN companies c ON u.id = c.agent_id
         LEFT JOIN files f ON m.attachment_file_id = f.id
+        LEFT JOIN files fp ON fp.id = u.profile_image
+        LEFT JOIN files fc ON fc.id = c.logo
         LEFT JOIN chat_message_reads mr_other
           ON mr_other.message_id = m.id AND mr_other.company_id = rc.other_company_id
         WHERE m.room_id = $1
@@ -323,6 +345,7 @@ const findMessageByIdForCompany = async (messageId, companyId) => {
     `
         WITH room_ctx AS (
           SELECT id,
+                 encryption_key,
                  CASE
                    WHEN company_a_id = $2 THEN company_b_id
                    WHEN company_b_id = $2 THEN company_a_id
@@ -332,9 +355,12 @@ const findMessageByIdForCompany = async (messageId, companyId) => {
           WHERE id = (SELECT room_id FROM chat_messages WHERE id = $1)
         )
         SELECT m.*,
+               rc.encryption_key AS room_encryption_key,
                u.first_name AS sender_first_name, u.last_name AS sender_last_name,
                u.profile_image AS sender_profile_image,
+               fp.file_path AS sender_profile_image_path,
                c.id AS sender_company_id, c.name AS sender_company_name, c.logo AS sender_company_logo,
+               fc.file_path AS sender_company_logo_path,
                f.file_name AS attachment_file_name, f.file_path AS attachment_file_path,
                f.file_metadata AS attachment_file_metadata,
                mr_other.read_at AS other_read_at
@@ -343,6 +369,8 @@ const findMessageByIdForCompany = async (messageId, companyId) => {
         JOIN users u ON m.sender_user_id = u.id
         JOIN companies c ON u.id = c.agent_id
         LEFT JOIN files f ON m.attachment_file_id = f.id
+        LEFT JOIN files fp ON fp.id = u.profile_image
+        LEFT JOIN files fc ON fc.id = c.logo
         LEFT JOIN chat_message_reads mr_other
           ON mr_other.message_id = m.id AND mr_other.company_id = rc.other_company_id
         WHERE m.id = $1

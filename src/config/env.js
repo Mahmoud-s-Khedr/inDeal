@@ -115,6 +115,8 @@ const envSchema = z.object({
   IMAGE_THUMB_SIZE: z.coerce.number().int().positive().default(150),
   IMAGE_MEDIUM_SIZE: z.coerce.number().int().positive().default(600),
   IMAGE_QUALITY: z.coerce.number().int().min(1).max(100).default(85),
+
+  CHAT_MASTER_KEY: z.string().length(64).optional(),
 });
 
 const parsed = envSchema.safeParse({

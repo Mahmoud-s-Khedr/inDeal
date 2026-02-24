@@ -206,13 +206,6 @@ const resolvePartnerReferenceOrThrow = async ({ partnerId, partnerName, companyI
   return { partnerName: partnerCompany.name };
 };
 
-const validateProjectContributors = (type, contributors) => {
-  if (type !== 'project') return;
-  if (!Array.isArray(contributors) || contributors.length < 1) {
-    throw new AppError('contributors must contain at least one name when type is project', 400);
-  }
-};
-
 const listAllCompanies = async () => {
   const companies = await companyRepository.listAll();
   return Promise.all(
@@ -244,7 +237,7 @@ const getCompanyDetail = async (companyId) => {
   };
 };
 
-const reviewCompanyStatus = async (companyId, status) => {
+const reviewCompanyStatus = async (companyId, status, reason) => {
   const numericId = parseCompanyId(companyId);
   const existing = await companyRepository.findById(numericId);
   if (!existing) {
@@ -268,7 +261,8 @@ const reviewCompanyStatus = async (companyId, status) => {
     return sanitizeCompany(existing, logoUrl);
   }
 
-  const updated = await companyRepository.updateCompanyStatus(numericId, status);
+  const rejectionReason = status === 'rejected' ? reason || null : null;
+  const updated = await companyRepository.updateCompanyStatus(numericId, status, rejectionReason);
 
   // Optional: notify agent on approval/rejection.
   if ((status === 'active' || status === 'rejected') && existing.agent_id) {
@@ -283,14 +277,18 @@ const reviewCompanyStatus = async (companyId, status) => {
           ? 'Your company has been approved'
           : 'Your company review result';
 
-        const text = [
+        const textParts = [
           isApproved
             ? 'Good news! Your company has been approved.'
             : 'Your company review has been completed.',
           `Company ID: ${existing.id}`,
           `Company Name: ${existing.name}`,
           `New Status: ${status}`,
-        ].join('\n');
+        ];
+        if (!isApproved && rejectionReason) {
+          textParts.push(`Reason: ${rejectionReason}`);
+        }
+        const text = textParts.join('\n');
 
         const html = `
                     <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
@@ -304,6 +302,7 @@ const reviewCompanyStatus = async (companyId, status) => {
                             <li><strong>Company ID:</strong> ${existing.id}</li>
                             <li><strong>Company Name:</strong> ${existing.name}</li>
                             <li><strong>New Status:</strong> ${status}</li>
+                            ${!isApproved && rejectionReason ? `<li><strong>Reason:</strong> ${rejectionReason}</li>` : ''}
                         </ul>
                     </div>
                 `;
@@ -330,7 +329,8 @@ const reviewCompanyStatus = async (companyId, status) => {
 
 const approveCompany = async (companyId) => reviewCompanyStatus(companyId, 'active');
 
-const rejectCompany = async (companyId) => reviewCompanyStatus(companyId, 'rejected');
+const rejectCompany = async (companyId, reason) =>
+  reviewCompanyStatus(companyId, 'rejected', reason);
 
 const changeCompanyAgent = async (companyId, agentId) => {
   const numericCompanyId = parseCompanyId(companyId);
@@ -738,8 +738,6 @@ const createCompanyContribution = async (companyId, payload) => {
       companyId: numericId,
     });
   }
-  validateProjectContributors(payload.type, payload.contributors);
-
   const details = {
     ...(payload.details || {}),
   };
@@ -826,7 +824,6 @@ const updateCompanyContribution = async (companyId, contributionId, payload) => 
 
   const nextType = payload.type ?? existing.type;
   const nextContributors = payload.contributors ?? existing.details?.contributors;
-  validateProjectContributors(nextType, nextContributors);
 
   let nextPartner = {
     partnerId: payload.partnerId ?? existing.details?.partnerId,

@@ -12,6 +12,14 @@ const reviewCompanyStatusSchema = z.object({
   params: companyIdSchema,
   body: z.object({
     status: z.enum(['active', 'underReview', 'rejected', 'suspended']),
+    reason: z.string().min(1).max(500).optional(),
+  }),
+});
+
+const rejectCompanySchema = z.object({
+  params: companyIdSchema,
+  body: z.object({
+    reason: z.string().min(1).max(500).optional(),
   }),
 });
 
@@ -380,16 +388,6 @@ const updateCompanyContributionSchema = z.object({
           path: ['mediaFileId'],
         });
       }
-
-      if (data.type === 'project') {
-        if (!Array.isArray(data.contributors) || data.contributors.length < 1) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'contributors must contain at least one name when type is project',
-            path: ['contributors'],
-          });
-        }
-      }
     })
     .refine((data) => Object.values(data).some((value) => value !== undefined), {
       message: 'At least one field must be provided',
@@ -399,6 +397,7 @@ const updateCompanyContributionSchema = z.object({
 module.exports = {
   companyParamsSchema,
   reviewCompanyStatusSchema,
+  rejectCompanySchema,
   changeCompanyAgentSchema,
   updateCompanySchema,
   updateCompanySummarySchema,

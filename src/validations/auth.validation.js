@@ -7,8 +7,15 @@ const contactSchema = z.object({
 
 const documentSchema = z.object({
   fileId: z.coerce.number().int().positive(),
-  docType: z.string().max(100).optional(),
+  docType: z
+    .string()
+    .max(100)
+    .refine((val) => !val.startsWith('registration:'), {
+      message: 'docType must not start with "registration:"',
+    })
+    .optional(),
   description: z.string().max(255).optional(),
+  expiryDate: z.coerce.date().optional(),
 });
 
 const companyTypeEnumValues = [

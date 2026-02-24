@@ -18,7 +18,11 @@ const getCompanyDetail = catchAsync(async (req, res) => {
 });
 
 const reviewCompanyStatus = catchAsync(async (req, res) => {
-  const updated = await adminCompanyService.reviewCompanyStatus(req.params.id, req.body.status);
+  const updated = await adminCompanyService.reviewCompanyStatus(
+    req.params.id,
+    req.body.status,
+    req.body.reason
+  );
   sendResponse(res, 200, updated, 'Company status updated');
 });
 
@@ -28,7 +32,7 @@ const approveCompany = catchAsync(async (req, res) => {
 });
 
 const rejectCompany = catchAsync(async (req, res) => {
-  const updated = await adminCompanyService.rejectCompany(req.params.id);
+  const updated = await adminCompanyService.rejectCompany(req.params.id, req.body.reason);
   sendResponse(res, 200, updated, 'Company rejected');
 });
 

@@ -360,16 +360,17 @@ const updateCompanyById = async (companyId, updates) => {
   return result.rows[0] || null;
 };
 
-const updateCompanyStatus = async (companyId, status) => {
+const updateCompanyStatus = async (companyId, status, rejectionReason) => {
   const result = await pool.query(
     `
         UPDATE companies
         SET status = $1,
+            rejection_reason = $3,
             updated_at = NOW()
         WHERE id = $2
         RETURNING *
         `,
-    [status, companyId]
+    [status, companyId, rejectionReason || null]
   );
   return result.rows[0];
 };

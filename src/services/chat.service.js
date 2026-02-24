@@ -5,6 +5,7 @@ const fileRepository = require('../repositories/file.repository');
 const socketService = require('./socket.service');
 const logger = require('../utils/logger');
 const { publicUrl } = require('../config/storage');
+const { encryptMessage, decryptMessage } = require('../utils/chatEncryption');
 
 // ─────────────────────────────────────────────────────────────
 // HELPER FUNCTIONS
@@ -25,7 +26,8 @@ const sanitizeRoom = (room, myCompanyId = null) => {
     otherCompany = {
       id: isCompanyA ? room.company_b_id : room.company_a_id,
       name: isCompanyA ? room.company_b_name : room.company_a_name,
-      logo: isCompanyA ? room.company_b_logo : room.company_a_logo,
+      logoFileId: isCompanyA ? room.company_b_logo : room.company_a_logo,
+      logoUrl: buildPublicUrl(isCompanyA ? room.company_b_logo_path : room.company_a_logo_path),
     };
   }
 
@@ -40,12 +42,14 @@ const sanitizeRoom = (room, myCompanyId = null) => {
       }
     : null;
 
+  const decryptedLastMessage = decryptMessage(room.last_message, room.encryption_key);
+
   const lastMessageObject = room.last_message_id
     ? {
         id: room.last_message_id,
         senderId: room.last_message_sender_id || null,
         sentAt: room.last_message_at,
-        messageText: room.last_message,
+        messageText: decryptedLastMessage,
         attachment: lastAttachment,
       }
     : null;
@@ -57,7 +61,7 @@ const sanitizeRoom = (room, myCompanyId = null) => {
     otherCompany,
     status: room.status,
     createdAt: room.created_at,
-    lastMessage: room.last_message || room.last_attachment_file_name || null,
+    lastMessage: decryptedLastMessage || room.last_attachment_file_name || null,
     lastMessageAt: room.last_message_at,
     lastMessageObject,
     unreadCount: room.unread_count !== undefined ? Number(room.unread_count) : 0,
@@ -79,10 +83,12 @@ const sanitizeMessage = (message) => {
     };
   }
 
+  const decryptedText = decryptMessage(message.message_text, message.room_encryption_key);
+
   return {
     id: message.id,
     roomId: message.room_id,
-    messageText: message.message_text,
+    messageText: decryptedText,
     sentAt: message.sent_at,
     readAt: message.other_read_at || null,
     isRead: !!message.other_read_at,
@@ -91,12 +97,14 @@ const sanitizeMessage = (message) => {
       id: message.sender_user_id,
       firstName: message.sender_first_name,
       lastName: message.sender_last_name,
-      profileImage: message.sender_profile_image,
+      profileImageFileId: message.sender_profile_image,
+      profileImageUrl: buildPublicUrl(message.sender_profile_image_path),
     },
     company: {
       id: message.sender_company_id,
       name: message.sender_company_name,
-      logo: message.sender_company_logo,
+      logoFileId: message.sender_company_logo,
+      logoUrl: buildPublicUrl(message.sender_company_logo_path),
     },
   };
 };
@@ -243,7 +251,7 @@ const archiveRoom = async (roomId, companyId) => {
  * Send a message to a room (REST fallback)
  */
 const sendMessage = async (roomId, userId, companyId, { messageText, attachmentFileId }) => {
-  await ensureRoomActive(roomId, companyId);
+  const room = await ensureRoomActive(roomId, companyId);
 
   const normalizedText = normalizeMessageText(messageText);
   const normalizedAttachmentId = normalizeAttachmentId(attachmentFileId);
@@ -277,10 +285,16 @@ const sendMessage = async (roomId, userId, companyId, { messageText, attachmentF
     }
   }
 
+  // Encrypt message text if the room has an encryption key
+  const storedText =
+    room.encryption_key && normalizedText
+      ? encryptMessage(normalizedText, room.encryption_key)
+      : normalizedText;
+
   const message = await chatRepository.createMessage(null, {
     roomId,
     senderUserId: userId,
-    messageText: normalizedText,
+    messageText: storedText,
     attachmentFileId: normalizedAttachmentId,
   });
 

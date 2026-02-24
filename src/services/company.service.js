@@ -248,13 +248,6 @@ const resolvePartnerReferenceOrThrow = async ({ partnerId, partnerName, companyI
   return { partnerName: partnerCompany.name };
 };
 
-const validateProjectContributors = (type, contributors) => {
-  if (type !== 'project') return;
-  if (!Array.isArray(contributors) || contributors.length < 1) {
-    throw new AppError('contributors must contain at least one name when type is project', 400);
-  }
-};
-
 const getMyProfile = async (agentId) => {
   const company = await getCompanyOrThrowByAgent(agentId);
   const [gallery, reviews, documents, contributions] = await Promise.all([
@@ -297,6 +290,17 @@ const getCompanyProfile = async (companyId) => {
   const { company, gallery, reviews, contributions, documents } =
     await companyRepository.findCompanyProfileById(companyId);
   return enrichProfile(company, gallery, reviews, documents, contributions);
+};
+
+const listCompanyDocuments = async (companyId) => {
+  const company = await getCompanyOrThrowById(companyId);
+  const docs = await companyDocumentRepository.listByCompanyId(company.id, { scope: 'public' });
+  return Promise.all(
+    docs.map(async (doc) => {
+      const fileUrl = await getFileUrl(doc.file_id);
+      return sanitizeDocument(doc, fileUrl);
+    })
+  );
 };
 
 const addGalleryItem = async (agentId, payload) => {
@@ -676,8 +680,6 @@ const createMyContribution = async (agentId, payload) => {
       companyId: company.id,
     });
   }
-  validateProjectContributors(payload.type, payload.contributors);
-
   // Map top-level UI fields to details JSONB
   const details = {
     ...(payload.details || {}),
@@ -766,7 +768,6 @@ const updateMyContribution = async (agentId, contributionId, payload) => {
   // Handle details updates (merge with existing or payload.details)
   const nextType = payload.type ?? existing.type;
   const nextContributors = payload.contributors ?? existing.details?.contributors;
-  validateProjectContributors(nextType, nextContributors);
 
   let nextPartner = {
     partnerId: payload.partnerId ?? existing.details?.partnerId,
@@ -1078,4 +1079,5 @@ module.exports = {
   updateContributionMedia,
   deleteContributionMedia,
   reorderContributionMedia,
+  listCompanyDocuments,
 };

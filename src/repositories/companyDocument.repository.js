@@ -11,15 +11,21 @@ const bulkCreateDocuments = async (client, documents) => {
   const values = [];
   const placeholders = documents
     .map((doc, index) => {
-      const baseIndex = index * 4;
-      values.push(doc.companyId, doc.fileId, doc.docType || null, doc.description || null);
-      return `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4})`;
+      const baseIndex = index * 5;
+      values.push(
+        doc.companyId,
+        doc.fileId,
+        doc.docType || null,
+        doc.description || null,
+        doc.expiryDate || null
+      );
+      return `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5})`;
     })
     .join(', ');
 
   const result = await executor.query(
     `
-        INSERT INTO company_documents (company_id, file_id, doc_type, description)
+        INSERT INTO company_documents (company_id, file_id, doc_type, description, expiry_date)
         VALUES ${placeholders}
         RETURNING id, company_id, file_id, doc_type, title, issuer, url, description, issue_date, expiry_date, uploaded_at
         `,

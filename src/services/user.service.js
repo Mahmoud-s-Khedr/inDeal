@@ -133,9 +133,23 @@ const updateProfileImage = async (userId, payload) => {
   return sanitizeUser(updated, profileImageUrl);
 };
 
+const deleteProfileImage = async (userId) => {
+  const existing = await userRepository.findById(userId);
+  if (!existing) {
+    throw new AppError('User not found', 404);
+  }
+
+  const updated = await userRepository.updateById(userId, {
+    profile_image: null,
+  });
+
+  return sanitizeUser(updated, null);
+};
+
 module.exports = {
   getMe,
   updateMe,
   updatePassword,
   updateProfileImage,
+  deleteProfileImage,
 };

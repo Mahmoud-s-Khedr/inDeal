@@ -178,6 +178,11 @@ const reorderContributionMedia = catchAsync(async (req, res) => {
   sendResponse(res, 200, media, 'Contribution media reordered');
 });
 
+const listCompanyDocuments = catchAsync(async (req, res) => {
+  const docs = await companyService.listCompanyDocuments(req.params.id);
+  sendResponse(res, 200, docs, 'Company documents fetched');
+});
+
 module.exports = {
   getMyProfile,
   updateMyProfile,
@@ -207,4 +212,5 @@ module.exports = {
   updateContributionMedia,
   deleteContributionMedia,
   reorderContributionMedia,
+  listCompanyDocuments,
 };

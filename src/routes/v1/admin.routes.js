@@ -8,6 +8,7 @@ const adminUserController = require('../../controllers/adminUser.controller');
 const dealController = require('../../controllers/deal.controller');
 const {
   reviewCompanyStatusSchema,
+  rejectCompanySchema,
   companyParamsSchema,
   changeCompanyAgentSchema,
   changeAgentEmailSchema,
@@ -70,7 +71,7 @@ router.post(
 );
 router.post(
   '/companies/:id/reject',
-  validate(companyParamsSchema),
+  validate(rejectCompanySchema),
   adminCompanyController.rejectCompany
 );
 router.post(

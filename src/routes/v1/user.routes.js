@@ -22,6 +22,7 @@ router.put(
   validate(updateProfileImageSchema),
   userController.updateProfileImage
 );
+router.delete('/me/profile-image', userController.deleteProfileImage);
 
 // Device token management (Push notifications)
 router.get('/me/devices', deviceTokenController.listDevices);
@@ -29,4 +30,3 @@ router.post('/me/devices', validate(registerDeviceSchema), deviceTokenController
 router.delete('/me/devices', deviceTokenController.unregisterDevice);
 
 module.exports = router;
-

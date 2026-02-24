@@ -76,10 +76,10 @@ const updateCompanySchema = z.object({
       phone: z.string().max(20).optional(),
       email: z.string().email().max(100).optional(),
       website: z.string().url().max(100).optional(),
-      logoFileId: z.coerce.number().int().positive().optional(),
+      logoFileId: z.coerce.number().int().positive().nullish(),
       companyType: z.enum(companyTypeEnumValues).optional(),
       companyIndustry: normalizedIndustryEnumSchema.optional(),
-      manufacturingStrategy: z.enum(manufacturingStrategyEnumValues).optional(),
+      manufacturingStrategy: z.enum(manufacturingStrategyEnumValues).nullish(),
       contacts: z.array(contactSchema).optional(),
       locations: z.array(z.string().min(1)).optional(),
       socialMediaLinks: z
@@ -374,16 +374,6 @@ const createContributionSchema = z.object({
           path: ['mediaFileId'],
         });
       }
-
-      if (data.type === 'project') {
-        if (!Array.isArray(data.contributors) || data.contributors.length < 1) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'contributors must contain at least one name when type is project',
-            path: ['contributors'],
-          });
-        }
-      }
     }),
 });
 
@@ -457,16 +447,6 @@ const updateContributionSchema = z.object({
           message: 'mediaFileId is required when setting mediaType to image/video/file',
           path: ['mediaFileId'],
         });
-      }
-
-      if (data.type === 'project') {
-        if (!Array.isArray(data.contributors) || data.contributors.length < 1) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'contributors must contain at least one name when type is project',
-            path: ['contributors'],
-          });
-        }
       }
     })
     .refine((data) => Object.values(data).some((value) => value !== undefined), {

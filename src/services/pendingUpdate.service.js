@@ -6,8 +6,10 @@
 const AppError = require('../utils/AppError');
 const pendingUpdateRepository = require('../repositories/pendingUpdate.repository');
 const companyRepository = require('../repositories/company.repository');
+const userRepository = require('../repositories/user.repository');
 const notificationService = require('./notification.service');
 const fileService = require('./file.service');
+const { sendMail } = require('../config/mailer');
 const { NOTIFICATION_TYPES } = require('../constants/notificationTypes');
 const logger = require('../utils/logger');
 
@@ -185,6 +187,38 @@ const rejectUpdate = async (updateId, adminId, reason) => {
     message: reason || 'Your profile changes have been rejected. Please review and resubmit.',
     metadata: { updateId, reason },
   });
+
+  // Send rejection email to agent
+  try {
+    const agent = await userRepository.findById(update.agent_id);
+    if (agent?.email) {
+      const text = [
+        'Your profile update request has been rejected.',
+        `Company: ${update.company_name}`,
+        reason ? `Reason: ${reason}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      const html = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+          <h2 style="color: #333;">Profile Update Rejected</h2>
+          <p>Your profile update request for <strong>${update.company_name}</strong> has been rejected.</p>
+          ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+          <p>Please review the feedback and resubmit your changes.</p>
+        </div>
+      `;
+
+      await sendMail({
+        to: agent.email,
+        subject: 'Your profile update has been rejected',
+        text,
+        html,
+      });
+    }
+  } catch (error) {
+    logger.error('Failed to send profile update rejection email', { error, updateId });
+  }
 
   logger.info(
     { updateId, adminId, companyId: update.company_id, reason },
