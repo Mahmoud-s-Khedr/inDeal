@@ -135,4 +135,6 @@ const protect = catchAsync(async (req, res, next) => {
   next();
 });
 
+protect.__requiresAuth = true;
+
 module.exports = protect;

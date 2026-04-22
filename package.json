@@ -16,6 +16,7 @@
     "db:seed:dev": "SEED_MODE=dev node scripts/seed.js",
     "db:seed:prod": "SEED_MODE=prod node scripts/seed.js",
     "db:seed:test": "SEED_MODE=test node scripts/seed.js",
+    "docs:verify": "node scripts/verify-swagger-coverage.js",
     "vercel-build": "echo 'No build step required for Express API'"
   },
   "author": "Mahmoud Khedr",
@@ -30,6 +31,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-list-endpoints": "^7.1.1",
     "firebase-admin": "^13.6.0",
     "helmet": "^8.1.0",
     "ioredis": "^5.8.2",
@@ -45,6 +47,8 @@
     "sharp": "^0.34.5",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^13.0.0",
     "web-push": "^3.6.7",
     "zod": "^4.1.13"

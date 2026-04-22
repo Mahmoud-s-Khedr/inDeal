@@ -8,17 +8,18 @@ const userRoutes = require('./user.routes');
 const dealRoutes = require('./deal.routes');
 const chatRoutes = require('./chat.routes');
 const supportRoutes = require('./support.routes');
+const { mountRouter } = require('../mountRouter');
 
 const router = express.Router();
 
-router.use('/health', healthRoutes);
-router.use('/system', systemRoutes);
-router.use('/auth', authRoutes);
-router.use('/companies', companyRoutes);
-router.use('/files', fileRoutes);
-router.use('/users', userRoutes);
-router.use('/deals', dealRoutes);
-router.use('/chats', chatRoutes);
-router.use('/support', supportRoutes);
+mountRouter(router, '/health', healthRoutes);
+mountRouter(router, '/system', systemRoutes);
+mountRouter(router, '/auth', authRoutes);
+mountRouter(router, '/companies', companyRoutes);
+mountRouter(router, '/files', fileRoutes);
+mountRouter(router, '/users', userRoutes);
+mountRouter(router, '/deals', dealRoutes);
+mountRouter(router, '/chats', chatRoutes);
+mountRouter(router, '/support', supportRoutes);
 
 module.exports = router;
