@@ -52,20 +52,12 @@ const archiveDeal = catchAsync(async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 
 const createDealRequest = catchAsync(async (req, res) => {
-  const request = await dealService.createDealRequest(
-    req.params.id,
-    getCompanyId(req),
-    req.body
-  );
+  const request = await dealService.createDealRequest(req.params.id, getCompanyId(req), req.body);
   sendResponse(res, 201, request, 'Request submitted successfully');
 });
 
 const getDealRequests = catchAsync(async (req, res) => {
-  const result = await dealService.getDealRequests(
-    req.params.id,
-    getCompanyId(req),
-    req.query
-  );
+  const result = await dealService.getDealRequests(req.params.id, getCompanyId(req), req.query);
   sendResponse(res, 200, result, 'Deal requests fetched');
 });
 
@@ -89,25 +81,6 @@ const withdrawRequest = catchAsync(async (req, res) => {
   sendResponse(res, 200, request, 'Request withdrawn');
 });
 
-// ─────────────────────────────────────────────────────────────
-// ADMIN CONTROLLERS
-// ─────────────────────────────────────────────────────────────
-
-const adminListDeals = catchAsync(async (req, res) => {
-  const deals = await dealService.adminGetAllDeals(req.query);
-  sendResponse(res, 200, deals, 'All deals fetched');
-});
-
-const adminGetDeal = catchAsync(async (req, res) => {
-  const result = await dealService.adminGetDealDetails(req.params.id);
-  sendResponse(res, 200, result, 'Deal details fetched');
-});
-
-const adminUpdateDealStatus = catchAsync(async (req, res) => {
-  const deal = await dealService.adminUpdateDealStatus(req.params.id, req.body.status);
-  sendResponse(res, 200, deal, 'Deal status updated');
-});
-
 module.exports = {
   // Deal endpoints
   createDeal,
@@ -122,8 +95,4 @@ module.exports = {
   getMyRequests,
   updateRequestStatus,
   withdrawRequest,
-  // Admin endpoints
-  adminListDeals,
-  adminGetDeal,
-  adminUpdateDealStatus,
 };

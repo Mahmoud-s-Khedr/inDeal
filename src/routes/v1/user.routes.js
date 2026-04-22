@@ -2,13 +2,11 @@ const express = require('express');
 const protect = require('../../middlewares/authMiddleware');
 const validate = require('../../middlewares/validateMiddleware');
 const userController = require('../../controllers/user.controller');
-const deviceTokenController = require('../../controllers/deviceToken.controller');
 const {
   updateMeSchema,
   updatePasswordSchema,
   updateProfileImageSchema,
 } = require('../../validations/user.validation');
-const { registerDeviceSchema } = require('../../validations/deviceToken.validation');
 
 const router = express.Router();
 
@@ -23,10 +21,5 @@ router.put(
   userController.updateProfileImage
 );
 router.delete('/me/profile-image', userController.deleteProfileImage);
-
-// Device token management (Push notifications)
-router.get('/me/devices', deviceTokenController.listDevices);
-router.post('/me/devices', validate(registerDeviceSchema), deviceTokenController.registerDevice);
-router.delete('/me/devices', deviceTokenController.unregisterDevice);
 
 module.exports = router;

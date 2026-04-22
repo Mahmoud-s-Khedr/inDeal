@@ -15,7 +15,6 @@ import { runDocumentsFlow } from '../flows/05-documents.flow.js';
 import { runGalleryFlow } from '../flows/06-gallery.flow.js';
 import { runContributionsFlow } from '../flows/07-contributions.flow.js';
 import { runReviewsFlow } from '../flows/08-reviews.flow.js';
-import { runAdminFlow } from '../flows/09-admin.flow.js';
 import { runCompanyRouteRegressionFlow } from '../flows/10-company-route-regression.flow.js';
 
 const ALL_FLOWS = [
@@ -27,7 +26,6 @@ const ALL_FLOWS = [
   { name: 'Gallery', fn: runGalleryFlow },
   { name: 'Contributions', fn: runContributionsFlow },
   { name: 'Reviews', fn: runReviewsFlow },
-  { name: 'Admin', fn: runAdminFlow },
   { name: 'Company Route Regression', fn: runCompanyRouteRegressionFlow },
 ];
 

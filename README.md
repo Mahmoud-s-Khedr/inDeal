@@ -1,151 +1,74 @@
-# inDeal - B2B Marketplace Platform
+# inDeal - V1 Backend
 
-**inDeal** is a specialized B2B marketplace designed to connect companies and agents through transparent Auctions and Requests for Quotations (RFQs). It facilitates direct deals, real-time communication, and targeted advertising within the industrial and commercial sectors.
+inDeal is a B2B backend focused on v1 scope: auth, company portfolio, deals, company-to-company chat, file uploads, and support contact info.
 
-## 🚀 Technology Stack
+## Tech Stack
 
-| Component         | Technology        | Description                                 |
-| :---------------- | :---------------- | :------------------------------------------ |
-| **Backend**       | Node.js + Express | High-performance API server.                |
-| **Database**      | PostgreSQL        | Primary relational database (Raw SQL).      |
-| **Caching/Queue** | Valkey            | Redis alternative for Job Queues & Pub/Sub. |
-| **Real-time**     | Socket.io         | Instant messaging and live updates.         |
-| **Storage**       | Cloudflare R2     | S3-compatible object storage for files.     |
-| **Notifications** | Firebase (FCM)    | Push notifications for mobile & web.        |
+- Backend: Node.js + Express
+- Database: PostgreSQL (`pg`, raw SQL)
+- Queue/Cache: Valkey + BullMQ
+- Realtime: Socket.IO (B2B chat only)
+- Storage: Cloudflare R2 (S3-compatible)
+- Email: Resend
 
-## 📂 Project Structure
+## API Base
 
+- Base path: `/api/v1`
+
+## V1 Endpoint Areas
+
+- `auth`: register, login, logout, forgot/reset password, OTP verification
+- `companies`: profile/settings, gallery, documents, contributions, reviews, search
+- `deals`: CRUD + deal requests lifecycle
+- `chats`: B2B chat rooms/messages/read receipts
+- `files`: signed upload URL
+- `support`: support info + email redirect payload
+- `system`, `health`
+
+## Removed From V1
+
+These endpoints were removed and now return `404`:
+
+- `/api/v1/admin/*`
+- `/api/v1/ads/*`
+- `/api/v1/notifications/*`
+- `/api/v1/users/me/devices*`
+- `/api/v1/support/tickets*`
+- `/api/v1/support/chat*`
+- `/api/v1/auth/admin/login`
+- `/api/v1/auth/resend-verification`
+- `/api/v1/auth/verify-email`
+
+## Local Development
+
+1. Install dependencies
+
+```bash
+npm install
 ```
-inDeal/
-├── src/
-│   ├── config/         # Database & App Config
-│   ├── controllers/    # Request Handlers
-│   ├── middlewares/    # Express Middlewares
-│   ├── routes/         # API Route definitions (versioned)
-│   ├── app.js          # Express App Setup
-│   └── server.js       # Entry Point
-├── AI_DOCS/            # AI & Project Documentation
-│   ├── AI_MEM.md       # Project Context & Memory
-│   ├── schema.sql      # Database Schema Definition
-│   ├── tech_stack.md   # Technology Choices
-│   └── plan.md         # Implementation Roadmap
-├── .env                # Environment Variables (Not committed)
-├── docker-compose.yml  # Infrastructure Config
-└── package.json        # Dependencies
+
+2. Start infra
+
+```bash
+docker compose up --build -d
 ```
 
-## 🛠️ Getting Started
+3. Apply schema/migrations
 
-### Prerequisites
+```bash
+npm run db:schema
+```
 
-- **Node.js**: v18+
-- **Docker**: For running PostgreSQL and Valkey locally.
+4. Run API
 
-### Installation
+```bash
+npm run dev
+```
 
-1.  **Clone the repository**
+## Destructive V1 De-scope Migration
 
-    ```bash
-    git clone <repo-url>
-    cd inDeal
-    ```
+Use migration:
 
-2.  **Install Dependencies**
+- `AI_DOCS/migrations/014_v1_descope_remove_non_target.sql`
 
-    ```bash
-    npm install
-    ```
-
-3.  **Environment Setup**
-    Copy the example environment file (create one if missing):
-
-    ```bash
-    cp .env.example .env
-    ```
-
-    All environment variables are validated with Zod via `src/config/env.js`. Refer to `.env.example` for the full list, including `LOG_LEVEL`, Redis/Valkey credentials, Cloudflare R2 (S3) settings, Firebase service account keys, and SMTP/email configuration.
-
-    Additional email settings used by the Company Portfolio review workflow:
-    - `COMPANY_REVIEW_NOTIFICATION_EMAIL` (optional): admin inbox address that receives "company resubmitted for review" notifications.
-
-4.  **Start the Docker Stack**
-    Build the API image and boot the development stack (API + Postgres + Valkey):
-
-    ```bash
-    docker compose up --build -d
-    ```
-
-5.  **Initialize Database**
-    Run the schema script to create tables:
-
-    ```bash
-    npm run db:schema
-    ```
-
-6.  **Run the Server (Optional, outside Docker)**
-    If you prefer running the API directly on your machine:
-    ```bash
-    npm run dev
-    ```
-
-## 🌐 API Routing
-
-- All HTTP endpoints are mounted under `/api/v1` via the routers defined in `src/routes`.
-- Health monitoring lives in `src/routes/v1/health.routes.js`, while system metadata/config endpoints are in `src/routes/v1/system.routes.js`.
-- Controllers respond through `src/utils/response.js` to keep payloads consistent.
-
-## 🔐 Authentication API
-
-- `POST /api/v1/auth/register` — accepts `{ user, company }` payloads to create an agent user and pending company profile in a single transaction; `company.documents` must reference uploaded file IDs (via `/files/upload-url`) so admins can review supporting paperwork.
-- `POST /api/v1/auth/login` — verifies email/password and returns a JWT plus the associated company record.
-- Access tokens include per-device session id (`sid`) and support multi-device login sessions. `POST /api/v1/auth/logout` revokes all active sessions for the user.
-- Protected routes return a `token` in the response payload. The backend only rotates it when the current token is near expiry (configured by `JWT_ROTATE_BEFORE_EXP_SECONDS`, default `60` seconds); otherwise it echoes the same bearer token.
-- Requests are validated with Zod schemas (`src/validations/auth.validation.js`) and auth responses include `{ token, user, company }`.
-
-## 🏢 Company Portfolio API
-
-- `GET /api/v1/companies/me` — authenticated company profile (contacts, gallery, reviews, rating) for the logged-in agent.
-- `PUT /api/v1/companies/me` — update descriptive/contact data; supports JSON `contacts` and `locations`.
-- `POST /api/v1/companies/me/gallery` — add gallery entries by referencing existing file IDs.
-- `GET /api/v1/companies/:id` — public profile with gallery + reviews; dedicated `/:id/gallery` and `/:id/reviews` endpoints are also available.
-- `POST /api/v1/companies/:id/reviews` — authenticated reviewers can rate other companies (1–5 stars) with optional review text.
-
-- `POST /api/v1/companies/:id/reviews` — authenticated reviewers can rate other companies (1–5 stars) with optional review text.
-
-## 🔔 Notifications API
-
-- `GET /api/v1/notifications` — list user notifications.
-- `PUT /api/v1/notifications/:id/read` — mark as read.
-- **Real-time**: Socket.IO events (`notification:new`) are emitted to connected clients.
-
-## RETROFIT 📤 File Uploads (Cloudflare R2)
-
-- `POST /api/v1/files/upload-url` — authenticated agents request a signed `PUT` URL, upload directly to Cloudflare R2, and receive the created `files` row (with its `id`) to reference in subsequent APIs (gallery, avatars, ads, etc.). The signed URL TTL (`R2_SIGNED_URL_TTL_SECONDS`) and max file size cap (`R2_MAX_FILE_SIZE_BYTES`) are configurable via environment variables (defaults: 5 minutes, 20 MB).
-
-## 🐳 Docker Development & Testing
-
-- `docker compose up --build -d` starts the API plus its Postgres and Valkey dependencies.
-- Follow logs via `docker compose logs -f api`.
-- Execute automated tests inside a disposable container:
-  ```bash
-  docker compose --profile test run --rm api-tests
-  ```
-  (The default `npm test` script is a placeholder and will fail until tests are implemented.)
-
-## 📖 Documentation
-
-Detailed documentation is maintained in the `AI_DOCS` directory:
-
-- [**Architecture & Tech Stack**](AI_DOCS/tech_stack.md)
-- [**Implementation Plan**](AI_DOCS/plan.md)
-- [**Implementation Plan**](AI_DOCS/plan.md)
-- [**Database Schema**](AI_DOCS/schema.sql)
-- [**Notification Guide**](AI_DOCS/notification_integration_guide.md)
-
-## 🧪 Postman Collection
-
-Import `postman/inDeal.postman_collection.json` to test the Auth and Company APIs locally. Configure the `base_url`, `auth_token`, and `company_id` variables inside Postman before running the requests.
-
-## ⚖️ License
-
-Private Proprietary Software.
+Before running it, take a full DB backup snapshot.

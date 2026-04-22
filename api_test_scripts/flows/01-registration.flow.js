@@ -115,43 +115,23 @@ export async function runRegistrationFlow(customData = null) {
 
       await delayBetweenRequests();
 
-      // Step 3: Notify about email verification
+      // Step 3: V1 note
       results.push(
-        await step('Email verification (info)', async () => {
-          console.log(chalk.yellow('    ⚠ Email verification required'));
-          console.log(
-            chalk.gray(
-              '    Check email for verification link or update testTokens.emailVerificationToken'
-            )
-          );
-          console.log(
-            chalk.gray(
-              `    Verification endpoint: GET /auth/verify-email?email=${userData.email}&token=<token>`
-            )
-          );
-          return { status: 'pending_verification' };
+        await step('V1 auth mode (info)', async () => {
+          console.log(chalk.gray('    Email verification endpoints are removed in v1.'));
+          console.log(chalk.gray('    Newly registered users are expected to be login-ready.'));
+          return { status: 'login_ready' };
         })
       );
 
       await delayBetweenRequests();
 
-      // Step 4: Attempt login (may fail if email not verified)
+      // Step 4: Attempt login
       results.push(
         await step('Initial login attempt', async () => {
-          try {
-            const loginResult = await apiClient.login(userData.email, userData.password);
-            console.log(chalk.green(`    ✓ Login successful! Token received`));
-            return loginResult;
-          } catch (error) {
-            if (
-              error.response?.status === 403 ||
-              error.response?.data?.message?.includes('verify')
-            ) {
-              console.log(chalk.yellow('    ⚠ Login blocked - email verification required'));
-              return { status: 'email_verification_required' };
-            }
-            throw error;
-          }
+          const loginResult = await apiClient.login(userData.email, userData.password);
+          console.log(chalk.green(`    ✓ Login successful! Token received`));
+          return loginResult;
         })
       );
 

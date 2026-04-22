@@ -145,27 +145,6 @@ const withdrawRequestSchema = z.object({
   }),
 });
 
-// ─────────────────────────────────────────────────────────────
-// Admin Schemas
-// ─────────────────────────────────────────────────────────────
-
-const adminUpdateDealStatusSchema = z.object({
-  params: z.object({
-    id: z.coerce.number().int().positive(),
-  }),
-  body: z.object({
-    status: z.enum(dealStatusEnumValues),
-  }),
-});
-
-const adminListDealsSchema = z.object({
-  query: z.object({
-    status: z.enum(dealStatusEnumValues).optional(),
-    limit: z.coerce.number().int().min(1).max(100).default(50),
-    offset: z.coerce.number().int().min(0).default(0),
-  }),
-});
-
 module.exports = {
   // Enums
   dealTypeEnumValues,
@@ -184,7 +163,4 @@ module.exports = {
   listDealRequestsSchema,
   listMyRequestsSchema,
   withdrawRequestSchema,
-  // Admin schemas
-  adminUpdateDealStatusSchema,
-  adminListDealsSchema,
 };

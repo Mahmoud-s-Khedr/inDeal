@@ -27,47 +27,6 @@ const resolveDecodedToken = async (token) => {
   }
 };
 
-const resolveSessionForToken = async ({ userId, decoded, sessionType }) => {
-  if (config.session.multiDeviceEnabled && decoded.sid) {
-    const sidSession = await sessionService.getSessionBySid(decoded.sid);
-    const isValidSidSession =
-      sidSession &&
-      Number(sidSession.userId) === Number(userId) &&
-      sidSession.sessionType === sessionType &&
-      sessionService.isJtiAccepted(sidSession, decoded.jti);
-
-    if (isValidSidSession) {
-      return { session: sidSession, mode: 'sid' };
-    }
-
-    logger.debug('SID session lookup failed', {
-      userId,
-      sessionType,
-      sid: decoded.sid,
-    });
-  }
-
-  if (!config.session.legacyFallbackEnabled) {
-    return { session: null, mode: 'none' };
-  }
-
-  const legacySession = await sessionService.getSession(userId, sessionType);
-  if (
-    legacySession &&
-    Number(legacySession.userId) === Number(userId) &&
-    sessionService.isJtiAccepted(legacySession, decoded.jti)
-  ) {
-    logger.debug('Legacy session fallback used', {
-      userId,
-      sessionType,
-      hasSid: !!decoded.sid,
-    });
-    return { session: legacySession, mode: 'legacy' };
-  }
-
-  return { session: null, mode: 'none' };
-};
-
 const protect = catchAsync(async (req, res, next) => {
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -109,12 +68,8 @@ const protect = catchAsync(async (req, res, next) => {
     return next(unauthorizedError());
   }
 
-  const { session, mode: sessionLookupMode } = await resolveSessionForToken({
-    userId: currentUser.id,
-    decoded,
-    sessionType,
-  });
-  if (!session) {
+  const session = await sessionService.getSession(currentUser.id, sessionType);
+  if (!session || !sessionService.isJtiAccepted(session, decoded.jti)) {
     return next(unauthorizedError());
   }
 
@@ -138,8 +93,6 @@ const protect = catchAsync(async (req, res, next) => {
   logger.debug('Auth token rotation decision', {
     userId: currentUser.id,
     sessionType,
-    sessionLookupMode,
-    hasSid: !!decoded.sid,
     shouldRotate,
     secondsToExpiry,
     expiredToken: tokenState.expired,
@@ -148,46 +101,32 @@ const protect = catchAsync(async (req, res, next) => {
 
   if (shouldRotate) {
     const newJti = sessionService.generateJti();
-    if (sessionLookupMode === 'sid' && decoded.sid) {
-      await sessionService.rotateSessionBySid({
-        sid: decoded.sid,
-        currentSession: session,
-        newJti,
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent'),
-      });
 
-      res.locals.accessToken = signToken(currentUser.id, {
-        jti: newJti,
-        st: sessionType,
-        sid: decoded.sid,
-      });
-    } else {
-      await sessionService.rotateSession({
-        userId: currentUser.id,
-        sessionType,
-        currentSession: session,
-        newJti,
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent'),
-      });
+    await sessionService.rotateSession({
+      userId: currentUser.id,
+      sessionType,
+      currentSession: session,
+      newJti,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
 
-      res.locals.accessToken = signToken(currentUser.id, {
-        jti: newJti,
-        st: sessionType,
-      });
-    }
+    res.locals.accessToken = signToken(currentUser.id, {
+      jti: newJti,
+      st: sessionType,
+    });
   } else {
     res.locals.accessToken = token;
   }
 
   req.user = currentUser;
   req.auth = {
-    sid: decoded.sid || null,
+    sid: null,
     sessionType,
-    sessionLookupMode,
-    isLegacyToken: !decoded.sid,
+    sessionLookupMode: 'single',
+    isLegacyToken: true,
   };
+
   if (currentUser.role === 'agent') {
     const company = await companyRepository.findByAgentId(currentUser.id);
     req.user.company = company || null;

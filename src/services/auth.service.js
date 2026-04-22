@@ -90,9 +90,7 @@ const sanitizeDocument = (doc, fileUrl = null) => {
 const OTP_KEY_PREFIX = 'fp:otp:';
 const RATE_LIMIT_PREFIX = 'fp:rate:';
 const otpSettings = config.forgotPassword;
-const emailVerificationSettings = config.emailVerification;
 const passwordHistorySettings = config.passwordHistory;
-const EMAIL_VERIFICATION_KEY_PREFIX = 'email:verification:';
 
 const requireForgotPasswordEnabled = () => {
   if (!otpSettings.enabled) {
@@ -199,35 +197,6 @@ const deleteOtpPayload = async (email) => {
   }
 };
 
-const buildEmailVerificationKey = (email) => `${EMAIL_VERIFICATION_KEY_PREFIX}${email}`;
-
-const storeEmailVerificationPayload = async (email, payload) => {
-  const ttlSeconds = emailVerificationSettings.tokenTtlMinutes * 60;
-  try {
-    await redis.set(buildEmailVerificationKey(email), JSON.stringify(payload), 'EX', ttlSeconds);
-  } catch (error) {
-    redisFailure(error);
-  }
-};
-
-const getEmailVerificationPayload = async (email) => {
-  try {
-    const raw = await redis.get(buildEmailVerificationKey(email));
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch (error) {
-    redisFailure(error);
-  }
-};
-
-const deleteEmailVerificationPayload = async (email) => {
-  try {
-    await redis.del(buildEmailVerificationKey(email));
-  } catch (error) {
-    redisFailure(error);
-  }
-};
-
 const updateOtpAttempts = async (email, payload, attempts) => {
   try {
     const ttl = await redis.ttl(buildOtpKey(email));
@@ -266,84 +235,17 @@ const sendOtpEmail = async ({ to, otp, ttlMinutes, userAgent, ipAddress }) => {
   }
 };
 
-const createEmailVerificationToken = async (email, userId) => {
-  const token = crypto.randomBytes(32).toString('hex');
-  await storeEmailVerificationPayload(email, {
-    userId,
-    token,
-    issuedAt: new Date().toISOString(),
-  });
-  return token;
-};
-
-const buildEmailVerificationLink = (email, token) => {
-  const baseUrl = (
-    emailVerificationSettings.baseUrl || `http://localhost:${config.app.port || 3000}`
-  ).replace(/\/$/, '');
-  const rawRoute = emailVerificationSettings.route || '/api/v1/auth/verify-email';
-  const sanitizedRoute = rawRoute.startsWith('/')
-    ? rawRoute.replace(/\/+$/, '')
-    : `/${rawRoute.replace(/\/+$/, '')}`;
-  const route = `${baseUrl}${sanitizedRoute}`;
-  const params = new URLSearchParams({ token, email });
-  return `${route}?${params.toString()}`;
-};
-
-const sendVerificationEmail = async (user) => {
-  const normalizedEmail = normalizeEmail(user.email);
-  const token = await createEmailVerificationToken(normalizedEmail, user.id);
-  const verificationLink = buildEmailVerificationLink(normalizedEmail, token);
-  const expiresMinutes = emailVerificationSettings.tokenTtlMinutes;
-
-  try {
-    await sendEmailSync({
-      to: normalizedEmail,
-      subject: 'Verify your inDeal email',
-      template: 'verifyEmail',
-      variables: {
-        verificationLink,
-        expiresMinutes,
-      },
-    });
-    logger.info(`Email verification link sent to ${normalizedEmail}`);
-  } catch (error) {
-    logger.error('Failed to dispatch verification email', error);
-    throw new AppError('Unable to send verification email. Please try again later.', 503);
-  }
-};
-
-const dispatchVerificationEmail = (user) => {
-  process.nextTick(() => {
-    sendVerificationEmail(user).catch((error) => {
-      logger.error('Failed to dispatch verification email (async)', error);
-    });
-  });
-};
-
 const issueAccessToken = async ({ userId, ipAddress, userAgent }) => {
   const sessionType = sessionService.inferSessionType(userAgent);
   const jti = sessionService.generateJti();
-  if (!config.session.multiDeviceEnabled) {
-    await sessionService.createOrReplaceSession({
-      userId,
-      sessionType,
-      jti,
-      ipAddress,
-      userAgent,
-    });
-    return signToken(userId, { jti, st: sessionType });
-  }
-
-  const sid = sessionService.generateSessionId();
-  await sessionService.createSession({
+  await sessionService.createOrReplaceSession({
     userId,
     sessionType,
-    sid,
     jti,
     ipAddress,
     userAgent,
   });
-  return signToken(userId, { jti, st: sessionType, sid });
+  return signToken(userId, { jti, st: sessionType });
 };
 
 const checkPasswordAgainstHistory = async (userId, newPassword, currentPasswordHash = null) => {
@@ -407,6 +309,8 @@ const register = async (payload, { ipAddress, userAgent } = {}) => {
       lastName: payload.user.lastName,
       jobTitle: payload.user.jobTitle,
     });
+    await userRepository.updateStatus(newUser.id, 'verified', client);
+    newUser.status = 'verified';
 
     const newCompany = await companyRepository.createCompany(client, {
       agentId: newUser.id,
@@ -456,8 +360,6 @@ const register = async (payload, { ipAddress, userAgent } = {}) => {
       );
     }
 
-    dispatchVerificationEmail(newUser);
-
     return {
       token,
       user: sanitizeUser(newUser),
@@ -465,7 +367,6 @@ const register = async (payload, { ipAddress, userAgent } = {}) => {
     };
   } catch (error) {
     await client.query('ROLLBACK');
-    await deleteEmailVerificationPayload(email);
     throw error;
   } finally {
     client.release();
@@ -573,35 +474,6 @@ const login = async (payload, { ipAddress, userAgent } = {}) => {
   };
 };
 
-const adminLogin = async (payload, { ipAddress, userAgent } = {}) => {
-  const email = payload.email.toLowerCase();
-  const user = await userRepository.findByEmail(email);
-
-  if (!user || user.role !== 'admin') {
-    throw new AppError('Invalid credentials', 401);
-  }
-
-  const isPasswordValid = await bcrypt.compare(payload.password, user.password_hash);
-  if (!isPasswordValid) {
-    throw new AppError('Invalid credentials', 401);
-  }
-
-  if (user.status !== 'verified') {
-    throw new AppError('Please verify your email before logging in', 403);
-  }
-
-  const token = await issueAccessToken({
-    userId: user.id,
-    ipAddress,
-    userAgent,
-  });
-
-  return {
-    token,
-    user: sanitizeUser(user),
-  };
-};
-
 const forgotPassword = async ({ email, ipAddress, userAgent }) => {
   requireForgotPasswordEnabled();
   const normalizedEmail = normalizeEmail(email);
@@ -700,64 +572,9 @@ const verifyOtp = async ({ email, otp, ipAddress }) => {
   return { message: 'OTP verified successfully' };
 };
 
-const verifyEmail = async ({ email, token }) => {
-  if (!emailVerificationSettings.baseUrl) {
-    throw new AppError('Email verification is not configured', 503);
-  }
-
-  const normalizedEmail = normalizeEmail(email);
-  const user = await userRepository.findByEmail(normalizedEmail);
-  if (!user) {
-    throw new AppError('Invalid or expired verification link', 400);
-  }
-
-  if (user.status === 'verified') {
-    await deleteEmailVerificationPayload(normalizedEmail);
-    return { message: 'Email already verified' };
-  }
-
-  const storedPayload = await getEmailVerificationPayload(normalizedEmail);
-  if (!storedPayload || storedPayload.token !== token || storedPayload.userId !== user.id) {
-    throw new AppError('Invalid or expired verification link', 400);
-  }
-
-  await userRepository.updateStatus(user.id, 'verified');
-  await deleteEmailVerificationPayload(normalizedEmail);
-
-  return { message: 'Email verified successfully' };
-};
-
-const resendVerificationEmail = async ({ email }) => {
-  if (!emailVerificationSettings.baseUrl) {
-    throw new AppError('Email verification is not configured', 503);
-  }
-
-  const normalizedEmail = normalizeEmail(email);
-  const user = await userRepository.findByEmail(normalizedEmail);
-  if (!user) {
-    return { message: 'If the email exists, a verification link was sent.' };
-  }
-
-  if (user.status === 'verified') {
-    return { message: 'Email already verified' };
-  }
-
-  dispatchVerificationEmail(user);
-  return { message: 'Verification email sent' };
-};
-
-const logoutCurrentSession = async ({ userId, sid, sessionType, isLegacyToken }) => {
-  if (sid) {
-    await sessionService.deleteSessionBySid(sid, userId, sessionType);
-    return { message: 'Logged out current session successfully' };
-  }
-
-  if (isLegacyToken && config.session.legacyFallbackEnabled) {
-    await sessionService.deleteAllSessionsForUser(userId);
-    return { message: 'Logged out successfully (legacy token)' };
-  }
-
-  throw new AppError('Session identifier is missing', 401);
+const logoutCurrentSession = async ({ userId, sessionType }) => {
+  await sessionService.deleteSession(userId, sessionType);
+  return { message: 'Logged out current session successfully' };
 };
 
 const logoutAllSessions = async (userId) => {
@@ -770,13 +587,10 @@ module.exports = {
   register,
   resubmit,
   login,
-  adminLogin,
   forgotPassword,
   resendForgotPasswordOtp,
   verifyOtp,
   resetPassword,
-  verifyEmail,
-  resendVerificationEmail,
   logoutCurrentSession,
   logoutAllSessions,
 };

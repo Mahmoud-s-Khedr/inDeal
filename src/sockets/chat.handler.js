@@ -2,7 +2,6 @@ const logger = require('../utils/logger');
 const { verifyToken } = require('../utils/jwt');
 const companyRepository = require('../repositories/company.repository');
 const chatService = require('../services/chat.service');
-const supportChatRepository = require('../repositories/supportChat.repository');
 const redis = require('../config/redis');
 
 // Valkey keys for socket presence and room membership
@@ -111,11 +110,10 @@ const registerChatHandlers = (io, socket) => {
     socket.join(`company:${companyId}`);
   }
 
-  // Auto-join all channels on connect (B2B rooms + active support room)
+  // Auto-join all B2B channels on connect
   const autoJoinAllChannels = async () => {
     const result = {
       b2bRoomIds: [],
-      supportRoomId: null,
       error: null,
     };
 
@@ -130,13 +128,6 @@ const registerChatHandlers = (io, socket) => {
         result.b2bRoomIds = b2bRoomIds;
       }
 
-      // 2. Auto-join active support chat room (if any)
-      const supportRoom = await supportChatRepository.findActiveRoomByUserId(userId);
-      if (supportRoom) {
-        socket.join(`support:room:${supportRoom.id}`);
-        result.supportRoomId = supportRoom.id;
-      }
-
       socket.emit('chat:ready', result);
       logger.debug(
         {
@@ -144,9 +135,8 @@ const registerChatHandlers = (io, socket) => {
           userId,
           companyId,
           b2bRoomCount: result.b2bRoomIds.length,
-          supportRoomId: result.supportRoomId,
         },
-        'User auto-joined all channels'
+        'User auto-joined B2B channels'
       );
     } catch (error) {
       logger.error({ err: error, socketId: socket.id }, 'Failed to auto-join channels');
@@ -271,18 +261,11 @@ const initializeChatSockets = (io) => {
   // Apply authentication middleware
   io.use(authenticateSocket);
 
-  // Import support chat handlers
-  const { registerSupportChatHandlers } = require('./supportChat.handler');
-
   io.on('connection', (socket) => {
-    // Register B2B chat handlers
     registerChatHandlers(io, socket);
-
-    // Register support chat handlers (FR-SUP-004)
-    registerSupportChatHandlers(io, socket);
   });
 
-  logger.info('Chat and support socket handlers initialized');
+  logger.info('Chat socket handlers initialized');
 };
 
 /**

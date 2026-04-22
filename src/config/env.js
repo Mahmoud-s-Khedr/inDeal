@@ -43,12 +43,6 @@ const envSchema = z.object({
 
   SESSION_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
   SESSION_ROTATE_LEEWAY_SECONDS: z.coerce.number().int().nonnegative().default(300),
-  SESSION_MULTI_DEVICE_ENABLED: z
-    .preprocess((val) => val === 'true' || val === true, z.boolean())
-    .default(true),
-  SESSION_LEGACY_FALLBACK_ENABLED: z
-    .preprocess((val) => val === 'true' || val === true, z.boolean())
-    .default(true),
 
   R2_BUCKET_NAME: z.string().default('indeal-assets'),
   R2_ACCESS_KEY_ID: z.string().optional(),
@@ -66,10 +60,6 @@ const envSchema = z.object({
     .int()
     .positive()
     .default(20 * 1024 * 1024),
-
-  FIREBASE_PROJECT_ID: z.string().optional(),
-  FIREBASE_CLIENT_EMAIL: z.string().optional(),
-  FIREBASE_PRIVATE_KEY: z.string().optional(),
 
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().default('no-reply@indeal.local'),
@@ -95,14 +85,6 @@ const envSchema = z.object({
   FORGOT_PASSWORD_RATE_LIMIT_FORGOT_PER_IP: z.coerce.number().int().positive().default(10),
   FORGOT_PASSWORD_RATE_LIMIT_RESET_PER_EMAIL: z.coerce.number().int().positive().default(10),
   FORGOT_PASSWORD_RATE_LIMIT_RESET_PER_IP: z.coerce.number().int().positive().default(15),
-  EMAIL_VERIFICATION_TOKEN_TTL_MINUTES: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(60 * 24),
-  EMAIL_VERIFICATION_API_BASE_URL: z.string().url().default('http://localhost:3000'),
-  EMAIL_VERIFICATION_PATH: z.string().default('/api/v1/auth/verify-email'),
-
   PASSWORD_HISTORY_DEPTH: z.coerce.number().int().nonnegative().default(5),
   PASSWORD_HISTORY_PRUNE_KEEP: z.coerce.number().int().positive().default(10),
 
@@ -121,9 +103,6 @@ const envSchema = z.object({
 
 const parsed = envSchema.safeParse({
   ...process.env,
-  FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY
-    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-    : undefined,
 });
 
 if (!parsed.success) {
@@ -160,8 +139,6 @@ module.exports = {
   session: {
     refreshTtlDays: env.SESSION_REFRESH_TTL_DAYS,
     rotateLeewaySeconds: env.SESSION_ROTATE_LEEWAY_SECONDS,
-    multiDeviceEnabled: env.SESSION_MULTI_DEVICE_ENABLED,
-    legacyFallbackEnabled: env.SESSION_LEGACY_FALLBACK_ENABLED,
   },
   storage: {
     bucket: env.R2_BUCKET_NAME,
@@ -172,11 +149,6 @@ module.exports = {
     publicUrl: env.R2_PUBLIC_URL,
     signedUrlTtlSeconds: env.R2_SIGNED_URL_TTL_SECONDS,
     maxUploadBytes: env.R2_MAX_FILE_SIZE_BYTES,
-  },
-  firebase: {
-    projectId: env.FIREBASE_PROJECT_ID,
-    clientEmail: env.FIREBASE_CLIENT_EMAIL,
-    privateKey: env.FIREBASE_PRIVATE_KEY,
   },
   resend: {
     apiKey: env.RESEND_API_KEY,
@@ -211,11 +183,6 @@ module.exports = {
       resetPerEmail: env.FORGOT_PASSWORD_RATE_LIMIT_RESET_PER_EMAIL,
       resetPerIp: env.FORGOT_PASSWORD_RATE_LIMIT_RESET_PER_IP,
     },
-  },
-  emailVerification: {
-    tokenTtlMinutes: env.EMAIL_VERIFICATION_TOKEN_TTL_MINUTES,
-    baseUrl: env.EMAIL_VERIFICATION_API_BASE_URL,
-    route: env.EMAIL_VERIFICATION_PATH,
   },
   passwordHistory: {
     depth: env.PASSWORD_HISTORY_DEPTH,

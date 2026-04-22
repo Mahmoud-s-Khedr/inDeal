@@ -12,7 +12,7 @@ const logger = require('../utils/logger');
 /**
  * Send an email asynchronously via queue with tracking
  * Use this for non-critical emails that can be retried
- * 
+ *
  * @param {Object} options
  * @param {string|string[]} options.to - Recipient email(s)
  * @param {string} options.subject - Email subject
@@ -21,35 +21,35 @@ const logger = require('../utils/logger');
  * @returns {Promise<{logId: number, jobId: string}>}
  */
 const sendEmailAsync = async (options) => {
-    const { to, subject, template, variables } = options;
-    const recipient = Array.isArray(to) ? to[0] : to;
+  const { to, subject, template, variables } = options;
+  const recipient = Array.isArray(to) ? to[0] : to;
 
-    // Create tracking log
-    const log = await emailLogRepository.createLog({
-        recipient,
-        template,
-        subject,
-        status: 'queued',
-    });
+  // Create tracking log
+  const log = await emailLogRepository.createLog({
+    recipient,
+    template,
+    subject,
+    status: 'queued',
+  });
 
-    // Enqueue the email job
-    const { jobId } = await enqueueEmail({
-        to,
-        subject,
-        template,
-        variables,
-        logId: log.id,
-    });
+  // Enqueue the email job
+  const { jobId } = await enqueueEmail({
+    to,
+    subject,
+    template,
+    variables,
+    logId: log.id,
+  });
 
-    logger.debug({ logId: log.id, jobId, to, template }, 'Email queued for async sending');
+  logger.debug({ logId: log.id, jobId, to, template }, 'Email queued for async sending');
 
-    return { logId: log.id, jobId };
+  return { logId: log.id, jobId };
 };
 
 /**
  * Send an email synchronously (immediately)
  * Use this for critical emails that must be sent immediately (e.g., OTP)
- * 
+ *
  * @param {Object} options
  * @param {string|string[]} options.to - Recipient email(s)
  * @param {string} options.subject - Email subject
@@ -58,51 +58,51 @@ const sendEmailAsync = async (options) => {
  * @returns {Promise<{id: string}>}
  */
 const sendEmailSync = async (options) => {
-    const { to, subject, template, variables } = options;
-    const recipient = Array.isArray(to) ? to[0] : to;
+  const { to, subject, template, variables } = options;
+  const recipient = Array.isArray(to) ? to[0] : to;
 
-    // Render template
-    const { html, text } = renderTemplate(template, variables);
+  // Render template
+  const { html, text } = renderTemplate(template, variables);
 
-    // Create tracking log
-    const log = await emailLogRepository.createLog({
-        recipient,
-        template,
-        subject,
-        status: 'sending',
+  // Create tracking log
+  const log = await emailLogRepository.createLog({
+    recipient,
+    template,
+    subject,
+    status: 'sending',
+  });
+
+  try {
+    // Send immediately
+    const result = await sendMail({
+      to,
+      subject,
+      html,
+      text,
     });
 
-    try {
-        // Send immediately
-        const result = await sendMail({
-            to,
-            subject,
-            html,
-            text,
-        });
+    // Update log on success
+    await emailLogRepository.updateLog(log.id, {
+      status: 'sent',
+      messageId: result.id,
+      sentAt: new Date(),
+      attempts: 1,
+    });
 
-        // Update log on success
-        await emailLogRepository.updateLog(log.id, {
-            status: 'sent',
-            messageId: result.id,
-            sentAt: new Date(),
-            attempts: 1,
-        });
+    logger.info({ logId: log.id, to, template, messageId: result.id }, 'Email sent synchronously');
 
-        logger.info({ logId: log.id, to, template, messageId: result.id }, 'Email sent synchronously');
+    return { id: result.id, logId: log.id };
+  } catch (error) {
+    // Update log on failure
+    await emailLogRepository.updateLog(log.id, {
+      status: 'failed',
+      error: error.message,
+      attempts: 1,
+    });
 
-        return { id: result.id, logId: log.id };
-    } catch (error) {
-        // Update log on failure
-        await emailLogRepository.updateLog(log.id, {
-            status: 'failed',
-            error: error.message,
-            attempts: 1,
-        });
-
-        logger.error({ err: error, logId: log.id, to, template }, 'Sync email send failed');
-        throw error;
-    }
+    logger.error({ err: error, logId: log.id, to, template }, 'Sync email send failed');
+    throw error;
+  }
 };
 
 /**
@@ -110,11 +110,11 @@ const sendEmailSync = async (options) => {
  * @returns {Promise<Object>}
  */
 const getEmailStats = async () => {
-    return emailLogRepository.getStats();
+  return emailLogRepository.getStats();
 };
 
 module.exports = {
-    sendEmailAsync,
-    sendEmailSync,
-    getEmailStats,
+  sendEmailAsync,
+  sendEmailSync,
+  getEmailStats,
 };

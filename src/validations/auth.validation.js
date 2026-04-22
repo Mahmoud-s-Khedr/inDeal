@@ -142,19 +142,6 @@ const verifyOtpSchema = z.object({
   }),
 });
 
-const verifyEmailSchema = z.object({
-  query: z.object({
-    email: z.string().email(),
-    token: z.string().min(16),
-  }),
-});
-
-const resendVerificationSchema = z.object({
-  body: z.object({
-    email: z.string().email(),
-  }),
-});
-
 const resubmitSchema = z.object({
   body: z.object({
     company: z
@@ -181,7 +168,5 @@ module.exports = {
   forgotPasswordSchema,
   resetPasswordSchema,
   verifyOtpSchema,
-  verifyEmailSchema,
-  resendVerificationSchema,
   resubmitSchema,
 };

@@ -10,16 +10,14 @@ const startupLogger = require('./utils/startupLogger');
 const redis = require('./config/redis');
 
 // Eager-load infrastructure modules so configuration issues surface on boot
-require('./config/firebase');
 require('./config/storage');
 require('./config/mailer');
 require('./config/queue');
 
 // Job queues and workers
-const { scheduleCleanupJob, scheduleNotificationCleanupJob } = require('./config/jobQueue');
+const { scheduleCleanupJob } = require('./config/jobQueue');
 const { startOrphanCleanupWorker } = require('./jobs/orphanCleanup.job');
 const { startImageOptimizationWorker } = require('./jobs/imageOptimization.job');
-const { startNotificationCleanupWorker } = require('./jobs/notificationCleanup.job');
 const { startEmailWorker } = require('./jobs/email.job');
 
 const server = http.createServer(app);
@@ -89,14 +87,10 @@ const startServer = async () => {
     startImageOptimizationWorker();
     startupLogger.logWorkerStarted('image-optimization');
 
-    startNotificationCleanupWorker();
-    startupLogger.logWorkerStarted('notification-cleanup');
-
     startEmailWorker();
     startupLogger.logWorkerStarted('email');
 
     await scheduleCleanupJob();
-    await scheduleNotificationCleanupJob();
 
     server.listen(config.app.port, () => {
       startupLogger.logServerListening(config.app.port, config.app.env);

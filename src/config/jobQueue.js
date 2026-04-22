@@ -16,9 +16,6 @@ const fileCleanupQueue = new Queue('file-cleanup', { connection });
 // Queue for image optimization jobs
 const imageOptimizationQueue = new Queue('image-optimization', { connection });
 
-// Queue for notification cleanup jobs
-const notificationCleanupQueue = new Queue('notification-cleanup', { connection });
-
 // Queue for email jobs
 const emailQueue = new Queue('email', { connection });
 
@@ -72,35 +69,6 @@ const enqueueImageOptimization = async (fileId, filePath, mimeType) => {
 };
 
 /**
- * Schedule recurring notification cleanup job (runs weekly).
- * Call this once on server startup.
- */
-const scheduleNotificationCleanupJob = async () => {
-  // Remove any existing repeatable job to avoid duplicates
-  const existingJobs = await notificationCleanupQueue.getRepeatableJobs();
-  for (const job of existingJobs) {
-    if (job.name === 'notification-cleanup') {
-      await notificationCleanupQueue.removeRepeatableByKey(job.key);
-    }
-  }
-
-  // Schedule to run weekly on Sunday at 4:00 AM
-  await notificationCleanupQueue.add(
-    'notification-cleanup',
-    {},
-    {
-      repeat: {
-        pattern: '0 4 * * 0', // Cron: 4 AM every Sunday
-      },
-      removeOnComplete: { count: 10 },
-      removeOnFail: { count: 50 },
-    }
-  );
-
-  logger.info('Scheduled notification cleanup job to run weekly on Sunday at 4 AM');
-};
-
-/**
  * Enqueue an email for async sending with retry
  * @param {Object} options - Email options
  * @param {string|string[]} options.to - Recipient email(s)
@@ -141,10 +109,8 @@ const enqueueEmail = async (options) => {
 module.exports = {
   fileCleanupQueue,
   imageOptimizationQueue,
-  notificationCleanupQueue,
   emailQueue,
   scheduleCleanupJob,
-  scheduleNotificationCleanupJob,
   enqueueImageOptimization,
   enqueueEmail,
   connection,

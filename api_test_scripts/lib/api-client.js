@@ -111,14 +111,6 @@ class ApiClient {
     return res.data;
   }
 
-  async adminLogin(email, password) {
-    const res = await this.client.post('/auth/admin/login', { email, password });
-    if (res.data.data?.accessToken) {
-      this.setTokens(res.data.data.accessToken, res.data.data.refreshToken);
-    }
-    return res.data;
-  }
-
   async logout() {
     const res = await this.client.post('/auth/logout');
     this.clearTokens();
@@ -147,11 +139,6 @@ class ApiClient {
       password,
       confirmPassword,
     });
-    return res.data;
-  }
-
-  async resendVerification(email) {
-    const res = await this.client.post('/auth/resend-verification', { email });
     return res.data;
   }
 
@@ -330,43 +317,6 @@ class ApiClient {
       fileType,
       fileSize,
     });
-    return res.data;
-  }
-
-  // ============ ADMIN ENDPOINTS ============
-
-  async adminGetCompanies() {
-    const res = await this.client.get('/admin/companies');
-    return res.data;
-  }
-
-  async adminGetPendingCompanies() {
-    const res = await this.client.get('/admin/companies/pending');
-    return res.data;
-  }
-
-  async adminGetCompany(companyId) {
-    const res = await this.client.get(`/admin/companies/${companyId}`);
-    return res.data;
-  }
-
-  async adminUpdateCompany(companyId, data) {
-    const res = await this.client.put(`/admin/companies/${companyId}`, data);
-    return res.data;
-  }
-
-  async adminUpdateCompanyStatus(companyId, status) {
-    const res = await this.client.patch(`/admin/companies/${companyId}/status`, { status });
-    return res.data;
-  }
-
-  async adminApproveCompany(companyId) {
-    const res = await this.client.post(`/admin/companies/${companyId}/approve`);
-    return res.data;
-  }
-
-  async adminRejectCompany(companyId) {
-    const res = await this.client.post(`/admin/companies/${companyId}/reject`);
     return res.data;
   }
 

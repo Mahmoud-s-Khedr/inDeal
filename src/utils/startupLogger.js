@@ -92,10 +92,6 @@ const logStartupConfig = () => {
       hasCredentials: !!(config.storage.accessKeyId && config.storage.secretAccessKey),
       publicUrl: config.storage.publicUrl,
     },
-    firebase: {
-      projectId: config.firebase.projectId || '[not configured]',
-      hasCredentials: !!(config.firebase.clientEmail && config.firebase.privateKey),
-    },
     email: {
       hasResendKey: !!config.resend.apiKey,
       fromEmail: config.resend.fromEmail,

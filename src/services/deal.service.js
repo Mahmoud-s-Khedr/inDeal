@@ -4,8 +4,6 @@ const dealRequestRepository = require('../repositories/dealRequest.repository');
 const companyRepository = require('../repositories/company.repository');
 const { sendMail } = require('../config/mailer');
 const logger = require('../utils/logger');
-const notificationService = require('./notification.service');
-const { NOTIFICATION_TYPES } = require('../constants/notificationTypes');
 
 // ─────────────────────────────────────────────────────────────
 // HELPER FUNCTIONS
@@ -335,49 +333,6 @@ const withdrawRequest = async (requestId, companyId) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// ADMIN OPERATIONS
-// ─────────────────────────────────────────────────────────────
-
-const adminGetAllDeals = async (filters = {}) => {
-  const deals = await dealRepository.listAll(filters);
-  return deals.map(sanitizeDeal);
-};
-
-const adminGetDealDetails = async (dealId) => {
-  const deal = await dealRepository.findById(dealId);
-  if (!deal) {
-    throw new AppError('Deal not found', 404);
-  }
-
-  const [requests, stats] = await Promise.all([
-    dealRequestRepository.findByDealId(dealId),
-    dealRequestRepository.getRequestStats(dealId),
-  ]);
-
-  return {
-    deal: sanitizeDeal(deal),
-    requests: requests.map(sanitizeRequest),
-    stats: {
-      total: parseInt(stats.total, 10),
-      pending: parseInt(stats.pending, 10),
-      accepted: parseInt(stats.accepted, 10),
-      rejected: parseInt(stats.rejected, 10),
-    },
-  };
-};
-
-const adminUpdateDealStatus = async (dealId, status) => {
-  const deal = await dealRepository.findById(dealId);
-  if (!deal) {
-    throw new AppError('Deal not found', 404);
-  }
-
-  const updated = await dealRepository.updateStatus(dealId, status);
-  logger.info('Admin updated deal status', { dealId, status });
-  return sanitizeDeal(updated);
-};
-
-// ─────────────────────────────────────────────────────────────
 // EMAIL NOTIFICATIONS
 // ─────────────────────────────────────────────────────────────
 
@@ -385,26 +340,6 @@ const notifyDealOwnerOfNewRequest = async (deal, applicant, request) => {
   // Get deal owner's user info
   const ownerCompany = await companyRepository.findById(deal.company_id);
   if (!ownerCompany) return;
-
-  // Create in-app notification
-  try {
-    await notificationService.createNotification({
-      userId: ownerCompany.agent_id,
-      type: NOTIFICATION_TYPES.DEAL_REQUEST_RECEIVED,
-      title: 'New Request on Your Deal',
-      message: `${applicant.name} has submitted a request on "${deal.deal_name}"`,
-      metadata: {
-        dealId: deal.id,
-        dealName: deal.deal_name,
-        requestId: request.id,
-        applicantCompanyId: applicant.id,
-        applicantCompanyName: applicant.name,
-        offer: request.request_offer,
-      },
-    });
-  } catch (err) {
-    logger.error({ err, dealId: deal.id }, 'Failed to create in-app notification for new request');
-  }
 
   // Send email notification
   if (!ownerCompany.email) return;
@@ -429,28 +364,6 @@ const notifyApplicantOfStatusChange = async (request, newStatus) => {
 
   const isAccepted = newStatus === 'accepted';
   const statusText = isAccepted ? 'accepted' : 'declined';
-  const notificationType = isAccepted
-    ? NOTIFICATION_TYPES.DEAL_REQUEST_ACCEPTED
-    : NOTIFICATION_TYPES.DEAL_REQUEST_REJECTED;
-
-  // Create in-app notification
-  try {
-    await notificationService.createNotification({
-      userId: applicant.agent_id,
-      type: notificationType,
-      title: `Request ${statusText.charAt(0).toUpperCase() + statusText.slice(1)}`,
-      message: `Your request on "${request.deal_name}" has been ${statusText}`,
-      metadata: {
-        dealId: request.deal_id,
-        dealName: request.deal_name,
-        requestId: request.id,
-        status: newStatus,
-      },
-    });
-  } catch (err) {
-    logger.error({ err, requestId: request.id }, 'Failed to create in-app notification for status change');
-  }
-
   // Send email notification
   if (!applicant.email) return;
 
@@ -480,8 +393,4 @@ module.exports = {
   getMyRequests,
   updateRequestStatus,
   withdrawRequest,
-  // Admin
-  adminGetAllDeals,
-  adminGetDealDetails,
-  adminUpdateDealStatus,
 };

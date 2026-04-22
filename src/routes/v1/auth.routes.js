@@ -9,8 +9,6 @@ const {
   forgotPasswordSchema,
   resetPasswordSchema,
   verifyOtpSchema,
-  verifyEmailSchema,
-  resendVerificationSchema,
 } = require('../../validations/auth.validation');
 const { createUploadUrlSchema } = require('../../validations/file.validation');
 
@@ -24,7 +22,6 @@ router.post(
 router.post('/register', validate(registerSchema), authController.register);
 router.post('/resubmit', protect, validate(resubmitSchema), authController.resubmit);
 router.post('/login', validate(loginSchema), authController.login);
-router.post('/admin/login', validate(loginSchema), authController.adminLogin);
 router.post('/logout', protect, authController.logout);
 router.post('/forgot-password', validate(forgotPasswordSchema), authController.forgotPassword);
 router.post(
@@ -34,11 +31,5 @@ router.post(
 );
 router.post('/verify-otp', validate(verifyOtpSchema), authController.verifyOtp);
 router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
-router.post(
-  '/resend-verification',
-  validate(resendVerificationSchema),
-  authController.resendVerificationEmail
-);
-router.get('/verify-email', validate(verifyEmailSchema), authController.verifyEmail);
 
 module.exports = router;

@@ -10,8 +10,6 @@ const fileService = require('./file.service');
 const config = require('../config/env');
 const logger = require('../utils/logger');
 const { sendMail } = require('../config/mailer');
-const notificationService = require('./notification.service');
-const { NOTIFICATION_TYPES } = require('../constants/notificationTypes');
 const { validateCompanyCompleteness } = require('../utils/validationHelper');
 
 const REGISTRATION_DOC_PREFIX = 'registration:';
@@ -951,15 +949,6 @@ const resendForReview = async (agentId) => {
   validateCompanyCompleteness(company);
 
   const updated = await companyRepository.updateCompanyStatus(company.id, 'underReview');
-
-  // Send in-app notification
-  await notificationService.createNotification({
-    userId: agentId,
-    type: NOTIFICATION_TYPES.COMPANY_STATUS_CHANGE,
-    title: 'Application Submitted',
-    message: 'Your company profile has been submitted for review.',
-    metadata: { companyId: company.id, status: 'underReview' },
-  });
 
   const agentEmail = company.email || company?.agent?.email;
   if (agentEmail) {
