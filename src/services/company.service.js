@@ -58,12 +58,14 @@ const sanitizeCompany = (company, logoUrl = null) => {
 
   if (company.first_name) {
     result.agent = {
-      id: company.agent_id_user,
+      id: company.agent_id_user || company.agent_id,
       firstName: company.first_name,
       lastName: company.last_name,
       email: company.agent_email,
       jobTitle: company.job_title,
       username: company.username,
+      profileImageFileId: company.profile_image || null,
+      preferences: company.preferences || {},
     };
   }
 
@@ -104,7 +106,7 @@ const sanitizeDocument = (doc, fileUrl = null) => ({
   uploadedAt: doc.uploaded_at,
 });
 
-const sanitizeContribution = (item, mediaFileUrl = null) => ({
+const sanitizeContribution = (item, mediaFileUrl = null, partner = null) => ({
   id: item.id,
   companyId: item.company_id,
   mediaFileId: item.media_file_id,
@@ -119,6 +121,8 @@ const sanitizeContribution = (item, mediaFileUrl = null) => ({
   socialMediaLinks: item.details?.socialMediaLinks || [],
   partnerId: item.details?.partnerId,
   partnerName: item.details?.partnerName,
+  partnerLogoFileId: partner?.logoFileId || null,
+  partnerLogoUrl: partner?.logoUrl || null,
   contributors: item.details?.contributors || [],
   tags: item.details?.tags || [],
   createdAt: item.created_at,
@@ -134,6 +138,71 @@ const sanitizeContributionMedia = (item, fileUrl = null) => ({
   caption: item.caption,
   createdAt: item.createdAt,
 });
+
+const buildPartnerMeta = async (contributions = []) => {
+  const partnerRefMap = new Map();
+  for (const contribution of contributions) {
+    if (contribution.type !== 'partnership') continue;
+
+    const partnerId = contribution.details?.partnerId;
+    const partnerName = contribution.details?.partnerName;
+    if (partnerId) {
+      partnerRefMap.set(`id:${partnerId}`, { partnerId });
+    } else if (partnerName) {
+      partnerRefMap.set(`name:${partnerName.toLowerCase()}`, { partnerName });
+    }
+  }
+
+  if (!partnerRefMap.size) return new Map();
+
+  const partnerMeta = new Map();
+  for (const [key, ref] of partnerRefMap.entries()) {
+    let partnerCompany = null;
+    if (ref.partnerId) {
+      partnerCompany = await companyRepository.findById(ref.partnerId);
+    } else if (ref.partnerName) {
+      partnerCompany = await companyRepository.findByName(ref.partnerName);
+    }
+
+    if (!partnerCompany) continue;
+    const logoUrl = await getFileUrl(partnerCompany.logo);
+    partnerMeta.set(key, {
+      companyId: partnerCompany.id,
+      companyName: partnerCompany.name,
+      logoFileId: partnerCompany.logo || null,
+      logoUrl,
+    });
+  }
+
+  return partnerMeta;
+};
+
+const resolvePartnerMetaForContribution = async (contribution) => {
+  if (!contribution || contribution.type !== 'partnership') return null;
+  if (contribution.details?.partnerId) {
+    const partner = await companyRepository.findById(contribution.details.partnerId);
+    if (!partner) return null;
+    return {
+      companyId: partner.id,
+      companyName: partner.name,
+      logoFileId: partner.logo || null,
+      logoUrl: await getFileUrl(partner.logo),
+    };
+  }
+
+  if (contribution.details?.partnerName) {
+    const partner = await companyRepository.findByName(contribution.details.partnerName);
+    if (!partner) return null;
+    return {
+      companyId: partner.id,
+      companyName: partner.name,
+      logoFileId: partner.logo || null,
+      logoUrl: await getFileUrl(partner.logo),
+    };
+  }
+
+  return null;
+};
 
 const enrichProfile = async (company, gallery = [], reviews = [], documents, contributions) => {
   const logoUrl = await getFileUrl(company.logo);
@@ -157,11 +226,21 @@ const enrichProfile = async (company, gallery = [], reviews = [], documents, con
       )
     : undefined;
 
+  const partnerMeta = Array.isArray(contributions)
+    ? await buildPartnerMeta(contributions)
+    : new Map();
+
   const sanitizedContributions = Array.isArray(contributions)
     ? await Promise.all(
         contributions.map(async (item) => {
           const mediaFileUrl = await getFileUrl(item.media_file_id);
-          return sanitizeContribution(item, mediaFileUrl);
+          const partnerRefKey = item.details?.partnerId
+            ? `id:${item.details.partnerId}`
+            : item.details?.partnerName
+              ? `name:${String(item.details.partnerName).toLowerCase()}`
+              : null;
+          const partner = partnerRefKey ? partnerMeta.get(partnerRefKey) || null : null;
+          return sanitizeContribution(item, mediaFileUrl, partner);
         })
       )
     : undefined;
@@ -663,7 +742,8 @@ const listMyContributions = async (agentId) => {
   return Promise.all(
     items.map(async (item) => {
       const mediaFileUrl = await getFileUrl(item.media_file_id);
-      return sanitizeContribution(item, mediaFileUrl);
+      const partner = await resolvePartnerMetaForContribution(item);
+      return sanitizeContribution(item, mediaFileUrl, partner);
     })
   );
 };
@@ -705,7 +785,8 @@ const createMyContribution = async (agentId, payload) => {
     description: payload.description,
   });
   const mediaFileUrl = await getFileUrl(item.media_file_id);
-  return sanitizeContribution(item, mediaFileUrl);
+  const partner = await resolvePartnerMetaForContribution(item);
+  return sanitizeContribution(item, mediaFileUrl, partner);
 };
 
 const updateMyContribution = async (agentId, contributionId, payload) => {
@@ -765,8 +846,6 @@ const updateMyContribution = async (agentId, contributionId, payload) => {
 
   // Handle details updates (merge with existing or payload.details)
   const nextType = payload.type ?? existing.type;
-  const nextContributors = payload.contributors ?? existing.details?.contributors;
-
   let nextPartner = {
     partnerId: payload.partnerId ?? existing.details?.partnerId,
     partnerName: payload.partnerName ?? existing.details?.partnerName,
@@ -822,7 +901,8 @@ const updateMyContribution = async (agentId, contributionId, payload) => {
   const updated = await contributionRepository.updateContribution(numericId, contributionUpdates);
 
   const mediaFileUrl = await getFileUrl(updated.media_file_id);
-  return sanitizeContribution(updated, mediaFileUrl);
+  const partner = await resolvePartnerMetaForContribution(updated);
+  return sanitizeContribution(updated, mediaFileUrl, partner);
 };
 
 const deleteMyContribution = async (agentId, contributionId) => {
@@ -845,7 +925,8 @@ const deleteMyContribution = async (agentId, contributionId) => {
     throw new AppError('Contribution not found', 404);
   }
   const mediaFileUrl = await getFileUrl(deleted.media_file_id);
-  return sanitizeContribution(deleted, mediaFileUrl);
+  const partner = await resolvePartnerMetaForContribution(deleted);
+  return sanitizeContribution(deleted, mediaFileUrl, partner);
 };
 
 // ============= Contribution Media CRUD =============

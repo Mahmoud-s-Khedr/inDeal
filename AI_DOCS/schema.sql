@@ -1,307 +1,286 @@
 -- 0. Enums
 DO $$ BEGIN CREATE TYPE user_role_enum AS ENUM ('agent', 'admin', 'support'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE user_status_enum AS ENUM ('pending', 'verified', 'suspended'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE company_state_enum AS ENUM ('active', 'underReview', 'pendingUpdate', 'rejected', 'suspended'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE company_state_enum AS ENUM ('active', 'underReview', 'rejected', 'suspended'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE deal_status_enum AS ENUM ('open', 'closed', 'negotiating', 'archived'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE deal_type_enum AS ENUM ('auction', 'rfq'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE deal_request_status_enum AS ENUM ('pending', 'accepted', 'rejected', 'withdrawn'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE deal_type_enum AS ENUM ('supply', 'demand'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE deal_request_status_enum AS ENUM ('pending', 'paused', 'accepted', 'rejected', 'canceled'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE deal_request_kind_enum AS ENUM ('supply', 'demand', 'rfq'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE chat_room_status_enum AS ENUM ('active', 'archived'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE ad_status_enum AS ENUM ('pending', 'active', 'rejected', 'paused', 'completed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE ad_location_enum AS ENUM ('homepage_banner', 'sidebar', 'search_result'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE ad_type_enum AS ENUM ('banner', 'video', 'sponsored_listing'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN CREATE TYPE support_ticket_status_enum AS ENUM ('open', 'in_progress', 'resolved', 'closed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE support_ticket_priority_enum AS ENUM ('low', 'medium', 'high', 'urgent'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN CREATE TYPE company_type_enum AS ENUM ('supplier', 'manufacturer', 'distributor', 'retailer', 'serviceProvider', 'wholesaler', 'eCommerce', 'franchise', 'cooperative', 'holdingCompany', 'consultancy', 'logistics', 'other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
 DO $$ BEGIN CREATE TYPE industry_enum AS ENUM ('agriculture', 'automotive', 'banking', 'construction', 'education', 'healthcare', 'hospitality', 'manufacturing', 'retail', 'technology', 'telecommunications', 'transportation', 'other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
 DO $$ BEGIN CREATE TYPE manufacturing_strategy_enum AS ENUM ('makeToStock', 'makeToOrder', 'assembleToOrder', 'engineerToOrder'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- 1. Files & Users (Standard)
-create table if not exists files (
-    id serial primary key,
-    file_name varchar(100) not null,
-    file_metadata jsonb,
-    file_path varchar(255) not null,
-    uploaded_at timestamp default current_timestamp,
-    deleted_at timestamp  -- Soft delete support
+-- 1. Files & Users
+CREATE TABLE IF NOT EXISTS files (
+  id serial PRIMARY KEY,
+  file_name varchar(100) NOT NULL,
+  file_metadata jsonb,
+  file_path varchar(255) NOT NULL,
+  uploaded_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  deleted_at timestamp
 );
 
-create table if not exists users (
-    id serial primary key,
-    username varchar(50) not null unique,
-    email varchar(100) not null unique,
-    password_hash varchar(255) not null,
-    first_name varchar(50) not null,
-    last_name varchar(50) not null,
-    job_title varchar(100),
-    role user_role_enum default 'agent',
-    status user_status_enum default 'pending' not null,
-    profile_image int references files(id),
-    preferences jsonb,
-    created_at timestamp default current_timestamp,
-    updated_at timestamp default current_timestamp
+CREATE TABLE IF NOT EXISTS users (
+  id serial PRIMARY KEY,
+  username varchar(50) NOT NULL UNIQUE,
+  email varchar(100) NOT NULL UNIQUE,
+  password_hash varchar(255) NOT NULL,
+  first_name varchar(50) NOT NULL,
+  last_name varchar(50) NOT NULL,
+  job_title varchar(100),
+  role user_role_enum DEFAULT 'agent',
+  status user_status_enum DEFAULT 'pending' NOT NULL,
+  profile_image int REFERENCES files(id),
+  preferences jsonb,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
--- 1b. User Password History
-create table if not exists user_password_history (
-    id serial primary key,
-    user_id int not null references users(id) on delete cascade,
-    password_hash varchar(255) not null,
-    created_at timestamp default current_timestamp
+CREATE TABLE IF NOT EXISTS user_password_history (
+  id serial PRIMARY KEY,
+  user_id int NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  password_hash varchar(255) NOT NULL,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Companies (Enforcing One Agent)
-create table if not exists companies (
-    id serial primary key,
-    agent_id int references users(id) unique,
-    name varchar(100) not null,
-    description text,
-    address varchar(255),
-    phone varchar(20),
-    website varchar(100),
-    email varchar(100), -- Public contact email for the company
-    company_type company_type_enum,
-    company_industry industry_enum,
-    manufacturing_strategy manufacturing_strategy_enum,
-    logo int references files(id),
-    status company_state_enum default 'underReview',
-    contacts jsonb,
-    locations jsonb,
-    rejection_reason text,
-    social_media_links jsonb,
-    created_at timestamp default current_timestamp,
-    updated_at timestamp default current_timestamp
+-- 2. Companies
+CREATE TABLE IF NOT EXISTS companies (
+  id serial PRIMARY KEY,
+  agent_id int REFERENCES users(id) UNIQUE,
+  name varchar(100) NOT NULL,
+  description text,
+  address varchar(255),
+  phone varchar(20),
+  website varchar(100),
+  email varchar(100),
+  company_type company_type_enum,
+  company_industry industry_enum,
+  manufacturing_strategy manufacturing_strategy_enum,
+  logo int REFERENCES files(id),
+  status company_state_enum DEFAULT 'underReview',
+  contacts jsonb,
+  locations jsonb,
+  rejection_reason text,
+  social_media_links jsonb,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2b. Company Agents (Multiple agents per company)
-create table if not exists company_agents (
-    id serial primary key,
-    company_id int references companies(id) on delete cascade,
-    user_id int references users(id) on delete cascade,
-    role varchar(20) default 'member', -- owner, admin, member
-    status varchar(20) default 'active', -- active, invited
-    created_at timestamp default current_timestamp,
-    unique(company_id, user_id)
+-- 3. Portfolio
+CREATE TABLE IF NOT EXISTS company_gallery (
+  id serial PRIMARY KEY,
+  company_id int REFERENCES companies(id),
+  image_file_id int REFERENCES files(id),
+  description text,
+  uploaded_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Assets (Gallery & Reviews)
-create table if not exists company_gallery (
-    id serial primary key,
-    company_id int references companies(id),
-    image_file_id int references files(id),
-    description text,
-    uploaded_at timestamp default current_timestamp
+CREATE TABLE IF NOT EXISTS company_reviews (
+  id serial PRIMARY KEY,
+  company_id int REFERENCES companies(id),
+  reviewer_company_id int REFERENCES companies(id),
+  deal_id int,
+  review_text text,
+  rating int CHECK (rating >= 1 AND rating <= 5),
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
-create table if not exists company_reviews (
-    id serial primary key,
-    company_id int references companies(id), -- The company being reviewed
-    reviewer_company_id int references companies(id), -- B2B: Companies review Companies
-    deal_id int, -- Deal being reviewed (FK added after deals table is created)
-    review_text text,
-    rating int check (rating >= 1 and rating <= 5),
-    created_at timestamp default current_timestamp
+CREATE TABLE IF NOT EXISTS company_documents (
+  id serial PRIMARY KEY,
+  company_id int REFERENCES companies(id),
+  file_id int REFERENCES files(id),
+  doc_type varchar(100),
+  title varchar(150),
+  issuer varchar(150),
+  url varchar(255),
+  description text,
+  issue_date date,
+  expiry_date date,
+  uploaded_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
-create table if not exists company_documents (
-    id serial primary key,
-    company_id int references companies(id),
-    file_id int references files(id),
-    doc_type varchar(100),
-    title varchar(150),
-    issuer varchar(150),
-    url varchar(255),
-    description text,
-    issue_date date,
-    expiry_date date,
-    uploaded_at timestamp default current_timestamp
+CREATE TABLE IF NOT EXISTS company_contributions (
+  id serial PRIMARY KEY,
+  company_id int REFERENCES companies(id),
+  media_file_id int REFERENCES files(id),
+  media_type varchar(30),
+  media_url varchar(255),
+  type varchar(30) NOT NULL,
+  title varchar(150) NOT NULL,
+  description text,
+  details jsonb,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3b. Portfolio Contributions
-create table if not exists company_contributions (
-    id serial primary key,
-    company_id int references companies(id),
-    media_file_id int references files(id),  -- Legacy single-media (deprecated)
-    media_type varchar(30),                  -- Legacy single-media (deprecated)
-    media_url varchar(255),                  -- Legacy single-media (deprecated)
-    type varchar(30) not null,
-    title varchar(150) not null,
-    description text,
-    details jsonb,
-    created_at timestamp default current_timestamp,
-    updated_at timestamp default current_timestamp
+CREATE TABLE IF NOT EXISTS company_contribution_media (
+  id serial PRIMARY KEY,
+  contribution_id int NOT NULL REFERENCES company_contributions(id) ON DELETE CASCADE,
+  file_id int REFERENCES files(id),
+  media_type varchar(30) NOT NULL,
+  media_url varchar(255),
+  sort_order int DEFAULT 0,
+  caption varchar(255),
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3c. Multiple Media per Contribution (junction table)
-create table if not exists company_contribution_media (
-    id serial primary key,
-    contribution_id int not null references company_contributions(id) on delete cascade,
-    file_id int references files(id),
-    media_type varchar(30) not null,  -- image, video, file, url
-    media_url varchar(255),           -- for external URLs
-    sort_order int default 0,
-    caption varchar(255),
-    created_at timestamp default current_timestamp
+-- 4. Deals
+CREATE TABLE IF NOT EXISTS deals (
+  id serial PRIMARY KEY,
+  company_id int REFERENCES companies(id),
+  deal_name varchar(100) NOT NULL,
+  deal_description text,
+  deal_value numeric(15, 2),
+  deal_type deal_type_enum,
+  status deal_status_enum DEFAULT 'open',
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Deals (The Core Transaction)
-create table if not exists deals (
-    id serial primary key,
-    company_id int references companies(id), -- The Publisher
-    deal_name varchar(100) not null,
-    deal_description text,
-    deal_value numeric(15, 2),
-    deal_type deal_type_enum,
-    status deal_status_enum default 'open',
-    created_at timestamp default current_timestamp,
-    updated_at timestamp default current_timestamp
+CREATE TABLE IF NOT EXISTS deal_attachments (
+  id serial PRIMARY KEY,
+  deal_id int NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
+  file_id int NOT NULL REFERENCES files(id),
+  kind varchar(20) NOT NULL CHECK (kind IN ('image', 'file')),
+  sort_order int DEFAULT 0,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
-create table if not exists deal_requests (
-    id serial primary key,
-    deal_id int references deals(id),
-    applicant_company_id int references companies(id), -- Who is applying?
-    request_details text,
-    request_offer numeric(15, 2), -- Needed for "Lowest Price" sorting
-    status deal_request_status_enum default 'pending',
-    created_at timestamp default current_timestamp,
-    updated_at timestamp default current_timestamp
+CREATE TABLE IF NOT EXISTS deal_requests (
+  id serial PRIMARY KEY,
+  deal_id int REFERENCES deals(id),
+  applicant_company_id int REFERENCES companies(id),
+  request_kind deal_request_kind_enum NOT NULL DEFAULT 'supply',
+  request_details text,
+  request_offer numeric(15, 2),
+  status deal_request_status_enum DEFAULT 'pending',
+  canceled_at timestamp,
+  canceled_by_company_id int REFERENCES companies(id),
+  cancel_reason text,
+  paused_at timestamp,
+  paused_by_company_id int REFERENCES companies(id),
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
--- Add FK after deals table exists
+CREATE TABLE IF NOT EXISTS deal_request_supply_details (
+  request_id int PRIMARY KEY REFERENCES deal_requests(id) ON DELETE CASCADE,
+  product_service_name varchar(200) NOT NULL,
+  category varchar(100) NOT NULL,
+  quantity_required numeric(15,2),
+  delivery_location varchar(255),
+  delivery_date date,
+  target_price_min numeric(15,2),
+  target_price_max numeric(15,2),
+  currency varchar(10),
+  payment_terms_preference text,
+  incoterm varchar(10),
+  bulk_discount_expectation text,
+  supply_type varchar(30),
+  key_specifications text,
+  material varchar(200),
+  dimensions_size varchar(200),
+  certifications_required jsonb,
+  quality_level varchar(50),
+  color_finish varchar(100),
+  country_of_origin varchar(100),
+  max_lead_time_accepted varchar(100),
+  delivery_method_preference varchar(50),
+  packaging_requirements text,
+  special_conditions_notes text,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS deal_request_demand_details (
+  request_id int PRIMARY KEY REFERENCES deal_requests(id) ON DELETE CASCADE,
+  product_service_name varchar(200) NOT NULL,
+  available_quantity numeric(15,2),
+  offer_validity_days int,
+  unit_price numeric(15,2),
+  currency varchar(10),
+  total_price numeric(15,2),
+  volume_discount_tiers jsonb,
+  moq numeric(15,2),
+  availability_type varchar(30),
+  quantity_in_stock numeric(15,2),
+  max_produce_quantity numeric(15,2),
+  stock_delivery_time varchar(100),
+  production_lead_time varchar(100),
+  specs_match_rfq varchar(20),
+  differences_from_rfq text,
+  material_offered varchar(200),
+  dimensions varchar(200),
+  certifications_held jsonb,
+  payment_terms text,
+  delivery_terms varchar(10),
+  warranty_return_policy text,
+  exclusivity_confidentiality text,
+  additional_notes text,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS deal_request_attachments (
+  id serial PRIMARY KEY,
+  request_id int NOT NULL REFERENCES deal_requests(id) ON DELETE CASCADE,
+  file_id int NOT NULL REFERENCES files(id),
+  sort_order int DEFAULT 0,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(request_id, file_id)
+);
+
 DO $$ BEGIN
   ALTER TABLE company_reviews
     ADD CONSTRAINT fk_company_reviews_deal_id
     FOREIGN KEY (deal_id) REFERENCES deals(id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- 5. Chat System (Fixed for B2B Context)
-create table if not exists chat_rooms (
-    id serial primary key,
-    company_a_id int references companies(id),
-    company_b_id int references companies(id),
-
-    status chat_room_status_enum default 'active',
-    created_at timestamp default current_timestamp,
-    encryption_key TEXT, -- AES-256-GCM key (base64, master-key-wrapped)
-    unique(company_a_id, company_b_id),
-    CONSTRAINT check_company_order CHECK (company_a_id < company_b_id)
+-- 5. Chat
+CREATE TABLE IF NOT EXISTS chat_rooms (
+  id serial PRIMARY KEY,
+  company_a_id int REFERENCES companies(id),
+  company_b_id int REFERENCES companies(id),
+  status chat_room_status_enum DEFAULT 'active',
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  encryption_key text,
+  UNIQUE(company_a_id, company_b_id),
+  CONSTRAINT check_company_order CHECK (company_a_id < company_b_id)
 );
 
-create table if not exists chat_messages (
-    id serial primary key,
-    room_id int references chat_rooms(id),
-    sender_user_id int references users(id),
-    message_text text,
-    attachment_file_id int references files(id),  -- Optional file attachment
-    sent_at timestamp default current_timestamp
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id serial PRIMARY KEY,
+  room_id int REFERENCES chat_rooms(id),
+  sender_user_id int REFERENCES users(id),
+  message_text text,
+  attachment_file_id int REFERENCES files(id),
+  sent_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
-create table if not exists chat_message_reads (
-    message_id int not null references chat_messages(id) on delete cascade,
-    company_id int not null references companies(id) on delete cascade,
-    read_at timestamp default current_timestamp,
-    primary key (message_id, company_id)
+CREATE TABLE IF NOT EXISTS chat_message_reads (
+  message_id int NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+  company_id int NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  read_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (message_id, company_id)
 );
 
--- 6. Ads
-create table if not exists advertisements (
-    id serial primary key,
-    company_id int references companies(id),
-    title varchar(100) not null,
-    content text,
-    image_file_id int references files(id),
-    target_url varchar(255),
-    location ad_location_enum,
-    type ad_type_enum,
-    status ad_status_enum default 'pending',
-    start_date date,
-    end_date date,
-    created_at timestamp default current_timestamp,
-    updated_at timestamp default current_timestamp
+-- 6. Email logs
+CREATE TABLE IF NOT EXISTS email_logs (
+  id serial PRIMARY KEY,
+  message_id varchar(100),
+  recipient varchar(255) NOT NULL,
+  template varchar(50),
+  subject varchar(255),
+  status varchar(20) DEFAULT 'queued',
+  error text,
+  attempts int DEFAULT 0,
+  sent_at timestamp,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
-create table if not exists ad_analytics_daily (
-    id serial primary key,
-    advertisement_id int references advertisements(id) on delete cascade,
-    date date default current_date,
-    impressions_count int default 0,
-    clicks_count int default 0,
-    unique(advertisement_id, date)
-);
-
-create table if not exists ad_click_events (
-    id serial primary key,
-    advertisement_id int references advertisements(id) on delete cascade,
-    user_id int references users(id),
-    ip_address varchar(45),
-    user_agent text,
-    clicked_at timestamp default current_timestamp
-);
-
--- 7. Audit Logs (Optimized for Searching)
-create table if not exists audit_logs (
-    id serial primary key,
-    user_id int references users(id),
-    company_id int references companies(id),
-    action varchar(100) not null,
-    details jsonb, -- Optimized for searching
-    timestamp timestamp default current_timestamp
-);
-
--- 8. Support Tickets
-create table if not exists support_tickets (
-    id serial primary key,
-    user_id int references users(id) on delete set null,
-    company_id int references companies(id) on delete set null,
-    subject varchar(200) not null,
-    message text not null,
-    email varchar(100) not null,
-    priority support_ticket_priority_enum default 'medium',
-    status support_ticket_status_enum default 'open',
-    admin_notes text,
-    created_at timestamp default current_timestamp,
-    updated_at timestamp default current_timestamp
-);
-
--- 9. Notifications
-create table if not exists notifications (
-    id serial primary key,
-    user_id int references users(id) on delete cascade,
-    type varchar(50) not null,
-    title varchar(200) not null,
-    message text,
-    is_read boolean default false,
-    metadata jsonb,
-    created_at timestamp default current_timestamp
-);
-
-create table if not exists support_ticket_responses (
-    id serial primary key,
-    ticket_id int not null references support_tickets(id) on delete cascade,
-    responder_user_id int not null references users(id),
-    message text not null,
-    created_at timestamp default current_timestamp
-);
-
--- 10. Email Logs (Tracking)
-create table if not exists email_logs (
-    id serial primary key,
-    message_id varchar(100),
-    recipient varchar(255) not null,
-    template varchar(50),
-    subject varchar(255),
-    status varchar(20) default 'queued',
-    error text,
-    attempts int default 0,
-    sent_at timestamp,
-    created_at timestamp default current_timestamp
-);
-
--- 11. Indexes (Performance)
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_files_deleted_at ON files(deleted_at) WHERE deleted_at IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_users_profile_image ON users(profile_image);
 CREATE INDEX IF NOT EXISTS idx_companies_agent_id ON companies(agent_id);
@@ -322,8 +301,14 @@ CREATE INDEX IF NOT EXISTS idx_company_contributions_details ON company_contribu
 CREATE INDEX IF NOT EXISTS idx_contribution_media_contribution_id ON company_contribution_media(contribution_id);
 CREATE INDEX IF NOT EXISTS idx_contribution_media_file_id ON company_contribution_media(file_id);
 CREATE INDEX IF NOT EXISTS idx_deals_company_id ON deals(company_id);
+CREATE INDEX IF NOT EXISTS idx_deal_attachments_deal_id ON deal_attachments(deal_id);
+CREATE INDEX IF NOT EXISTS idx_deal_attachments_file_id ON deal_attachments(file_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_deal_attachments_unique ON deal_attachments(deal_id, file_id, kind);
 CREATE INDEX IF NOT EXISTS idx_deal_requests_deal_id ON deal_requests(deal_id);
 CREATE INDEX IF NOT EXISTS idx_deal_requests_applicant_company_id ON deal_requests(applicant_company_id);
+CREATE INDEX IF NOT EXISTS idx_deal_requests_status ON deal_requests(status);
+CREATE INDEX IF NOT EXISTS idx_deal_request_attachments_request_id ON deal_request_attachments(request_id);
+CREATE INDEX IF NOT EXISTS idx_deal_request_attachments_file_id ON deal_request_attachments(file_id);
 CREATE INDEX IF NOT EXISTS idx_chat_rooms_company_a_id ON chat_rooms(company_a_id);
 CREATE INDEX IF NOT EXISTS idx_chat_rooms_company_b_id ON chat_rooms(company_b_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_room_id ON chat_messages(room_id);
@@ -331,97 +316,7 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_sender_user_id ON chat_messages(sen
 CREATE INDEX IF NOT EXISTS idx_chat_messages_attachment_file_id ON chat_messages(attachment_file_id);
 CREATE INDEX IF NOT EXISTS idx_chat_message_reads_company_id ON chat_message_reads(company_id);
 CREATE INDEX IF NOT EXISTS idx_chat_message_reads_message_id ON chat_message_reads(message_id);
-CREATE INDEX IF NOT EXISTS idx_advertisements_company_id ON advertisements(company_id);
-CREATE INDEX IF NOT EXISTS idx_advertisements_image_file_id ON advertisements(image_file_id);
-CREATE INDEX IF NOT EXISTS idx_ad_analytics_daily_advertisement_id ON ad_analytics_daily(advertisement_id);
-CREATE INDEX IF NOT EXISTS idx_ad_click_events_advertisement_id ON ad_click_events(advertisement_id);
-CREATE INDEX IF NOT EXISTS idx_ad_click_events_user_id ON ad_click_events(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_company_id ON audit_logs(company_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_details ON audit_logs USING GIN (details);
-
-CREATE INDEX IF NOT EXISTS idx_support_tickets_user_id ON support_tickets(user_id);
-CREATE INDEX IF NOT EXISTS idx_support_tickets_company_id ON support_tickets(company_id);
-CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status);
-CREATE INDEX IF NOT EXISTS idx_support_tickets_priority ON support_tickets(priority);
-CREATE INDEX IF NOT EXISTS idx_support_ticket_responses_ticket_id ON support_ticket_responses(ticket_id);
-
--- Notification indexes
-CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
-CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
-CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read) WHERE is_read = false;
-CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_notifications_read_created ON notifications(is_read, created_at);
-
--- Email log indexes
 CREATE INDEX IF NOT EXISTS idx_email_logs_recipient ON email_logs(recipient);
 CREATE INDEX IF NOT EXISTS idx_email_logs_status ON email_logs(status);
 CREATE INDEX IF NOT EXISTS idx_email_logs_template ON email_logs(template);
 CREATE INDEX IF NOT EXISTS idx_email_logs_created_at ON email_logs(created_at DESC);
-
--- ═══════════════════════════════════════════════════════════════
--- 12. Company Pending Updates (FR-ADMIN-003)
--- ═══════════════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS company_pending_updates (
-    id SERIAL PRIMARY KEY,
-    company_id INT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-    pending_data JSONB NOT NULL,
-    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'pending', -- pending, approved, rejected
-    reviewed_by INT REFERENCES users(id),
-    reviewed_at TIMESTAMP,
-    rejection_reason TEXT
-);
-
-CREATE INDEX IF NOT EXISTS idx_pending_updates_company ON company_pending_updates(company_id);
-CREATE INDEX IF NOT EXISTS idx_pending_updates_status ON company_pending_updates(status);
-
--- ═══════════════════════════════════════════════════════════════
--- 13. FCM Device Tokens (Push Notifications)
--- ═══════════════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS user_device_tokens (
-    id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token VARCHAR(500) NOT NULL,
-    device_type VARCHAR(20) NOT NULL, -- ios, android, web
-    device_info JSONB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, token)
-);
-
-CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON user_device_tokens(user_id);
-
--- ═══════════════════════════════════════════════════════════════
--- 14. Support Live Chat (FR-SUP-004)
--- ═══════════════════════════════════════════════════════════════
-DO $$ BEGIN CREATE TYPE support_chat_status_enum AS ENUM ('waiting', 'active', 'closed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-CREATE TABLE IF NOT EXISTS support_chat_rooms (
-    id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users(id),
-    company_id INT REFERENCES companies(id),
-    assigned_admin_id INT REFERENCES users(id),
-    status support_chat_status_enum DEFAULT 'waiting',
-    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ended_at TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS support_chat_messages (
-    id SERIAL PRIMARY KEY,
-    room_id INT NOT NULL REFERENCES support_chat_rooms(id) ON DELETE CASCADE,
-    sender_id INT NOT NULL REFERENCES users(id),
-    is_from_support BOOLEAN DEFAULT FALSE,
-    message_text TEXT NOT NULL,
-    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_support_rooms_user ON support_chat_rooms(user_id);
-CREATE INDEX IF NOT EXISTS idx_support_rooms_admin ON support_chat_rooms(assigned_admin_id);
-CREATE INDEX IF NOT EXISTS idx_support_rooms_status ON support_chat_rooms(status);
-CREATE INDEX IF NOT EXISTS idx_support_messages_room ON support_chat_messages(room_id);
-
--- ═══════════════════════════════════════════════════════════════
--- Late migrations (idempotent — fix existing DBs missing columns)
--- ═══════════════════════════════════════════════════════════════
-ALTER TABLE chat_rooms ADD COLUMN IF NOT EXISTS encryption_key TEXT;

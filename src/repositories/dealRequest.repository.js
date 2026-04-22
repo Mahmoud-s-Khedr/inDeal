@@ -2,10 +2,6 @@ const { pool } = require('../config/db');
 
 const run = (client) => client || pool;
 
-// ─────────────────────────────────────────────────────────────
-// DEAL REQUEST (BID) CRUD
-// ─────────────────────────────────────────────────────────────
-
 /**
  * Create a deal request (bid/application)
  */
@@ -13,19 +9,21 @@ const createRequest = async (client, request) => {
   const executor = run(client);
   const result = await executor.query(
     `
-        INSERT INTO deal_requests (
-            deal_id,
-            applicant_company_id,
-            request_details,
-            request_offer,
-            status
-        )
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *
-        `,
+      INSERT INTO deal_requests (
+        deal_id,
+        applicant_company_id,
+        request_kind,
+        request_details,
+        request_offer,
+        status
+      )
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `,
     [
       request.dealId,
       request.applicantCompanyId,
+      request.requestKind,
       request.requestDetails || null,
       request.requestOffer || null,
       request.status || 'pending',
@@ -40,15 +38,17 @@ const createRequest = async (client, request) => {
 const findById = async (requestId) => {
   const result = await pool.query(
     `
-        SELECT r.*, 
-               d.deal_name, d.company_id AS deal_owner_company_id,
-               c.name AS applicant_company_name, c.logo AS applicant_company_logo
-        FROM deal_requests r
-        JOIN deals d ON r.deal_id = d.id
-        JOIN companies c ON r.applicant_company_id = c.id
-        WHERE r.id = $1
-        LIMIT 1
-        `,
+      SELECT r.*,
+             d.deal_name,
+             d.company_id AS deal_owner_company_id,
+             c.name AS applicant_company_name,
+             c.logo AS applicant_company_logo
+      FROM deal_requests r
+      JOIN deals d ON r.deal_id = d.id
+      JOIN companies c ON r.applicant_company_id = c.id
+      WHERE r.id = $1
+      LIMIT 1
+    `,
     [requestId]
   );
   return result.rows[0];
@@ -59,24 +59,37 @@ const findById = async (requestId) => {
  */
 const findByDealId = async (dealId, { status, limit = 50, offset = 0 } = {}) => {
   let query = `
-        SELECT r.*, 
-               c.name AS applicant_company_name, c.logo AS applicant_company_logo,
-               c.company_type AS applicant_company_type, c.company_industry AS applicant_industry
-        FROM deal_requests r
-        JOIN companies c ON r.applicant_company_id = c.id
-        WHERE r.deal_id = $1
-    `;
+      SELECT r.*,
+             c.name AS applicant_company_name,
+             c.logo AS applicant_company_logo,
+             c.company_type AS applicant_company_type,
+             c.company_industry AS applicant_industry
+      FROM deal_requests r
+      JOIN companies c ON r.applicant_company_id = c.id
+      WHERE r.deal_id = $1
+  `;
   const params = [dealId];
   let paramIndex = 2;
 
   if (status) {
     query += ` AND r.status = $${paramIndex}`;
     params.push(status);
-    paramIndex++;
+    paramIndex += 1;
   }
 
-  query += ` ORDER BY r.request_offer ASC NULLS LAST, r.created_at ASC 
-               LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  query += `
+    ORDER BY
+      CASE r.status
+        WHEN 'pending' THEN 1
+        WHEN 'paused' THEN 2
+        WHEN 'accepted' THEN 3
+        WHEN 'rejected' THEN 4
+        WHEN 'canceled' THEN 5
+        ELSE 6
+      END,
+      r.created_at ASC
+    LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+  `;
   params.push(limit, offset);
 
   const result = await pool.query(query, params);
@@ -88,21 +101,24 @@ const findByDealId = async (dealId, { status, limit = 50, offset = 0 } = {}) => 
  */
 const findByApplicantCompanyId = async (companyId, { status, limit = 50, offset = 0 } = {}) => {
   let query = `
-        SELECT r.*, 
-               d.deal_name, d.deal_type, d.deal_value, d.status AS deal_status,
-               oc.name AS owner_company_name
-        FROM deal_requests r
-        JOIN deals d ON r.deal_id = d.id
-        JOIN companies oc ON d.company_id = oc.id
-        WHERE r.applicant_company_id = $1
-    `;
+      SELECT r.*,
+             d.deal_name,
+             d.deal_type,
+             d.deal_value,
+             d.status AS deal_status,
+             oc.name AS owner_company_name
+      FROM deal_requests r
+      JOIN deals d ON r.deal_id = d.id
+      JOIN companies oc ON d.company_id = oc.id
+      WHERE r.applicant_company_id = $1
+  `;
   const params = [companyId];
   let paramIndex = 2;
 
   if (status) {
     query += ` AND r.status = $${paramIndex}`;
     params.push(status);
-    paramIndex++;
+    paramIndex += 1;
   }
 
   query += ` ORDER BY r.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
@@ -118,10 +134,12 @@ const findByApplicantCompanyId = async (companyId, { status, limit = 50, offset 
 const findExistingRequest = async (dealId, applicantCompanyId) => {
   const result = await pool.query(
     `
-        SELECT * FROM deal_requests
-        WHERE deal_id = $1 AND applicant_company_id = $2
-        LIMIT 1
-        `,
+      SELECT *
+      FROM deal_requests
+      WHERE deal_id = $1
+        AND applicant_company_id = $2
+      LIMIT 1
+    `,
     [dealId, applicantCompanyId]
   );
   return result.rows[0];
@@ -144,12 +162,46 @@ const countByDealId = async (dealId) => {
 const updateStatus = async (requestId, status) => {
   const result = await pool.query(
     `
-        UPDATE deal_requests
-        SET status = $1, updated_at = NOW()
-        WHERE id = $2
-        RETURNING *
-        `,
+      UPDATE deal_requests
+      SET status = $1,
+          updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `,
     [status, requestId]
+  );
+  return result.rows[0];
+};
+
+const pauseRequest = async (requestId, byCompanyId) => {
+  const result = await pool.query(
+    `
+      UPDATE deal_requests
+      SET status = 'paused',
+          paused_at = NOW(),
+          paused_by_company_id = $2,
+          updated_at = NOW()
+      WHERE id = $1
+      RETURNING *
+    `,
+    [requestId, byCompanyId]
+  );
+  return result.rows[0];
+};
+
+const cancelRequest = async (requestId, byCompanyId, cancelReason) => {
+  const result = await pool.query(
+    `
+      UPDATE deal_requests
+      SET status = 'canceled',
+          canceled_at = NOW(),
+          canceled_by_company_id = $2,
+          cancel_reason = $3,
+          updated_at = NOW()
+      WHERE id = $1
+      RETURNING *
+    `,
+    [requestId, byCompanyId, cancelReason]
   );
   return result.rows[0];
 };
@@ -163,9 +215,11 @@ const updateRequest = async (requestId, updates) => {
   let index = 1;
 
   const fieldMapping = {
+    requestKind: 'request_kind',
     requestDetails: 'request_details',
     requestOffer: 'request_offer',
     status: 'status',
+    cancelReason: 'cancel_reason',
   };
 
   Object.entries(updates).forEach(([key, value]) => {
@@ -173,22 +227,22 @@ const updateRequest = async (requestId, updates) => {
     const dbField = fieldMapping[key] || key;
     fields.push(`${dbField} = $${index}`);
     values.push(value);
-    index++;
+    index += 1;
   });
 
   if (!fields.length) {
-    return await findById(requestId);
+    return findById(requestId);
   }
 
   fields.push('updated_at = NOW()');
 
   const result = await pool.query(
     `
-        UPDATE deal_requests
-        SET ${fields.join(', ')}
-        WHERE id = $${index}
-        RETURNING *
-        `,
+      UPDATE deal_requests
+      SET ${fields.join(', ')}
+      WHERE id = $${index}
+      RETURNING *
+    `,
     [...values, requestId]
   );
 
@@ -196,11 +250,10 @@ const updateRequest = async (requestId, updates) => {
 };
 
 /**
- * Withdraw request (by applicant)
+ * Withdraw request (legacy alias)
  */
-const withdrawRequest = async (requestId) => {
-  return await updateStatus(requestId, 'withdrawn');
-};
+const withdrawRequest = async (requestId, byCompanyId, cancelReason) =>
+  cancelRequest(requestId, byCompanyId, cancelReason);
 
 /**
  * Get request statistics for a deal
@@ -208,18 +261,19 @@ const withdrawRequest = async (requestId) => {
 const getRequestStats = async (dealId) => {
   const result = await pool.query(
     `
-        SELECT 
-            COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE status = 'pending') AS pending,
-            COUNT(*) FILTER (WHERE status = 'accepted') AS accepted,
-            COUNT(*) FILTER (WHERE status = 'rejected') AS rejected,
-            COUNT(*) FILTER (WHERE status = 'withdrawn') AS withdrawn,
-            MIN(request_offer) AS lowest_offer,
-            MAX(request_offer) AS highest_offer,
-            AVG(request_offer) AS average_offer
-        FROM deal_requests
-        WHERE deal_id = $1
-        `,
+      SELECT
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE status = 'pending') AS pending,
+        COUNT(*) FILTER (WHERE status = 'paused') AS paused,
+        COUNT(*) FILTER (WHERE status = 'accepted') AS accepted,
+        COUNT(*) FILTER (WHERE status = 'rejected') AS rejected,
+        COUNT(*) FILTER (WHERE status = 'canceled') AS canceled,
+        MIN(request_offer) AS lowest_offer,
+        MAX(request_offer) AS highest_offer,
+        AVG(request_offer) AS average_offer
+      FROM deal_requests
+      WHERE deal_id = $1
+    `,
     [dealId]
   );
   return result.rows[0];
@@ -231,18 +285,18 @@ const getRequestStats = async (dealId) => {
 const findAcceptedDealBetweenCompanies = async ({ dealId, companyAId, companyBId }) => {
   const result = await pool.query(
     `
-        SELECT r.*, d.status AS deal_status, d.company_id AS deal_owner_company_id
-        FROM deal_requests r
-        JOIN deals d ON r.deal_id = d.id
-        WHERE r.deal_id = $1
-          AND r.status = 'accepted'
-          AND d.status IN ('open', 'negotiating', 'closed')
-          AND (
-            (d.company_id = $2 AND r.applicant_company_id = $3)
-            OR (d.company_id = $3 AND r.applicant_company_id = $2)
-          )
-        LIMIT 1
-        `,
+      SELECT r.*, d.status AS deal_status, d.company_id AS deal_owner_company_id
+      FROM deal_requests r
+      JOIN deals d ON r.deal_id = d.id
+      WHERE r.deal_id = $1
+        AND r.status = 'accepted'
+        AND d.status IN ('open', 'negotiating', 'closed')
+        AND (
+          (d.company_id = $2 AND r.applicant_company_id = $3)
+          OR (d.company_id = $3 AND r.applicant_company_id = $2)
+        )
+      LIMIT 1
+    `,
     [dealId, companyAId, companyBId]
   );
   return result.rows[0];
@@ -256,6 +310,8 @@ module.exports = {
   findExistingRequest,
   countByDealId,
   updateStatus,
+  pauseRequest,
+  cancelRequest,
   updateRequest,
   withdrawRequest,
   getRequestStats,

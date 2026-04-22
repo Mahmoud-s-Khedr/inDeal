@@ -21,8 +21,10 @@ DROP TABLE IF EXISTS support_chat_rooms CASCADE;
 
 DROP TABLE IF EXISTS notifications CASCADE;
 DROP TABLE IF EXISTS user_device_tokens CASCADE;
+DROP TABLE IF EXISTS fcm_device_tokens CASCADE;
 
 DROP TABLE IF EXISTS company_pending_updates CASCADE;
+DROP TABLE IF EXISTS profile_pending_updates CASCADE;
 DROP TABLE IF EXISTS company_agents CASCADE;
 
 -- Drop orphaned enum types tied to removed modules

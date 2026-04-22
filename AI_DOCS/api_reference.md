@@ -56,6 +56,8 @@ Base URL prefix: `/api/v1`
 - `POST /deals/:id/requests`
 - `GET /deals/:id/requests`
 - `PATCH /deals/:dealId/requests/:requestId/status`
+- `PATCH /deals/requests/:requestId/pause`
+- `PATCH /deals/requests/:requestId/cancel`
 - `DELETE /deals/requests/:requestId`
 
 ## Chats
@@ -77,15 +79,3 @@ Base URL prefix: `/api/v1`
 
 - `GET /system/*`
 - `GET /health`
-
-## Removed Endpoints (Not in V1)
-
-- `/admin/*`
-- `/ads/*`
-- `/notifications/*`
-- `/users/me/devices*`
-- `/support/tickets*`
-- `/support/chat*`
-- `/auth/admin/login`
-- `/auth/resend-verification`
-- `/auth/verify-email`

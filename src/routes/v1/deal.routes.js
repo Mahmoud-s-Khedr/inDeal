@@ -10,6 +10,8 @@ const {
   listMyDealsSchema,
   createDealRequestSchema,
   dealRequestStatusSchema,
+  pauseDealRequestSchema,
+  cancelDealRequestSchema,
   listDealRequestsSchema,
   listMyRequestsSchema,
   withdrawRequestSchema,
@@ -74,7 +76,23 @@ router.patch(
   dealController.updateRequestStatus
 );
 
-// Withdraw my request
+// Pause my request (as applicant company admin)
+router.patch(
+  '/requests/:requestId/pause',
+  protect,
+  validate(pauseDealRequestSchema),
+  dealController.pauseRequest
+);
+
+// Cancel my request with reason (as applicant company admin)
+router.patch(
+  '/requests/:requestId/cancel',
+  protect,
+  validate(cancelDealRequestSchema),
+  dealController.cancelRequest
+);
+
+// Withdraw my request (legacy alias to cancel; requires cancelReason)
 router.delete(
   '/requests/:requestId',
   protect,

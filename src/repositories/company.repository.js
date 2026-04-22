@@ -48,8 +48,9 @@ const createCompany = async (client, company) => {
 const findByAgentId = async (agentId) => {
   const result = await pool.query(
     `
-        SELECT c.*, 
-               u.first_name, u.last_name, u.email, u.job_title, u.username
+        SELECT c.*,
+               u.first_name, u.last_name, u.email AS agent_email, u.job_title, u.username,
+               u.profile_image, u.preferences
         FROM companies c
         JOIN users u ON c.agent_id = u.id
         WHERE c.agent_id = $1 LIMIT 1
@@ -79,8 +80,9 @@ const findByName = async (name) => {
 
 const findCompanyProfileById = async (companyId) => {
   const companyQuery = `
-    SELECT c.*, 
+    SELECT c.*,
            u.id as agent_id_user, u.first_name, u.last_name, u.job_title, u.username,
+           u.profile_image, u.preferences,
            u.email as agent_email
     FROM companies c
     JOIN users u ON c.agent_id = u.id

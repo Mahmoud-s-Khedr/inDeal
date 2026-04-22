@@ -77,8 +77,27 @@ const updateRequestStatus = catchAsync(async (req, res) => {
 });
 
 const withdrawRequest = catchAsync(async (req, res) => {
-  const request = await dealService.withdrawRequest(req.params.requestId, getCompanyId(req));
+  const cancelReason = req.body?.cancelReason || req.query?.cancelReason;
+  const request = await dealService.withdrawRequest(
+    req.params.requestId,
+    getCompanyId(req),
+    cancelReason
+  );
   sendResponse(res, 200, request, 'Request withdrawn');
+});
+
+const pauseRequest = catchAsync(async (req, res) => {
+  const request = await dealService.pauseRequest(req.params.requestId, getCompanyId(req));
+  sendResponse(res, 200, request, 'Request paused');
+});
+
+const cancelRequest = catchAsync(async (req, res) => {
+  const request = await dealService.cancelRequest(
+    req.params.requestId,
+    getCompanyId(req),
+    req.body.cancelReason
+  );
+  sendResponse(res, 200, request, 'Request canceled');
 });
 
 module.exports = {
@@ -94,5 +113,7 @@ module.exports = {
   getDealRequests,
   getMyRequests,
   updateRequestStatus,
+  pauseRequest,
+  cancelRequest,
   withdrawRequest,
 };

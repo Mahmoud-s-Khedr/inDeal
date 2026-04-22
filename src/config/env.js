@@ -43,6 +43,7 @@ const envSchema = z.object({
 
   SESSION_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
   SESSION_ROTATE_LEEWAY_SECONDS: z.coerce.number().int().nonnegative().default(300),
+  MAX_OPEN_DEALS_PER_COMPANY: z.coerce.number().int().positive().default(25),
 
   R2_BUCKET_NAME: z.string().default('indeal-assets'),
   R2_ACCESS_KEY_ID: z.string().optional(),
@@ -139,6 +140,9 @@ module.exports = {
   session: {
     refreshTtlDays: env.SESSION_REFRESH_TTL_DAYS,
     rotateLeewaySeconds: env.SESSION_ROTATE_LEEWAY_SECONDS,
+  },
+  deals: {
+    maxOpenPerCompany: env.MAX_OPEN_DEALS_PER_COMPANY,
   },
   storage: {
     bucket: env.R2_BUCKET_NAME,
