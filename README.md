@@ -11,6 +11,14 @@ inDeal is a B2B backend focused on v1 scope: auth, company portfolio, deals, com
 - Storage: Cloudflare R2 (S3-compatible)
 - Email: Resend
 
+## Project Structure
+
+- `src/modules/*`: feature-first domains (`auth`, `company`, `deal`, `chat`, `file`, `support`, `system`, `health`, `user`)
+- `src/app`: HTTP app bootstrap and route composition
+- `src/core`: framework-agnostic HTTP/core primitives (errors, middleware, response helpers)
+- `src/infrastructure`: env/config, db/redis/queue/storage/mailer, workers, realtime bootstrap
+- `src/shared`: cross-module utilities/constants with ownership index in `src/shared/OWNERSHIP.md`
+
 ## API Base
 
 - Base path: `/api/v1`

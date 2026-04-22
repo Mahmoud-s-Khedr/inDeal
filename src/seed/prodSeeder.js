@@ -1,8 +1,9 @@
 const dotenv = require('dotenv');
 dotenv.config();
 const bcrypt = require('bcryptjs');
-const userRepository = require('../repositories/user.repository');
-const logger = require('../utils/logger');
+const userModule = require('../modules/user');
+const logger = require('../shared/utils/logger');
+const { userRepository } = userModule.repository;
 
 const truthy = (value) => value === true || value === 'true' || value === '1' || value === 1;
 

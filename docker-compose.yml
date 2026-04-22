@@ -78,7 +78,7 @@ services:
       context: .
       target: development
     container_name: indeal_api_tests
-    command: sh -c "npm install && npm test"
+    command: sh -c "npm ci --no-package-lock --no-audit --no-fund && npm test"
     env_file:
       - .env.docker
     environment:

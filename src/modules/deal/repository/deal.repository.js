@@ -1,0 +1,414 @@
+const { pool } = require('../../../infrastructure/config/db');
+
+const run = (client) => client || pool;
+
+/**
+ * Create a new deal
+ */
+const createDeal = async (client, deal) => {
+  const executor = run(client);
+  const result = await executor.query(
+    `
+      INSERT INTO deals (
+        company_id,
+        deal_name,
+        deal_description,
+        deal_value,
+        deal_type,
+        status
+      )
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `,
+    [
+      deal.companyId,
+      deal.dealName,
+      deal.dealDescription || null,
+      deal.dealValue || null,
+      deal.dealType,
+      deal.status || 'open',
+    ]
+  );
+  return result.rows[0];
+};
+
+/**
+ * Find deal by ID
+ */
+const findById = async (dealId) => {
+  const result = await pool.query(
+    `
+      SELECT d.*,
+             c.name AS company_name,
+             c.logo AS company_logo,
+             c.company_type,
+             c.company_industry,
+             c.address AS company_address,
+             c.status AS company_status,
+             COALESCE(req.request_count, 0)::int AS applications_count
+      FROM deals d
+      JOIN companies c ON d.company_id = c.id
+      LEFT JOIN (
+        SELECT deal_id, COUNT(*) AS request_count
+        FROM deal_requests
+        GROUP BY deal_id
+      ) req ON req.deal_id = d.id
+      WHERE d.id = $1
+      LIMIT 1
+    `,
+    [dealId]
+  );
+  return result.rows[0];
+};
+
+/**
+ * Find deals by company ID (owner's deals)
+ */
+const findByCompanyId = async (companyId, { status, limit = 50, offset = 0 } = {}) => {
+  let query = `
+      SELECT d.*, COALESCE(req.request_count, 0)::int AS applications_count
+      FROM deals d
+      LEFT JOIN (
+        SELECT deal_id, COUNT(*) AS request_count
+        FROM deal_requests
+        GROUP BY deal_id
+      ) req ON req.deal_id = d.id
+      WHERE d.company_id = $1
+  `;
+  const params = [companyId];
+  let paramIndex = 2;
+
+  if (status) {
+    query += ` AND d.status = $${paramIndex}`;
+    params.push(status);
+    paramIndex += 1;
+  }
+
+  query += ` ORDER BY d.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  params.push(limit, offset);
+
+  const result = await pool.query(query, params);
+  return result.rows;
+};
+
+/**
+ * Search deals with filters
+ */
+const search = async ({
+  keyword,
+  dealType,
+  status,
+  companyIndustry,
+  minValue,
+  maxValue,
+  createdFrom,
+  createdTo,
+  sortBy,
+  sortOrder = 'desc',
+  companyId,
+  excludeCompanyId,
+  limit = 20,
+  offset = 0,
+} = {}) => {
+  let query = `
+      SELECT d.*,
+             c.name AS company_name,
+             c.logo AS company_logo,
+             c.company_type,
+             c.company_industry,
+             c.address AS company_address,
+             COALESCE(req.request_count, 0)::int AS applications_count
+      FROM deals d
+      JOIN companies c ON d.company_id = c.id
+      LEFT JOIN (
+        SELECT deal_id, COUNT(*) AS request_count
+        FROM deal_requests
+        GROUP BY deal_id
+      ) req ON req.deal_id = d.id
+      WHERE c.status = 'active'
+  `;
+
+  const params = [];
+  let paramIndex = 1;
+
+  if (keyword) {
+    query += ` AND (d.deal_name ILIKE $${paramIndex} OR d.deal_description ILIKE $${paramIndex})`;
+    params.push(`%${keyword}%`);
+    paramIndex += 1;
+  }
+
+  if (dealType) {
+    query += ` AND d.deal_type = $${paramIndex}`;
+    params.push(dealType);
+    paramIndex += 1;
+  }
+
+  if (status) {
+    query += ` AND d.status = $${paramIndex}`;
+    params.push(status);
+    paramIndex += 1;
+  }
+
+  if (companyIndustry) {
+    query += ` AND c.company_industry = $${paramIndex}`;
+    params.push(companyIndustry);
+    paramIndex += 1;
+  }
+
+  if (minValue !== undefined && minValue !== null) {
+    query += ` AND d.deal_value >= $${paramIndex}`;
+    params.push(minValue);
+    paramIndex += 1;
+  }
+
+  if (maxValue !== undefined && maxValue !== null) {
+    query += ` AND d.deal_value <= $${paramIndex}`;
+    params.push(maxValue);
+    paramIndex += 1;
+  }
+
+  if (createdFrom) {
+    query += ` AND d.created_at >= $${paramIndex}`;
+    params.push(createdFrom);
+    paramIndex += 1;
+  }
+
+  if (createdTo) {
+    query += ` AND d.created_at <= $${paramIndex}`;
+    params.push(createdTo);
+    paramIndex += 1;
+  }
+
+  if (companyId) {
+    query += ` AND d.company_id = $${paramIndex}`;
+    params.push(companyId);
+    paramIndex += 1;
+  }
+
+  if (excludeCompanyId) {
+    query += ` AND d.company_id != $${paramIndex}`;
+    params.push(excludeCompanyId);
+    paramIndex += 1;
+  }
+
+  const normalizedSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
+  const sortColumnMap = {
+    price: 'd.deal_value',
+    date: 'd.created_at',
+    applications: 'applications_count',
+  };
+  const sortColumn = sortColumnMap[sortBy] || 'd.created_at';
+
+  query += ` ORDER BY ${sortColumn} ${normalizedSortOrder}, d.id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  params.push(limit, offset);
+
+  const result = await pool.query(query, params);
+  return result.rows;
+};
+
+/**
+ * Count deals matching filters
+ */
+const countSearch = async ({
+  keyword,
+  dealType,
+  status,
+  companyIndustry,
+  minValue,
+  maxValue,
+  createdFrom,
+  createdTo,
+  companyId,
+  excludeCompanyId,
+} = {}) => {
+  let query = `
+      SELECT COUNT(*) AS total
+      FROM deals d
+      JOIN companies c ON d.company_id = c.id
+      WHERE c.status = 'active'
+  `;
+
+  const params = [];
+  let paramIndex = 1;
+
+  if (keyword) {
+    query += ` AND (d.deal_name ILIKE $${paramIndex} OR d.deal_description ILIKE $${paramIndex})`;
+    params.push(`%${keyword}%`);
+    paramIndex += 1;
+  }
+
+  if (dealType) {
+    query += ` AND d.deal_type = $${paramIndex}`;
+    params.push(dealType);
+    paramIndex += 1;
+  }
+
+  if (status) {
+    query += ` AND d.status = $${paramIndex}`;
+    params.push(status);
+    paramIndex += 1;
+  }
+
+  if (companyIndustry) {
+    query += ` AND c.company_industry = $${paramIndex}`;
+    params.push(companyIndustry);
+    paramIndex += 1;
+  }
+
+  if (minValue !== undefined && minValue !== null) {
+    query += ` AND d.deal_value >= $${paramIndex}`;
+    params.push(minValue);
+    paramIndex += 1;
+  }
+
+  if (maxValue !== undefined && maxValue !== null) {
+    query += ` AND d.deal_value <= $${paramIndex}`;
+    params.push(maxValue);
+    paramIndex += 1;
+  }
+
+  if (createdFrom) {
+    query += ` AND d.created_at >= $${paramIndex}`;
+    params.push(createdFrom);
+    paramIndex += 1;
+  }
+
+  if (createdTo) {
+    query += ` AND d.created_at <= $${paramIndex}`;
+    params.push(createdTo);
+    paramIndex += 1;
+  }
+
+  if (companyId) {
+    query += ` AND d.company_id = $${paramIndex}`;
+    params.push(companyId);
+    paramIndex += 1;
+  }
+
+  if (excludeCompanyId) {
+    query += ` AND d.company_id != $${paramIndex}`;
+    params.push(excludeCompanyId);
+  }
+
+  const result = await pool.query(query, params);
+  return parseInt(result.rows[0].total, 10);
+};
+
+/**
+ * Update deal by ID
+ */
+const updateById = async (dealId, updates, client = null) => {
+  const executor = run(client);
+  const fields = [];
+  const values = [];
+  let index = 1;
+
+  const allowedFields = ['deal_name', 'deal_description', 'deal_value', 'deal_type', 'status'];
+  const fieldMapping = {
+    dealName: 'deal_name',
+    dealDescription: 'deal_description',
+    dealValue: 'deal_value',
+    dealType: 'deal_type',
+    status: 'status',
+  };
+
+  Object.entries(updates).forEach(([key, value]) => {
+    if (value === undefined) return;
+    const dbField = fieldMapping[key] || key;
+    if (!allowedFields.includes(dbField)) return;
+    fields.push(`${dbField} = $${index}`);
+    values.push(value);
+    index += 1;
+  });
+
+  if (!fields.length) {
+    return findById(dealId);
+  }
+
+  fields.push('updated_at = NOW()');
+
+  const result = await executor.query(
+    `
+      UPDATE deals
+      SET ${fields.join(', ')}
+      WHERE id = $${index}
+      RETURNING *
+    `,
+    [...values, dealId]
+  );
+
+  return result.rows[0];
+};
+
+/**
+ * Update deal status
+ */
+const updateStatus = async (dealId, status) => {
+  const result = await pool.query(
+    `
+      UPDATE deals
+      SET status = $1, updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `,
+    [status, dealId]
+  );
+  return result.rows[0];
+};
+
+/**
+ * Delete deal (soft archive by status change)
+ */
+const archiveDeal = async (dealId) => updateStatus(dealId, 'archived');
+
+/**
+ * List all deals for admin
+ */
+const listAll = async ({ status, limit = 50, offset = 0 } = {}) => {
+  let query = `
+      SELECT d.*, c.name AS company_name, c.logo AS company_logo
+      FROM deals d
+      JOIN companies c ON d.company_id = c.id
+  `;
+  const params = [];
+  let paramIndex = 1;
+
+  if (status) {
+    query += ` WHERE d.status = $${paramIndex}`;
+    params.push(status);
+    paramIndex += 1;
+  }
+
+  query += ` ORDER BY d.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  params.push(limit, offset);
+
+  const result = await pool.query(query, params);
+  return result.rows;
+};
+
+const countOpenByCompanyId = async (companyId) => {
+  const result = await pool.query(
+    `
+      SELECT COUNT(*) AS total
+      FROM deals
+      WHERE company_id = $1
+        AND status = 'open'
+    `,
+    [companyId]
+  );
+
+  return parseInt(result.rows[0].total, 10);
+};
+
+module.exports = {
+  createDeal,
+  findById,
+  findByCompanyId,
+  search,
+  countSearch,
+  updateById,
+  updateStatus,
+  archiveDeal,
+  listAll,
+  countOpenByCompanyId,
+};

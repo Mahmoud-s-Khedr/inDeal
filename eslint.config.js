@@ -22,6 +22,31 @@ module.exports = [
     },
   },
   {
+    files: ['src/modules/*/{controller,service,repository,routes,validation}/**/*.js'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            '../../*/controller/*',
+            '../../*/service/*',
+            '../../*/repository/*',
+            '../../*/validation/*',
+            '../../*/routes/*',
+            '../../../controllers/*',
+            '../../../services/*',
+            '../../../repositories/*',
+            '../../../validations/*',
+            '../../../routes/*',
+            '../../../middlewares/*',
+            '../../../utils/*',
+            '../../../config/*',
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['scripts/**/*.js'],
     rules: {
       'no-console': 'off',

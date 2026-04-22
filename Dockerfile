@@ -68,4 +68,4 @@ ENV NODE_ENV=production
 
 EXPOSE 3000
 
-CMD ["dumb-init", "node", "src/server.js"]
+CMD ["dumb-init", "node", "src/app/server.js"]

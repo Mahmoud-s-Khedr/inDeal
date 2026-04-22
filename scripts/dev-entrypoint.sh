@@ -2,7 +2,7 @@
 set -eu
 
 LOCKFILE="package-lock.json"
-HASH_FILE="node_modules/.lockfile-sha256"
+HASH_FILE="/tmp/indeal-lockfile-sha256"
 
 compute_hash() {
   if [ -f "$LOCKFILE" ]; then
@@ -31,8 +31,11 @@ fi
 
 if [ "$needs_install" -eq 1 ]; then
   echo "📦 Syncing npm dependencies..."
-  npm install
-  mkdir -p node_modules
+  if [ -f "$LOCKFILE" ]; then
+    npm ci --no-package-lock --no-audit --no-fund
+  else
+    npm install --no-package-lock --no-audit --no-fund
+  fi
   echo "$current_hash" > "$HASH_FILE"
 fi
 

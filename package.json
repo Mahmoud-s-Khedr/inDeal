@@ -2,11 +2,14 @@
   "name": "indeal",
   "version": "1.0.0",
   "description": "B2B",
-  "main": "src/server.js",
+  "main": "src/app/server.js",
   "scripts": {
-    "start": "node scripts/check-db.js && node src/server.js",
-    "dev": "node scripts/check-db.js && nodemon src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node scripts/check-db.js && node src/app/server.js",
+    "dev": "node scripts/check-db.js && nodemon src/app/server.js",
+    "test": "npm run test:architecture && npm run test:unit && npm run test:integration",
+    "test:unit": "node --test --test-force-exit tests/unit/**/*.test.js",
+    "test:integration": "node --test --test-force-exit tests/integration/**/*.test.js",
+    "test:architecture": "node --test --test-force-exit tests/architecture/**/*.test.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -28,6 +31,7 @@
     "@aws-sdk/client-s3": "^3.948.0",
     "@aws-sdk/lib-storage": "^3.948.0",
     "@aws-sdk/s3-request-presigner": "^3.948.0",
+    "@prisma/client": "^6.6.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.66.0",
@@ -41,7 +45,6 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
-    "@prisma/client": "^6.6.0",
     "pg": "^8.16.3",
     "pino": "^10.1.0",
     "pino-http": "^11.0.0",
@@ -66,6 +69,7 @@
     "lint-staged": "^16.2.7",
     "nodemon": "^3.1.11",
     "prettier": "^3.8.0",
-    "prisma": "^6.6.0"
+    "prisma": "^6.6.0",
+    "supertest": "^7.2.2"
   }
 }
