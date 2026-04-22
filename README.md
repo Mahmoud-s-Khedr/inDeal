@@ -5,7 +5,7 @@ inDeal is a B2B backend focused on v1 scope: auth, company portfolio, deals, com
 ## Tech Stack
 
 - Backend: Node.js + Express
-- Database: PostgreSQL (`pg`, raw SQL)
+- Database: PostgreSQL (`pg` + Prisma ORM)
 - Queue/Cache: Valkey + BullMQ
 - Realtime: Socket.IO (B2B chat only)
 - Storage: Cloudflare R2 (S3-compatible)
@@ -58,10 +58,11 @@ docker compose up --build -d
 If port 5432 is already in use on your machine, the compose DB service uses host port `5433` by default.
 Override it with `HOST_DB_PORT=<port>` when needed.
 
-3. Apply schema/migrations
+3. Apply Prisma schema
 
 ```bash
-npm run db:schema
+npm run prisma:generate
+npm run prisma:db:push
 ```
 
 4. Run API
@@ -76,10 +77,7 @@ npm run dev
 - In production, set `SWAGGER_ENABLED=true` to expose docs.
 - Optional: set `API_BASE_URL` to control the server URL shown in the spec.
 
-## Destructive V1 De-scope Migration
+## Database Notes
 
-Use migration:
-
-- `AI_DOCS/migrations/014_v1_descope_remove_non_target.sql`
-
-Before running it, take a full DB backup snapshot.
+- Legacy SQL schema/migration files under `AI_DOCS/` were removed.
+- Prisma schema is now the source of truth for schema synchronization.

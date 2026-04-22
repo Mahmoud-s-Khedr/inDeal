@@ -11,11 +11,14 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "prepare": "husky",
-    "db:schema": "node scripts/run-schema.js",
     "db:seed": "node scripts/seed.js",
     "db:seed:dev": "SEED_MODE=dev node scripts/seed.js",
     "db:seed:prod": "SEED_MODE=prod node scripts/seed.js",
     "db:seed:test": "SEED_MODE=test node scripts/seed.js",
+    "prisma:pull": "node scripts/prisma-cli.js db pull",
+    "prisma:generate": "node scripts/prisma-cli.js generate",
+    "prisma:db:push": "node scripts/prisma-cli.js db push --accept-data-loss",
+    "prisma:migrate:deploy": "node scripts/prisma-cli.js migrate deploy",
     "docs:verify": "node scripts/verify-swagger-coverage.js",
     "vercel-build": "echo 'No build step required for Express API'"
   },
@@ -38,6 +41,7 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "@prisma/client": "^6.6.0",
     "pg": "^8.16.3",
     "pino": "^10.1.0",
     "pino-http": "^11.0.0",
@@ -61,6 +65,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "nodemon": "^3.1.11",
-    "prettier": "^3.8.0"
+    "prettier": "^3.8.0",
+    "prisma": "^6.6.0"
   }
 }

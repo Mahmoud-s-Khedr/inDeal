@@ -1,8 +1,63 @@
 const { pool } = require('../config/db');
+const prisma = require('../config/prisma');
 
 const run = (client) => client || pool;
 
+const statusToPrisma = {
+  pending: 'PENDING',
+  verified: 'VERIFIED',
+  suspended: 'SUSPENDED',
+};
+
+const statusFromPrisma = {
+  PENDING: 'pending',
+  VERIFIED: 'verified',
+  SUSPENDED: 'suspended',
+};
+
+const roleFromPrisma = {
+  AGENT: 'agent',
+  ADMIN: 'admin',
+  SUPPORT: 'support',
+};
+
+const roleToPrisma = {
+  agent: 'AGENT',
+  admin: 'ADMIN',
+  support: 'SUPPORT',
+};
+
+const normalizeUser = (user) => {
+  if (!user) return user;
+  return {
+    ...user,
+    role: roleFromPrisma[user.role] || user.role,
+    status: statusFromPrisma[user.status] || user.status,
+  };
+};
+
+const normalizeUserUpdateData = (updates = {}) => {
+  const normalized = {};
+  Object.entries(updates).forEach(([key, value]) => {
+    if (value === undefined) return;
+
+    if (key === 'status') {
+      normalized.status = statusToPrisma[value] || value;
+      return;
+    }
+
+    if (key === 'role') {
+      normalized.role = roleToPrisma[value] || value;
+      return;
+    }
+
+    normalized[key] = value;
+  });
+  return normalized;
+};
+
 const createUser = async (client, user) => {
+  // Kept as raw SQL to support caller-owned PG transactions.
   const executor = run(client);
   const result = await executor.query(
     `
@@ -31,59 +86,65 @@ const createUser = async (client, user) => {
 };
 
 const findByEmail = async (email) => {
-  const result = await pool.query('SELECT * FROM users WHERE email = $1 LIMIT 1', [email]);
-  return result.rows[0];
+  const user = await prisma.user.findFirst({ where: { email } });
+  return normalizeUser(user);
 };
 
 const findByUsername = async (username) => {
-  const result = await pool.query('SELECT * FROM users WHERE username = $1 LIMIT 1', [username]);
-  return result.rows[0];
+  const user = await prisma.user.findFirst({ where: { username } });
+  return normalizeUser(user);
 };
 
 const findById = async (id) => {
-  const result = await pool.query('SELECT * FROM users WHERE id = $1 LIMIT 1', [id]);
-  return result.rows[0];
+  const user = await prisma.user.findUnique({ where: { id } });
+  return normalizeUser(user);
 };
 
 const updateById = async (userId, updates) => {
-  const fields = [];
-  const values = [];
-  let index = 1;
+  const data = normalizeUserUpdateData(updates);
 
-  Object.entries(updates).forEach(([key, value]) => {
-    if (value === undefined) return;
-
-    if (key === 'preferences') {
-      fields.push(`${key} = $${index}::jsonb`);
-      values.push(value ? JSON.stringify(value) : null);
-    } else {
-      fields.push(`${key} = $${index}`);
-      values.push(value);
-    }
-
-    index += 1;
-  });
-
-  if (!fields.length) {
+  if (!Object.keys(data).length) {
     return await findById(userId);
   }
 
-  fields.push('updated_at = NOW()');
+  let updated;
+  try {
+    updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...data,
+        updated_at: new Date(),
+      },
+    });
+  } catch (error) {
+    if (error && error.code === 'P2025') {
+      return null;
+    }
+    throw error;
+  }
 
-  const result = await pool.query(
-    `
-        UPDATE users
-        SET ${fields.join(', ')}
-        WHERE id = $${index}
-        RETURNING *
-        `,
-    [...values, userId]
-  );
-
-  return result.rows[0] || null;
+  return normalizeUser(updated) || null;
 };
 
 const updatePasswordHash = async (userId, passwordHash, client) => {
+  if (!client) {
+    try {
+      const updated = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          password_hash: passwordHash,
+          updated_at: new Date(),
+        },
+      });
+      return normalizeUser(updated);
+    } catch (error) {
+      if (error && error.code === 'P2025') {
+        return null;
+      }
+      throw error;
+    }
+  }
+
   const executor = run(client);
   const result = await executor.query(
     `
@@ -99,8 +160,20 @@ const updatePasswordHash = async (userId, passwordHash, client) => {
 };
 
 const listRecentPasswordHistoryHashes = async (userId, limit = 2, client) => {
-  const executor = run(client);
   const safeLimit = Number.isInteger(limit) && limit > 0 ? limit : 2;
+
+  // Kept as raw SQL when a transaction client is passed.
+  if (!client) {
+    const rows = await prisma.userPasswordHistory.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: 'desc' },
+      take: safeLimit,
+      select: { password_hash: true },
+    });
+    return rows.map((r) => r.password_hash);
+  }
+
+  const executor = run(client);
   const result = await executor.query(
     `
         SELECT password_hash
@@ -115,6 +188,16 @@ const listRecentPasswordHistoryHashes = async (userId, limit = 2, client) => {
 };
 
 const insertPasswordHistory = async (userId, passwordHash, client) => {
+  // Kept as raw SQL when a transaction client is passed.
+  if (!client) {
+    return await prisma.userPasswordHistory.create({
+      data: {
+        user_id: userId,
+        password_hash: passwordHash,
+      },
+    });
+  }
+
   const executor = run(client);
   const result = await executor.query(
     `
@@ -128,8 +211,30 @@ const insertPasswordHistory = async (userId, passwordHash, client) => {
 };
 
 const prunePasswordHistory = async (userId, keep = 10, client) => {
-  const executor = run(client);
   const safeKeep = Number.isInteger(keep) && keep >= 0 ? keep : 10;
+
+  // Kept as raw SQL when a transaction client is passed.
+  if (!client) {
+    const keepRows = await prisma.userPasswordHistory.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: 'desc' },
+      take: safeKeep,
+      select: { id: true },
+    });
+
+    await prisma.userPasswordHistory.deleteMany({
+      where: {
+        user_id: userId,
+        id: {
+          notIn: keepRows.map((row) => row.id),
+        },
+      },
+    });
+
+    return;
+  }
+
+  const executor = run(client);
 
   await executor.query(
     `
@@ -147,18 +252,41 @@ const prunePasswordHistory = async (userId, keep = 10, client) => {
   );
 };
 
-const updateStatus = async (userId, status) => {
-  const result = await pool.query(
-    `
-        UPDATE users
-        SET status = $2,
-            updated_at = NOW()
-        WHERE id = $1
-        RETURNING *
-        `,
-    [userId, status]
-  );
-  return result.rows[0];
+const updateStatus = async (userId, status, client) => {
+  const normalizedStatus = statusToPrisma[status] || status;
+  const dbStatus = statusFromPrisma[status] || status;
+
+  // Keep raw SQL path for transaction-scoped updates.
+  if (client) {
+    const executor = run(client);
+    const result = await executor.query(
+      `
+          UPDATE users
+          SET status = $2,
+              updated_at = NOW()
+          WHERE id = $1
+          RETURNING *
+          `,
+      [userId, dbStatus]
+    );
+    return normalizeUser(result.rows[0] || null);
+  }
+
+  try {
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        status: normalizedStatus,
+        updated_at: new Date(),
+      },
+    });
+    return normalizeUser(updated);
+  } catch (error) {
+    if (error && error.code === 'P2025') {
+      return null;
+    }
+    throw error;
+  }
 };
 
 module.exports = {

@@ -14,7 +14,7 @@ Baseline: `AI_DOCS/v1-target.md` only. The items below are currently implemented
   - `src/routes/v1/ad.routes.js`
   - Ads routes inside `src/routes/v1/admin.routes.js`
 - Data model affected:
-  - `advertisements`, `ad_analytics_daily`, `ad_click_events` in `AI_DOCS/schema.sql`.
+  - `advertisements`, `ad_analytics_daily`, `ad_click_events` in the legacy SQL schema (now removed; Prisma schema is source of truth).
 
 ### 2) Notifications and device tokens
 

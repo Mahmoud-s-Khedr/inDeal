@@ -1,4 +1,5 @@
 const { pool } = require('../config/db');
+const prisma = require('../config/prisma');
 
 /**
  * Create an email log entry
@@ -6,13 +7,14 @@ const { pool } = require('../config/db');
  * @returns {Promise<Object>}
  */
 const createLog = async (payload) => {
-  const result = await pool.query(
-    `INSERT INTO email_logs (recipient, template, subject, status)
-     VALUES ($1, $2, $3, $4)
-     RETURNING *`,
-    [payload.recipient, payload.template, payload.subject, payload.status || 'queued']
-  );
-  return result.rows[0];
+  return await prisma.emailLog.create({
+    data: {
+      recipient: payload.recipient,
+      template: payload.template,
+      subject: payload.subject,
+      status: payload.status || 'queued',
+    },
+  });
 };
 
 /**
@@ -22,39 +24,27 @@ const createLog = async (payload) => {
  * @returns {Promise<Object>}
  */
 const updateLog = async (logId, updates) => {
-  const setClauses = [];
-  const values = [];
-  let paramIndex = 1;
+  const data = {};
 
-  if (updates.status !== undefined) {
-    setClauses.push(`status = $${paramIndex++}`);
-    values.push(updates.status);
-  }
-  if (updates.messageId !== undefined) {
-    setClauses.push(`message_id = $${paramIndex++}`);
-    values.push(updates.messageId);
-  }
-  if (updates.error !== undefined) {
-    setClauses.push(`error = $${paramIndex++}`);
-    values.push(updates.error);
-  }
-  if (updates.sentAt !== undefined) {
-    setClauses.push(`sent_at = $${paramIndex++}`);
-    values.push(updates.sentAt);
-  }
-  if (updates.attempts !== undefined) {
-    setClauses.push(`attempts = $${paramIndex++}`);
-    values.push(updates.attempts);
-  }
+  if (updates.status !== undefined) data.status = updates.status;
+  if (updates.messageId !== undefined) data.message_id = updates.messageId;
+  if (updates.error !== undefined) data.error = updates.error;
+  if (updates.sentAt !== undefined) data.sent_at = updates.sentAt;
+  if (updates.attempts !== undefined) data.attempts = updates.attempts;
 
-  if (setClauses.length === 0) return null;
+  if (!Object.keys(data).length) return null;
 
-  values.push(logId);
-  const result = await pool.query(
-    `UPDATE email_logs SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
-    values
-  );
-  return result.rows[0];
+  try {
+    return await prisma.emailLog.update({
+      where: { id: logId },
+      data,
+    });
+  } catch (error) {
+    if (error && error.code === 'P2025') {
+      return null;
+    }
+    throw error;
+  }
 };
 
 /**
@@ -63,8 +53,7 @@ const updateLog = async (logId, updates) => {
  * @returns {Promise<Object|null>}
  */
 const findById = async (logId) => {
-  const result = await pool.query('SELECT * FROM email_logs WHERE id = $1', [logId]);
-  return result.rows[0] || null;
+  return await prisma.emailLog.findUnique({ where: { id: logId } });
 };
 
 /**
@@ -74,35 +63,23 @@ const findById = async (logId) => {
  */
 const listLogs = async (filters = {}) => {
   const { status, template, recipient, limit = 50, offset = 0 } = filters;
-  const conditions = [];
-  const values = [];
-  let paramIndex = 1;
 
-  if (status) {
-    conditions.push(`status = $${paramIndex++}`);
-    values.push(status);
-  }
-  if (template) {
-    conditions.push(`template = $${paramIndex++}`);
-    values.push(template);
-  }
-  if (recipient) {
-    conditions.push(`recipient = $${paramIndex++}`);
-    values.push(recipient);
-  }
+  const where = {};
+  if (status) where.status = status;
+  if (template) where.template = template;
+  if (recipient) where.recipient = recipient;
 
-  const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-  values.push(limit, offset);
-
-  const result = await pool.query(
-    `SELECT * FROM email_logs ${whereClause} ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
-    values
-  );
-  return result.rows;
+  return await prisma.emailLog.findMany({
+    where,
+    orderBy: { created_at: 'desc' },
+    take: limit,
+    skip: offset,
+  });
 };
 
 /**
  * Get email stats
+ * Raw SQL retained for one-pass aggregate counters (performance-sensitive path).
  * @returns {Promise<Object>}
  */
 const getStats = async () => {

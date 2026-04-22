@@ -2,10 +2,10 @@ const { TokenExpiredError, JsonWebTokenError, NotBeforeError } = require('jsonwe
 const { verifyToken, signToken } = require('../utils/jwt');
 const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
-const { pool } = require('../config/db');
 const config = require('../config/env');
 const logger = require('../utils/logger');
 const companyRepository = require('../repositories/company.repository');
+const userRepository = require('../repositories/user.repository');
 const sessionService = require('../services/session.service');
 
 const unauthorizedError = () =>
@@ -57,8 +57,7 @@ const protect = catchAsync(async (req, res, next) => {
     return next(unauthorizedError());
   }
 
-  const result = await pool.query('SELECT * FROM users WHERE id = $1', [decoded.id]);
-  const currentUser = result.rows[0];
+  const currentUser = await userRepository.findById(decoded.id);
   if (!currentUser) {
     return next(new AppError('The user belonging to this token no longer exists.', 401));
   }

@@ -4,6 +4,7 @@
 const http = require('http');
 const app = require('./app');
 const { pool } = require('./config/db');
+const prisma = require('./config/prisma');
 const config = require('./config/env');
 const logger = require('./utils/logger');
 const startupLogger = require('./utils/startupLogger');
@@ -112,6 +113,7 @@ const gracefulShutdown = async (signal) => {
       if (io) {
         io.close();
       }
+      await prisma.$disconnect();
       await pool.end();
       await redis.quit();
       logger.info('Graceful shutdown complete');

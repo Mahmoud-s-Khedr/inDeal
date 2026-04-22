@@ -1,4 +1,5 @@
 const { pool } = require('../config/db');
+const prisma = require('../config/prisma');
 
 const mapFile = (row) => {
   if (!row) return null;
@@ -13,27 +14,19 @@ const mapFile = (row) => {
 };
 
 const createFile = async ({ fileName, filePath, fileMetadata }) => {
-  const result = await pool.query(
-    `
-        INSERT INTO files (file_name, file_path, file_metadata)
-        VALUES ($1, $2, $3)
-        RETURNING id, file_name, file_path, file_metadata, uploaded_at, deleted_at
-        `,
-    [fileName, filePath, fileMetadata || null]
-  );
-  return mapFile(result.rows[0]);
+  const file = await prisma.file.create({
+    data: {
+      file_name: fileName,
+      file_path: filePath,
+      file_metadata: fileMetadata || null,
+    },
+  });
+  return mapFile(file);
 };
 
 const findById = async (id) => {
-  const result = await pool.query(
-    `
-        SELECT id, file_name, file_path, file_metadata, uploaded_at, deleted_at
-        FROM files
-        WHERE id = $1
-        `,
-    [id]
-  );
-  return mapFile(result.rows[0]);
+  const file = await prisma.file.findUnique({ where: { id } });
+  return mapFile(file);
 };
 
 const findByIds = async (ids) => {
@@ -41,20 +34,18 @@ const findByIds = async (ids) => {
     return [];
   }
 
-  const result = await pool.query(
-    `
-        SELECT id, file_name, file_path, file_metadata, uploaded_at, deleted_at
-        FROM files
-        WHERE id = ANY($1::int[])
-        `,
-    [ids]
-  );
+  const files = await prisma.file.findMany({
+    where: {
+      id: { in: ids },
+    },
+  });
 
-  return result.rows.map(mapFile);
+  return files.map(mapFile);
 };
 
 /**
  * Soft delete a file by setting deleted_at timestamp.
+ * Raw SQL retained to preserve single-statement "deleted_at IS NULL" semantics.
  */
 const softDelete = async (id) => {
   const result = await pool.query(
@@ -76,18 +67,18 @@ const softDelete = async (id) => {
  * @param {number} limit - Max number of files to return
  */
 const findOrphanedFiles = async (retentionSeconds, limit = 100) => {
-  const result = await pool.query(
-    `
-        SELECT id, file_name, file_path, file_metadata, uploaded_at, deleted_at
-        FROM files
-        WHERE deleted_at IS NOT NULL
-          AND deleted_at < NOW() - INTERVAL '1 second' * $1
-        ORDER BY deleted_at ASC
-        LIMIT $2
-        `,
-    [retentionSeconds, limit]
-  );
-  return result.rows.map(mapFile);
+  const cutoffDate = new Date(Date.now() - retentionSeconds * 1000);
+  const files = await prisma.file.findMany({
+    where: {
+      deleted_at: {
+        not: null,
+        lt: cutoffDate,
+      },
+    },
+    orderBy: { deleted_at: 'asc' },
+    take: limit,
+  });
+  return files.map(mapFile);
 };
 
 /**
@@ -95,21 +86,26 @@ const findOrphanedFiles = async (retentionSeconds, limit = 100) => {
  * Should only be called after the file has been removed from R2.
  */
 const hardDelete = async (id) => {
-  const result = await pool.query(
-    `
-        DELETE FROM files
-        WHERE id = $1
-        RETURNING id, file_name, file_path
-        `,
-    [id]
-  );
-  return result.rows[0] || null;
+  try {
+    const file = await prisma.file.delete({
+      where: { id },
+      select: { id: true, file_name: true, file_path: true },
+    });
+    return file;
+  } catch (error) {
+    if (error && error.code === 'P2025') {
+      return null;
+    }
+    throw error;
+  }
 };
 
 /**
  * Update file metadata (e.g., to add image variant paths).
+ * Raw SQL retained for atomic JSONB merge.
  */
 const updateMetadata = async (id, metadata) => {
+  const safeMetadata = metadata && typeof metadata === 'object' ? metadata : {};
   const result = await pool.query(
     `
         UPDATE files
@@ -117,7 +113,7 @@ const updateMetadata = async (id, metadata) => {
         WHERE id = $1
         RETURNING id, file_name, file_path, file_metadata, uploaded_at, deleted_at
         `,
-    [id, JSON.stringify(metadata)]
+    [id, JSON.stringify(safeMetadata)]
   );
   return mapFile(result.rows[0]);
 };
