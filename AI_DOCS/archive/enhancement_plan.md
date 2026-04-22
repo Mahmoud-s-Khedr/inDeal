@@ -105,13 +105,13 @@ Now that all 5 core phases are complete, here's a roadmap for enhancements, opti
 
 ### 9.3 Notifications
 
-| Priority  | Task                     | Description                   |
-| --------- | ------------------------ | ----------------------------- |
-| 🔴 High   | Push notifications       | FCM/APNs integration          |
-| 🔴 High   | In-app notifications     | ✅ Done (Socket.io)           |
-| 🟡 Medium | Email digests            | Daily/weekly summaries        |
-| 🟡 Medium | Notification preferences | User-configurable settings    |
-| 🟢 Low    | SMS notifications        | Twilio for critical alerts    |
+| Priority  | Task                     | Description                |
+| --------- | ------------------------ | -------------------------- |
+| 🔴 High   | Push notifications       | FCM/APNs integration       |
+| 🔴 High   | In-app notifications     | ✅ Done (Socket.io)        |
+| 🟡 Medium | Email digests            | Daily/weekly summaries     |
+| 🟡 Medium | Notification preferences | User-configurable settings |
+| 🟢 Low    | SMS notifications        | Twilio for critical alerts |
 
 ### 9.4 Analytics & Reporting
 

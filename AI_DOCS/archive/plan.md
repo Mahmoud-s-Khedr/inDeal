@@ -141,10 +141,10 @@ Testing backend base URL: https://api-test.indealeg.com
   - ✅ Real-time alerts via Socket.io
   - ✅ Listings and Read status management
 
-| Method | Endpoint                    | Status |
-| :----- | :-------------------------- | :----: |
-| `GET`  | `/api/v1/notifications`     |   ✅   |
-| `PUT`  | `/api/v1/notifications/read`|   ✅   |
+| Method | Endpoint                     | Status |
+| :----- | :--------------------------- | :----: |
+| `GET`  | `/api/v1/notifications`      |   ✅   |
+| `PUT`  | `/api/v1/notifications/read` |   ✅   |
 
 #### **8. Advertisement Module** ✅
 
@@ -210,13 +210,13 @@ Testing backend base URL: https://api-test.indealeg.com
 
 ## Documentation Created
 
-| Document                     | Purpose                           |
-| ---------------------------- | --------------------------------- |
-| `api_reference.md`           | Complete API documentation        |
-| `chat_integration_guide.md`  | Flutter/Web Socket.io integration |
-| `deals_integration_guide.md` | Deals API integration             |
-| `notification_integration_guide.md`| Real-time Notification Guide      |
-| `migrations/*.sql`           | Database migrations               |
+| Document                            | Purpose                           |
+| ----------------------------------- | --------------------------------- |
+| `api_reference.md`                  | Complete API documentation        |
+| `chat_integration_guide.md`         | Flutter/Web Socket.io integration |
+| `deals_integration_guide.md`        | Deals API integration             |
+| `notification_integration_guide.md` | Real-time Notification Guide      |
+| `migrations/*.sql`                  | Database migrations               |
 
 ---
 

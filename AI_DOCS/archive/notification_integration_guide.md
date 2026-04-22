@@ -11,12 +11,14 @@ All notification endpoints require authentication (Bearer Token).
 Retrieves a paginated list of notifications for the current user.
 
 **Request:**
+
 ```http
 GET /api/v1/notifications?limit=20&offset=0
 Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -45,6 +47,7 @@ Authorization: Bearer <token>
 Marks a specific notification as read.
 
 **Request:**
+
 ```http
 PUT /api/v1/notifications/10/read
 Authorization: Bearer <token>
@@ -55,6 +58,7 @@ Authorization: Bearer <token>
 Marks all notifications for the user as read.
 
 **Request:**
+
 ```http
 PUT /api/v1/notifications/read-all
 Authorization: Bearer <token>
@@ -65,12 +69,14 @@ Authorization: Bearer <token>
 Deletes a specific notification.
 
 **Request:**
+
 ```http
 DELETE /api/v1/notifications/10
 Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -91,12 +97,14 @@ Authorization: Bearer <token>
 Deletes all read notifications for the current user.
 
 **Request:**
+
 ```http
 DELETE /api/v1/notifications/read
 Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -120,16 +128,16 @@ The client must connect with the JWT token in the `auth` object.
 
 ```javascript
 /* Client-side example */
-import { io } from "socket.io-client";
+import { io } from 'socket.io-client';
 
-const socket = io("https://api.indeal.com", {
+const socket = io('https://api.indeal.com', {
   auth: {
-    token: "YOUR_JWT_TOKEN"
-  }
+    token: 'YOUR_JWT_TOKEN',
+  },
 });
 
-socket.on("connect", () => {
-  console.log("Connected to Real-time Notification Service");
+socket.on('connect', () => {
+  console.log('Connected to Real-time Notification Service');
 });
 ```
 
@@ -138,9 +146,9 @@ socket.on("connect", () => {
 Listen for the `notification:new` event.
 
 ```javascript
-socket.on("notification:new", (notification) => {
-  console.log("New Notification Received:", notification);
-  
+socket.on('notification:new', (notification) => {
+  console.log('New Notification Received:', notification);
+
   // Example Payload:
   // {
   //   "id": 11,
@@ -151,7 +159,7 @@ socket.on("notification:new", (notification) => {
   //   "metadata": { "dealId": 5, "requestId": 12 },
   //   "createdAt": "..."
   // }
-  
+
   // Update UI badge count or show toast
   updateBadgeCount();
   showToast(notification.title);
@@ -160,9 +168,9 @@ socket.on("notification:new", (notification) => {
 
 ### 2.3 Rooms
 
-*   Upon connection, the server automatically joins the socket to a private room: `user:{userId}`.
-*   All notifications targeted at a specific user are emitted to this room.
-*   No manual `join` event is required from the client side for notifications.
+- Upon connection, the server automatically joins the socket to a private room: `user:{userId}`.
+- All notifications targeted at a specific user are emitted to this room.
+- No manual `join` event is required from the client side for notifications.
 
 ---
 
@@ -170,15 +178,15 @@ socket.on("notification:new", (notification) => {
 
 All notification types are defined in `src/constants/notificationTypes.js`:
 
-| Type | Description |
-|------|-------------|
+| Type                    | Description                                                         |
+| ----------------------- | ------------------------------------------------------------------- |
 | `COMPANY_STATUS_CHANGE` | When company profile status changes (submitted, approved, rejected) |
-| `DEAL_REQUEST_RECEIVED` | A company has submitted a request on your deal |
-| `DEAL_REQUEST_ACCEPTED` | Your deal request was accepted |
-| `DEAL_REQUEST_REJECTED` | Your deal request was rejected |
-| `DEAL_UPDATE` | General deal status updates |
-| `CHAT_MESSAGE` | Fallback notification when user is offline (future) |
-| `SUPPORT_TICKET_REPLY` | Admin replied to a support ticket |
+| `DEAL_REQUEST_RECEIVED` | A company has submitted a request on your deal                      |
+| `DEAL_REQUEST_ACCEPTED` | Your deal request was accepted                                      |
+| `DEAL_REQUEST_REJECTED` | Your deal request was rejected                                      |
+| `DEAL_UPDATE`           | General deal status updates                                         |
+| `CHAT_MESSAGE`          | Fallback notification when user is offline (future)                 |
+| `SUPPORT_TICKET_REPLY`  | Admin replied to a support ticket                                   |
 
 ---
 
@@ -186,10 +194,10 @@ All notification types are defined in `src/constants/notificationTypes.js`:
 
 To prevent database bloat, old notifications are automatically cleaned up:
 
-| Status | Retention Period |
-|--------|-----------------|
-| Read notifications | 90 days |
-| Unread notifications | 180 days |
+| Status               | Retention Period |
+| -------------------- | ---------------- |
+| Read notifications   | 90 days          |
+| Unread notifications | 180 days         |
 
 The cleanup job runs weekly (Sunday at 4:00 AM). These values can be configured via environment variables:
 
@@ -222,5 +230,6 @@ await notificationService.createNotification({
 ```
 
 This will:
+
 1. Insert the notification into the database
 2. Emit a real-time `notification:new` event via Socket.IO (if enabled)
