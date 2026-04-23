@@ -30,6 +30,7 @@ inDeal is a B2B backend focused on v1 scope: auth, company portfolio, deals, com
 - `auth`: register, login, logout, forgot/reset password, OTP verification
 - `companies`: profile/settings, gallery, documents, contributions, reviews, search
 - `deals`: CRUD + deal requests lifecycle
+- `search`: unified auth-aware search feed (`GET /api/v1/search`)
 - `chats`: B2B chat rooms/messages/read receipts
 - `files`: signed upload URL
 - `support`: support info + email redirect payload

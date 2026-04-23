@@ -2,6 +2,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 const { pool } = require('../src/infrastructure/config/db');
 const { execSync } = require('child_process');
+const { bootstrapSearch } = require('./bootstrap-search');
 
 async function checkDatabase() {
   console.log('🔍 Checking database status...');
@@ -13,6 +14,9 @@ async function checkDatabase() {
 
     console.log('⚙️  Applying Prisma schema...');
     execSync('npm run prisma:db:push', { stdio: 'inherit' });
+
+    console.log('⚙️  Bootstrapping search extensions/functions/indexes...');
+    await bootstrapSearch();
 
     // Require all critical V1 runtime tables before starting the app.
     const requiredTables = [

@@ -24,6 +24,7 @@ const getRoomSchema = z.object({
 
 const listRoomsSchema = z.object({
   query: z.object({
+    keyword: z.string().max(200).optional(),
     status: z.enum(chatRoomStatusEnumValues).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),

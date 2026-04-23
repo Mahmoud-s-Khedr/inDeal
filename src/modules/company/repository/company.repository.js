@@ -153,7 +153,8 @@ const searchCompanies = async ({
   offset = 0,
 } = {}) => {
   let query = `
-        SELECT c.*
+        SELECT c.*,
+               0::float8 AS search_score
         FROM companies c
         WHERE 1 = 1
     `;
@@ -167,12 +168,34 @@ const searchCompanies = async ({
   }
 
   if (keyword) {
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', c.name, c.description, c.address, c.company_type, c.company_industry))";
+    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
+    query = query.replace(
+      '0::float8 AS search_score',
+      `((
+          (
+            0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
+            0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
+          ) * 0.8
+        ) + (
+          GREATEST(
+            similarity(${normalizedDoc}, ${normalizedKeyword}),
+            word_similarity(${normalizedDoc}, ${normalizedKeyword})
+          ) * 0.2
+        ))::float8 AS search_score`
+    );
     query += ` AND (
-            c.name ILIKE $${paramIndex}
-            OR c.description ILIKE $${paramIndex}
-            OR c.address ILIKE $${paramIndex}
+            ${arabicTsVector} @@ ${arabicTsQuery}
+            OR ${simpleTsVector} @@ ${simpleTsQuery}
+            OR ${normalizedDoc} % ${normalizedKeyword}
         )`;
-    params.push(`%${keyword}%`);
+    params.push(keyword);
     paramIndex++;
   }
 
@@ -204,7 +227,12 @@ const searchCompanies = async ({
     paramIndex++;
   }
 
-  query += ` ORDER BY c.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  if (keyword) {
+    query += ` ORDER BY search_score DESC, c.created_at DESC`;
+  } else {
+    query += ` ORDER BY c.created_at DESC`;
+  }
+  query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   params.push(limit, offset);
 
   const result = await pool.query(query, params);
@@ -234,12 +262,20 @@ const countCompanies = async ({
   }
 
   if (keyword) {
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', c.name, c.description, c.address, c.company_type, c.company_industry))";
+    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
     query += ` AND (
-            c.name ILIKE $${paramIndex}
-            OR c.description ILIKE $${paramIndex}
-            OR c.address ILIKE $${paramIndex}
+            ${arabicTsVector} @@ ${arabicTsQuery}
+            OR ${simpleTsVector} @@ ${simpleTsQuery}
+            OR ${normalizedDoc} % ${normalizedKeyword}
         )`;
-    params.push(`%${keyword}%`);
+    params.push(keyword);
     paramIndex++;
   }
 

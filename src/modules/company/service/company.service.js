@@ -370,9 +370,12 @@ const getCompanyProfile = async (companyId) => {
   return enrichProfile(company, gallery, reviews, documents, contributions);
 };
 
-const listCompanyDocuments = async (companyId) => {
+const listCompanyDocuments = async (companyId, filters = {}) => {
   const company = await getCompanyOrThrowById(companyId);
-  const docs = await companyDocumentRepository.listByCompanyId(company.id, { scope: 'public' });
+  const docs = await companyDocumentRepository.listByCompanyId(company.id, {
+    scope: 'public',
+    keyword: filters.keyword,
+  });
   return Promise.all(
     docs.map(async (doc) => {
       const fileUrl = await getFileUrl(doc.file_id);
@@ -545,9 +548,12 @@ const createReview = async (agentId, companyId, payload) => {
   return sanitizeReview({ ...review, reviewer_name: reviewerCompany.name });
 };
 
-const listMyDocuments = async (agentId) => {
+const listMyDocuments = async (agentId, filters = {}) => {
   const company = await getCompanyOrThrowByAgent(agentId);
-  const docs = await companyDocumentRepository.listByCompanyId(company.id, { scope: 'public' });
+  const docs = await companyDocumentRepository.listByCompanyId(company.id, {
+    scope: 'public',
+    keyword: filters.keyword,
+  });
   return Promise.all(
     docs.map(async (doc) => {
       const fileUrl = await getFileUrl(doc.file_id);
@@ -737,9 +743,11 @@ const deleteMyRegistrationDocument = async (agentId, registrationDocumentId) => 
   return sanitizeDocument(deleted, fileUrl);
 };
 
-const listMyContributions = async (agentId) => {
+const listMyContributions = async (agentId, filters = {}) => {
   const company = await getCompanyOrThrowByAgent(agentId);
-  const items = await contributionRepository.listByCompanyId(company.id);
+  const items = await contributionRepository.listByCompanyId(company.id, {
+    keyword: filters.keyword,
+  });
   return Promise.all(
     items.map(async (item) => {
       const mediaFileUrl = await getFileUrl(item.media_file_id);

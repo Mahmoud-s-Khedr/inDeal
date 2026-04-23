@@ -64,9 +64,11 @@ const findById = async (dealId) => {
 /**
  * Find deals by company ID (owner's deals)
  */
-const findByCompanyId = async (companyId, { status, limit = 50, offset = 0 } = {}) => {
+const findByCompanyId = async (companyId, { status, keyword, limit = 50, offset = 0 } = {}) => {
   let query = `
-      SELECT d.*, COALESCE(req.request_count, 0)::int AS applications_count
+      SELECT d.*,
+             COALESCE(req.request_count, 0)::int AS applications_count,
+             0::float8 AS search_score
       FROM deals d
       LEFT JOIN (
         SELECT deal_id, COUNT(*) AS request_count
@@ -84,7 +86,45 @@ const findByCompanyId = async (companyId, { status, limit = 50, offset = 0 } = {
     paramIndex += 1;
   }
 
-  query += ` ORDER BY d.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  if (keyword) {
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', d.deal_name, d.deal_description))";
+    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
+    query = query.replace(
+      '0::float8 AS search_score',
+      `((
+          (
+            0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
+            0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
+          ) * 0.8
+        ) + (
+          GREATEST(
+            similarity(${normalizedDoc}, ${normalizedKeyword}),
+            word_similarity(${normalizedDoc}, ${normalizedKeyword})
+          ) * 0.2
+        ))::float8 AS search_score`
+    );
+
+    query += ` AND (
+      ${arabicTsVector} @@ ${arabicTsQuery}
+      OR ${simpleTsVector} @@ ${simpleTsQuery}
+      OR ${normalizedDoc} % ${normalizedKeyword}
+    )`;
+    params.push(keyword);
+    paramIndex += 1;
+  }
+
+  if (keyword) {
+    query += ` ORDER BY search_score DESC, d.created_at DESC`;
+  } else {
+    query += ` ORDER BY d.created_at DESC`;
+  }
+  query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   params.push(limit, offset);
 
   const result = await pool.query(query, params);
@@ -117,7 +157,8 @@ const search = async ({
              c.company_type,
              c.company_industry,
              c.address AS company_address,
-             COALESCE(req.request_count, 0)::int AS applications_count
+             COALESCE(req.request_count, 0)::int AS applications_count,
+             0::float8 AS search_score
       FROM deals d
       JOIN companies c ON d.company_id = c.id
       LEFT JOIN (
@@ -132,8 +173,35 @@ const search = async ({
   let paramIndex = 1;
 
   if (keyword) {
-    query += ` AND (d.deal_name ILIKE $${paramIndex} OR d.deal_description ILIKE $${paramIndex})`;
-    params.push(`%${keyword}%`);
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', d.deal_name, d.deal_description, c.name, c.company_type, c.company_industry))";
+    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
+    query = query.replace(
+      '0::float8 AS search_score',
+      `((
+          (
+            0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
+            0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
+          ) * 0.8
+        ) + (
+          GREATEST(
+            similarity(${normalizedDoc}, ${normalizedKeyword}),
+            word_similarity(${normalizedDoc}, ${normalizedKeyword})
+          ) * 0.2
+        ))::float8 AS search_score`
+    );
+
+    query += ` AND (
+      ${arabicTsVector} @@ ${arabicTsQuery}
+      OR ${simpleTsVector} @@ ${simpleTsQuery}
+      OR ${normalizedDoc} % ${normalizedKeyword}
+    )`;
+    params.push(keyword);
     paramIndex += 1;
   }
 
@@ -191,15 +259,19 @@ const search = async ({
     paramIndex += 1;
   }
 
-  const normalizedSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
-  const sortColumnMap = {
-    price: 'd.deal_value',
-    date: 'd.created_at',
-    applications: 'applications_count',
-  };
-  const sortColumn = sortColumnMap[sortBy] || 'd.created_at';
-
-  query += ` ORDER BY ${sortColumn} ${normalizedSortOrder}, d.id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  if (keyword) {
+    query += ` ORDER BY search_score DESC, d.created_at DESC, d.id DESC`;
+  } else {
+    const normalizedSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
+    const sortColumnMap = {
+      price: 'd.deal_value',
+      date: 'd.created_at',
+      applications: 'applications_count',
+    };
+    const sortColumn = sortColumnMap[sortBy] || 'd.created_at';
+    query += ` ORDER BY ${sortColumn} ${normalizedSortOrder}, d.id DESC`;
+  }
+  query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   params.push(limit, offset);
 
   const result = await pool.query(query, params);
@@ -232,8 +304,20 @@ const countSearch = async ({
   let paramIndex = 1;
 
   if (keyword) {
-    query += ` AND (d.deal_name ILIKE $${paramIndex} OR d.deal_description ILIKE $${paramIndex})`;
-    params.push(`%${keyword}%`);
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', d.deal_name, d.deal_description, c.name, c.company_type, c.company_industry))";
+    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
+    query += ` AND (
+      ${arabicTsVector} @@ ${arabicTsQuery}
+      OR ${simpleTsVector} @@ ${simpleTsQuery}
+      OR ${normalizedDoc} % ${normalizedKeyword}
+    )`;
+    params.push(keyword);
     paramIndex += 1;
   }
 

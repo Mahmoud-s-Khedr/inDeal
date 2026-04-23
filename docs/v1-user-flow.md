@@ -16,6 +16,7 @@ This document is the source of truth for V1 client simulation behavior.
 - `GET /api/v1/system/config`
 - `GET /api/v1/companies/search`
 - `GET /api/v1/deals`
+- `GET /api/v1/search?q=<keyword>`
 - `GET /api/v1/support/info`
 - `GET /api/v1/support/email-redirect`
 

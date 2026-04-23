@@ -57,13 +57,14 @@ const findById = async (requestId) => {
 /**
  * Find requests by deal ID (for deal owner to see all bids)
  */
-const findByDealId = async (dealId, { status, limit = 50, offset = 0 } = {}) => {
+const findByDealId = async (dealId, { status, keyword, limit = 50, offset = 0 } = {}) => {
   let query = `
       SELECT r.*,
              c.name AS applicant_company_name,
              c.logo AS applicant_company_logo,
              c.company_type AS applicant_company_type,
-             c.company_industry AS applicant_industry
+             c.company_industry AS applicant_industry,
+             0::float8 AS search_score
       FROM deal_requests r
       JOIN companies c ON r.applicant_company_id = c.id
       WHERE r.deal_id = $1
@@ -77,19 +78,59 @@ const findByDealId = async (dealId, { status, limit = 50, offset = 0 } = {}) => 
     paramIndex += 1;
   }
 
-  query += `
-    ORDER BY
-      CASE r.status
-        WHEN 'pending' THEN 1
-        WHEN 'paused' THEN 2
-        WHEN 'accepted' THEN 3
-        WHEN 'rejected' THEN 4
-        WHEN 'canceled' THEN 5
-        ELSE 6
-      END,
-      r.created_at ASC
-    LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-  `;
+  if (keyword) {
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', r.request_details, r.cancel_reason, c.name, c.company_type, c.company_industry))";
+    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
+    query = query.replace(
+      '0::float8 AS search_score',
+      `((
+          (
+            0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
+            0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
+          ) * 0.8
+        ) + (
+          GREATEST(
+            similarity(${normalizedDoc}, ${normalizedKeyword}),
+            word_similarity(${normalizedDoc}, ${normalizedKeyword})
+          ) * 0.2
+        ))::float8 AS search_score`
+    );
+
+    query += ` AND (
+      ${arabicTsVector} @@ ${arabicTsQuery}
+      OR ${simpleTsVector} @@ ${simpleTsQuery}
+      OR ${normalizedDoc} % ${normalizedKeyword}
+    )`;
+    params.push(keyword);
+    paramIndex += 1;
+  }
+
+  if (keyword) {
+    query += `
+      ORDER BY search_score DESC, r.created_at ASC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+  } else {
+    query += `
+      ORDER BY
+        CASE r.status
+          WHEN 'pending' THEN 1
+          WHEN 'paused' THEN 2
+          WHEN 'accepted' THEN 3
+          WHEN 'rejected' THEN 4
+          WHEN 'canceled' THEN 5
+          ELSE 6
+        END,
+        r.created_at ASC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+  }
   params.push(limit, offset);
 
   const result = await pool.query(query, params);
@@ -99,14 +140,18 @@ const findByDealId = async (dealId, { status, limit = 50, offset = 0 } = {}) => 
 /**
  * Find requests by applicant company (my submitted bids)
  */
-const findByApplicantCompanyId = async (companyId, { status, limit = 50, offset = 0 } = {}) => {
+const findByApplicantCompanyId = async (
+  companyId,
+  { status, keyword, limit = 50, offset = 0 } = {}
+) => {
   let query = `
       SELECT r.*,
              d.deal_name,
              d.deal_type,
              d.deal_value,
              d.status AS deal_status,
-             oc.name AS owner_company_name
+             oc.name AS owner_company_name,
+             0::float8 AS search_score
       FROM deal_requests r
       JOIN deals d ON r.deal_id = d.id
       JOIN companies oc ON d.company_id = oc.id
@@ -121,7 +166,45 @@ const findByApplicantCompanyId = async (companyId, { status, limit = 50, offset 
     paramIndex += 1;
   }
 
-  query += ` ORDER BY r.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  if (keyword) {
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', r.request_details, r.cancel_reason, d.deal_name, oc.name))";
+    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
+    query = query.replace(
+      '0::float8 AS search_score',
+      `((
+          (
+            0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
+            0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
+          ) * 0.8
+        ) + (
+          GREATEST(
+            similarity(${normalizedDoc}, ${normalizedKeyword}),
+            word_similarity(${normalizedDoc}, ${normalizedKeyword})
+          ) * 0.2
+        ))::float8 AS search_score`
+    );
+
+    query += ` AND (
+      ${arabicTsVector} @@ ${arabicTsQuery}
+      OR ${simpleTsVector} @@ ${simpleTsQuery}
+      OR ${normalizedDoc} % ${normalizedKeyword}
+    )`;
+    params.push(keyword);
+    paramIndex += 1;
+  }
+
+  if (keyword) {
+    query += ` ORDER BY search_score DESC, r.created_at DESC`;
+  } else {
+    query += ` ORDER BY r.created_at DESC`;
+  }
+  query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   params.push(limit, offset);
 
   const result = await pool.query(query, params);

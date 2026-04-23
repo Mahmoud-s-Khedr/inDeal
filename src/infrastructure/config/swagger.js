@@ -25,6 +25,7 @@ const swaggerDefinition = {
     { name: 'Users' },
     { name: 'Support' },
     { name: 'System' },
+    { name: 'Search' },
   ],
   components: {
     securitySchemes: {

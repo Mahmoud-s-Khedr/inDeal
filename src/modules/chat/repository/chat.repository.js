@@ -131,7 +131,10 @@ const findRoomByIdForCompany = async (roomId, companyId) => {
 /**
  * Find rooms for a company (as participant)
  */
-const findRoomsByCompanyId = async (companyId, { status, limit = 50, offset = 0 } = {}) => {
+const findRoomsByCompanyId = async (
+  companyId,
+  { status, keyword, limit = 50, offset = 0 } = {}
+) => {
   let query = `
         SELECT r.*,
                ca.name AS company_a_name, ca.logo AS company_a_logo,
@@ -146,6 +149,7 @@ const findRoomsByCompanyId = async (companyId, { status, limit = 50, offset = 0 
          lm.attachment_file_name AS last_attachment_file_name,
          lm.attachment_file_path AS last_attachment_file_path,
          lm.attachment_file_metadata AS last_attachment_file_metadata,
+               0::float8 AS search_score,
                (
                    SELECT COUNT(*)
                    FROM chat_messages m
@@ -188,7 +192,41 @@ const findRoomsByCompanyId = async (companyId, { status, limit = 50, offset = 0 
     paramIndex++;
   }
 
-  query += ` ORDER BY last_message_at DESC NULLS LAST, r.created_at DESC`;
+  if (keyword) {
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', ca.name, cb.name, COALESCE(ca.company_type, ''), COALESCE(cb.company_type, ''), COALESCE(ca.company_industry, ''), COALESCE(cb.company_industry, '')))";
+    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
+    query = query.replace(
+      '0::float8 AS search_score',
+      `((
+          (
+            0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
+            0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
+          ) * 0.8
+        ) + (
+          GREATEST(
+            similarity(${normalizedDoc}, ${normalizedKeyword}),
+            word_similarity(${normalizedDoc}, ${normalizedKeyword})
+          ) * 0.2
+        ))::float8 AS search_score`
+    );
+
+    query += ` AND (
+      ${arabicTsVector} @@ ${arabicTsQuery}
+      OR ${simpleTsVector} @@ ${simpleTsQuery}
+      OR ${normalizedDoc} % ${normalizedKeyword}
+    )`;
+    params.push(keyword);
+    paramIndex++;
+    query += ` ORDER BY search_score DESC, last_message_at DESC NULLS LAST, r.created_at DESC`;
+  } else {
+    query += ` ORDER BY last_message_at DESC NULLS LAST, r.created_at DESC`;
+  }
   query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   params.push(limit, offset);
 

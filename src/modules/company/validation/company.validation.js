@@ -116,6 +116,10 @@ const companyIdParamsSchema = z.object({
   params: companyIdParam,
 });
 
+const keywordQuerySchema = z.object({
+  keyword: z.string().max(200).optional(),
+});
+
 const searchCompaniesSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
@@ -127,6 +131,19 @@ const searchCompaniesSchema = z.object({
     limit: z.coerce.number().int().min(1).max(100).default(20),
     offset: z.coerce.number().int().min(0).default(0),
   }),
+});
+
+const listMyDocumentsSchema = z.object({
+  query: keywordQuerySchema,
+});
+
+const listMyContributionsSchema = z.object({
+  query: keywordQuerySchema,
+});
+
+const listCompanyDocumentsSchema = z.object({
+  params: companyIdParam,
+  query: keywordQuerySchema,
 });
 
 const galleryItemParamsSchema = z.object({
@@ -528,6 +545,9 @@ module.exports = {
   createReviewSchema,
   companyIdParamsSchema,
   searchCompaniesSchema,
+  listMyDocumentsSchema,
+  listMyContributionsSchema,
+  listCompanyDocumentsSchema,
   galleryItemParamsSchema,
   updateGalleryItemSchema,
   documentIdParamsSchema,

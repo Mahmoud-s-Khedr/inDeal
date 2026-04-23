@@ -1,14 +1,52 @@
 const { pool } = require('../../../infrastructure/config/db');
 
-const listByCompanyId = async (companyId) => {
+const listByCompanyId = async (companyId, options = {}) => {
+  const { keyword } = options;
+  const params = [companyId];
+  let keywordCondition = '';
+  let scoreExpr = '0::float8 AS search_score';
+  let orderBy = 'created_at DESC';
+
+  if (keyword) {
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', title, description, details::text, type))";
+    const normalizedKeyword = `public.normalize_search_text($2)`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
+    scoreExpr = `((
+      (
+        0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
+        0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
+      ) * 0.8
+    ) + (
+      GREATEST(
+        similarity(${normalizedDoc}, ${normalizedKeyword}),
+        word_similarity(${normalizedDoc}, ${normalizedKeyword})
+      ) * 0.2
+    ))::float8 AS search_score`;
+
+    keywordCondition = ` AND (
+      ${arabicTsVector} @@ ${arabicTsQuery}
+      OR ${simpleTsVector} @@ ${simpleTsQuery}
+      OR ${normalizedDoc} % ${normalizedKeyword}
+    )`;
+    params.push(keyword);
+    orderBy = 'search_score DESC, created_at DESC';
+  }
+
   const result = await pool.query(
     `
-        SELECT id, company_id, media_file_id, media_type, media_url, type, title, description, details, created_at, updated_at
+        SELECT id, company_id, media_file_id, media_type, media_url, type, title, description, details, created_at, updated_at,
+               ${scoreExpr}
         FROM company_contributions
         WHERE company_id = $1
-        ORDER BY created_at DESC
+        ${keywordCondition}
+        ORDER BY ${orderBy}
         `,
-    [companyId]
+    params
   );
 
   return result.rows;

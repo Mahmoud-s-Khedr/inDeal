@@ -18,6 +18,9 @@ const {
   createReviewSchema,
   companyIdParamsSchema,
   searchCompaniesSchema,
+  listMyDocumentsSchema,
+  listMyContributionsSchema,
+  listCompanyDocumentsSchema,
   addContributionMediaSchema,
   contributionMediaIdParamsSchema,
   updateContributionMediaSchema,
@@ -53,7 +56,12 @@ router.delete(
   companyController.deleteMyGalleryItem
 );
 
-router.get('/me/documents', protect, companyController.listMyDocuments);
+router.get(
+  '/me/documents',
+  protect,
+  validate(listMyDocumentsSchema),
+  companyController.listMyDocuments
+);
 router.post(
   '/me/documents',
   protect,
@@ -86,7 +94,12 @@ router.delete(
   companyController.deleteMyDocument
 );
 
-router.get('/me/contributions', protect, companyController.listMyContributions);
+router.get(
+  '/me/contributions',
+  protect,
+  validate(listMyContributionsSchema),
+  companyController.listMyContributions
+);
 router.post(
   '/me/contributions',
   protect,
@@ -146,7 +159,7 @@ router.get('/:id/reviews', validate(companyIdParamsSchema), companyController.li
 router.post('/:id/reviews', protect, validate(createReviewSchema), companyController.createReview);
 router.get(
   '/:id/documents',
-  validate(companyIdParamsSchema),
+  validate(listCompanyDocumentsSchema),
   companyController.listCompanyDocuments
 );
 

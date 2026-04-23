@@ -36,7 +36,7 @@ const bulkCreateDocuments = async (client, documents) => {
 };
 
 const listByCompanyId = async (companyId, options = {}) => {
-  const { scope = 'all' } = options;
+  const { scope = 'all', keyword } = options;
   let scopeCondition = '';
   if (scope === 'public') {
     scopeCondition = ` AND (doc_type IS NULL OR doc_type NOT LIKE 'registration:%')`;
@@ -44,15 +44,54 @@ const listByCompanyId = async (companyId, options = {}) => {
     scopeCondition = ` AND doc_type LIKE 'registration:%'`;
   }
 
+  const params = [companyId];
+  let paramIndex = 2;
+  let keywordCondition = '';
+  let scoreExpr = '0::float8 AS search_score';
+  let orderBy = 'uploaded_at DESC';
+
+  if (keyword) {
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', title, issuer, description, doc_type, url))";
+    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
+    scoreExpr = `((
+      (
+        0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
+        0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
+      ) * 0.8
+    ) + (
+      GREATEST(
+        similarity(${normalizedDoc}, ${normalizedKeyword}),
+        word_similarity(${normalizedDoc}, ${normalizedKeyword})
+      ) * 0.2
+    ))::float8 AS search_score`;
+
+    keywordCondition = ` AND (
+      ${arabicTsVector} @@ ${arabicTsQuery}
+      OR ${simpleTsVector} @@ ${simpleTsQuery}
+      OR ${normalizedDoc} % ${normalizedKeyword}
+    )`;
+    params.push(keyword);
+    paramIndex += 1;
+    orderBy = 'search_score DESC, uploaded_at DESC';
+  }
+
   const result = await pool.query(
     `
-        SELECT id, company_id, file_id, doc_type, title, issuer, url, description, issue_date, expiry_date, uploaded_at
+        SELECT id, company_id, file_id, doc_type, title, issuer, url, description, issue_date, expiry_date, uploaded_at,
+               ${scoreExpr}
         FROM company_documents
         WHERE company_id = $1
         ${scopeCondition}
-        ORDER BY uploaded_at DESC
+        ${keywordCondition}
+        ORDER BY ${orderBy}
         `,
-    [companyId]
+    params
   );
 
   return result.rows;

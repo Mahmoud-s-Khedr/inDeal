@@ -153,6 +153,7 @@ const getDealSchema = z.object({
 
 const listMyDealsSchema = z.object({
   query: z.object({
+    keyword: z.string().max(200).optional(),
     status: z.enum(dealStatusEnumValues).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
@@ -254,6 +255,7 @@ const listDealRequestsSchema = z.object({
     id: z.coerce.number().int().positive(), // deal ID
   }),
   query: z.object({
+    keyword: z.string().max(200).optional(),
     status: z.enum(dealRequestStatusEnumValues).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
@@ -262,6 +264,7 @@ const listDealRequestsSchema = z.object({
 
 const listMyRequestsSchema = z.object({
   query: z.object({
+    keyword: z.string().max(200).optional(),
     status: z.enum(dealRequestStatusEnumValues).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),

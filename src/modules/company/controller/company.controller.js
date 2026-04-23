@@ -67,7 +67,7 @@ const deleteMyGalleryItem = catchAsync(async (req, res) => {
 });
 
 const listMyDocuments = catchAsync(async (req, res) => {
-  const docs = await companyService.listMyDocuments(req.user.id);
+  const docs = await companyService.listMyDocuments(req.user.id, req.query);
   sendResponse(res, 200, docs, 'Company documents fetched');
 });
 
@@ -109,7 +109,7 @@ const deleteMyDocument = catchAsync(async (req, res) => {
 });
 
 const listMyContributions = catchAsync(async (req, res) => {
-  const contributions = await companyService.listMyContributions(req.user.id);
+  const contributions = await companyService.listMyContributions(req.user.id, req.query);
   sendResponse(res, 200, contributions, 'Company contributions fetched');
 });
 
@@ -179,7 +179,7 @@ const reorderContributionMedia = catchAsync(async (req, res) => {
 });
 
 const listCompanyDocuments = catchAsync(async (req, res) => {
-  const docs = await companyService.listCompanyDocuments(req.params.id);
+  const docs = await companyService.listCompanyDocuments(req.params.id, req.query);
   sendResponse(res, 200, docs, 'Company documents fetched');
 });
 
