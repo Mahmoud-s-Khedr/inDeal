@@ -196,17 +196,30 @@ def run():
         },
         expected_statuses=[201],
     )
-    req_b_a_id = runner.extract_id(runner.extract_data(req_b_a_resp), ["id", "requestId"])
-
-    runner.step(
-        step_id="agent_a.accept_b_request",
-        role=a.label,
-        method="PATCH",
-        path=f"/deals/{deal_ids[a.label]}/requests/{req_b_a_id}/status",
-        token=a.token,
-        payload={"status": "accepted"},
-        expected_statuses=[200],
+    req_b_a_id = runner.require_id(
+        runner.extract_data(req_b_a_resp),
+        keys=["id", "requestId"],
+        context="agent_b.request_on_a",
     )
+    if req_b_a_id:
+        runner.step(
+            step_id="agent_a.accept_b_request",
+            role=a.label,
+            method="PATCH",
+            path=f"/deals/{deal_ids[a.label]}/requests/{req_b_a_id}/status",
+            token=a.token,
+            payload={"status": "accepted"},
+            expected_statuses=[200],
+        )
+    else:
+        runner.blocked_step(
+            step_id="agent_a.accept_b_request",
+            role=a.label,
+            method="PATCH",
+            path="/deals/<dealId>/requests/<requestId>/status",
+            reason="missing request id from agent_b.request_on_a",
+            expected_statuses=[200],
+        )
 
     # C submits request on A deal -> cancel
     req_c_a_resp = runner.step(
@@ -227,16 +240,30 @@ def run():
         },
         expected_statuses=[201],
     )
-    req_c_a_id = runner.extract_id(runner.extract_data(req_c_a_resp), ["id", "requestId"])
-    runner.step(
-        step_id="agent_c.cancel_request",
-        role=c.label,
-        method="PATCH",
-        path=f"/deals/requests/{req_c_a_id}/cancel",
-        token=c.token,
-        payload={"cancelReason": "No capacity this month"},
-        expected_statuses=[200],
+    req_c_a_id = runner.require_id(
+        runner.extract_data(req_c_a_resp),
+        keys=["id", "requestId"],
+        context="agent_c.request_on_a",
     )
+    if req_c_a_id:
+        runner.step(
+            step_id="agent_c.cancel_request",
+            role=c.label,
+            method="PATCH",
+            path=f"/deals/requests/{req_c_a_id}/cancel",
+            token=c.token,
+            payload={"cancelReason": "No capacity this month"},
+            expected_statuses=[200],
+        )
+    else:
+        runner.blocked_step(
+            step_id="agent_c.cancel_request",
+            role=c.label,
+            method="PATCH",
+            path="/deals/requests/<requestId>/cancel",
+            reason="missing request id from agent_c.request_on_a",
+            expected_statuses=[200],
+        )
 
     # review path
     runner.step(
@@ -279,7 +306,7 @@ def run():
         method="POST",
         path=f"/chats/{room_id}/read",
         token=b.token,
-        payload={"messageId": None},
+        payload={},
         expected_statuses=[200],
     )
     runner.step(
@@ -340,7 +367,7 @@ def run():
         ("removed.notifications", "GET", "/notifications"),
         ("removed.support_tickets", "GET", "/support/tickets"),
         ("removed.support_chat", "GET", "/support/chat"),
-        ("removed.devices", "GET", "/users/me/devices"),
+        ("removed.devices.guest_unauthorized", "GET", "/users/me/devices"),
         ("removed.auth_admin", "POST", "/auth/admin/login"),
         ("removed.auth_verify_email", "GET", "/auth/verify-email"),
         ("removed.auth_resend_verification", "POST", "/auth/resend-verification"),
@@ -350,14 +377,24 @@ def run():
         payload = None
         if path == "/auth/admin/login":
             payload = {"email": "admin@indeal.local", "password": "Password123!"}
+        expected = [401] if step_id == "removed.devices.guest_unauthorized" else [404]
         runner.step(
             step_id=step_id,
             role="guest",
             method=method,
             path=path,
             payload=payload,
-            expected_statuses=[404],
+            expected_statuses=expected,
         )
+
+    runner.step(
+        step_id="removed.devices.authenticated_missing_route",
+        role=a.label,
+        method="GET",
+        path="/users/me/devices",
+        token=a.token,
+        expected_statuses=[404],
+    )
 
     # unauthorized check sample
     runner.step(

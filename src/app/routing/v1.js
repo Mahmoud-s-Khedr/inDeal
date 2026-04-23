@@ -10,6 +10,7 @@ const userModule = require('../../modules/user');
 const dealModule = require('../../modules/deal');
 const chatModule = require('../../modules/chat');
 const supportModule = require('../../modules/support');
+const adminModule = require('../../modules/admin');
 
 const router = express.Router();
 
@@ -22,5 +23,6 @@ mountRouter(router, '/users', userModule.router);
 mountRouter(router, '/deals', dealModule.router);
 mountRouter(router, '/chats', chatModule.router);
 mountRouter(router, '/support', supportModule.router);
+mountRouter(router, '/admin', adminModule.router);
 
 module.exports = router;

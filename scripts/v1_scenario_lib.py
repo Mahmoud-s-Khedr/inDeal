@@ -179,6 +179,46 @@ class ScenarioRunner:
         self.steps.append(entry)
         return response
 
+    def blocked_step(
+        self,
+        *,
+        step_id: str,
+        role: str,
+        method: str,
+        path: str,
+        reason: str,
+        expected_statuses: Optional[List[int]] = None,
+        expected_status_family: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        entry = {
+            "timestamp": now_iso(),
+            "stepId": step_id,
+            "role": role,
+            "method": method,
+            "path": path,
+            "request": {"params": None, "payload": None},
+            "expectedStatus": expected_statuses,
+            "expectedStatusFamily": expected_status_family,
+            "assertionResult": {
+                "passed": False,
+                "actualStatus": None,
+                "actualStatusFamily": "blocked",
+            },
+            "response": {
+                "url": None,
+                "status": None,
+                "headers": {},
+                "body": "",
+                "json": None,
+                "durationMs": 0,
+                "error": f"Blocked: {reason}",
+            },
+            "blocked": True,
+            "blockReason": reason,
+        }
+        self.steps.append(entry)
+        return entry["response"]
+
     def extract_token(self, response: Dict[str, Any]) -> Optional[str]:
         data = (response.get("json") or {}).get("data") or {}
         return data.get("accessToken") or data.get("token")
@@ -194,6 +234,18 @@ class ScenarioRunner:
                 value = payload.get(key)
                 if isinstance(value, int):
                     return value
+        return None
+
+    def require_id(
+        self,
+        payload: Any,
+        *,
+        keys: Optional[List[str]] = None,
+        context: str = "response payload",
+    ) -> Optional[int]:
+        value = self.extract_id(payload, keys)
+        if isinstance(value, int) and value > 0:
+            return value
         return None
 
     def summary(self) -> Dict[str, Any]:

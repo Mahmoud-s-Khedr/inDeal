@@ -208,7 +208,6 @@ model DealRequest {
   created_at            DateTime          @default(now()) @db.Timestamp(6)
   updated_at            DateTime          @default(now()) @db.Timestamp(6)
 
-  @@unique([deal_id, applicant_company_id])
   @@index([deal_id], map: "idx_deal_requests_deal_id")
   @@index([applicant_company_id], map: "idx_deal_requests_applicant")
   @@map("deal_requests")

@@ -10,7 +10,6 @@ const fileModule = require('../../file');
 const config = require('../../../infrastructure/config/env');
 const logger = require('../../../shared/utils/logger');
 const { sendMail } = require('../../../infrastructure/config/mailer');
-const { validateCompanyCompleteness } = require('../../../shared/utils/validationHelper');
 const { dealRequestRepository } = dealModule.repository;
 const fileService = fileModule.service;
 
@@ -1025,11 +1024,8 @@ const reorderContributionMedia = async (agentId, contributionId, orderedIds) => 
     })
   );
 };
-// validateCompanyCompleteness is imported from utils/validationHelper
-
 const resendForReview = async (agentId) => {
   const company = await getCompanyOrThrowByAgent(agentId);
-  validateCompanyCompleteness(company);
 
   const updated = await companyRepository.updateCompanyStatus(company.id, 'underReview');
 

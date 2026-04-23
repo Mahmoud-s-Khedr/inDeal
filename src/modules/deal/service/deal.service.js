@@ -429,7 +429,7 @@ const createDealRequest = async (dealId, applicantCompanyId, payload) => {
   if (!deal) {
     throw new AppError('Deal not found', 404);
   }
-  if (deal.status !== 'open') {
+  if (!['open', 'negotiating'].includes(deal.status)) {
     throw new AppError('Deal is not open for requests', 400);
   }
 

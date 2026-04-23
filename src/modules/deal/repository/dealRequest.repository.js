@@ -131,16 +131,21 @@ const findByApplicantCompanyId = async (companyId, { status, limit = 50, offset 
 /**
  * Check if company already has a request for this deal
  */
-const findExistingRequest = async (dealId, applicantCompanyId) => {
+const findExistingRequest = async (
+  dealId,
+  applicantCompanyId,
+  statuses = ['pending', 'paused', 'accepted']
+) => {
   const result = await pool.query(
     `
       SELECT *
       FROM deal_requests
       WHERE deal_id = $1
         AND applicant_company_id = $2
+        AND status = ANY($3::text[])
       LIMIT 1
     `,
-    [dealId, applicantCompanyId]
+    [dealId, applicantCompanyId, statuses]
   );
   return result.rows[0];
 };

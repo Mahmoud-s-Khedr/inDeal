@@ -264,7 +264,7 @@ def run():
         ("negative.removed.notifications", "GET", "/notifications", [404]),
         ("negative.removed.support_ticket", "GET", "/support/tickets", [404]),
         ("negative.removed.support_chat", "GET", "/support/chat", [404]),
-        ("negative.removed.devices", "GET", "/users/me/devices", [404]),
+        ("negative.removed.devices.guest_unauthorized", "GET", "/users/me/devices", [401]),
         ("negative.removed.auth_admin", "POST", "/auth/admin/login", [404]),
         ("negative.removed.auth_verify_email", "GET", "/auth/verify-email", [404]),
     ]
@@ -281,6 +281,15 @@ def run():
             payload=payload,
             expected_statuses=expected,
         )
+
+    runner.step(
+        step_id="negative.removed.devices.authenticated_missing_route",
+        role=actor_b.label,
+        method="GET",
+        path="/users/me/devices",
+        token=actor_b.token,
+        expected_statuses=[404],
+    )
 
     runner.save(
         OUTPUT_FILE,

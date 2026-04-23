@@ -37,22 +37,27 @@ def run():
         last_name="Applicant",
     )
 
-    deal_resp = runner.step(
-        step_id="owner.create_deal",
-        role=owner.label,
-        method="POST",
-        path="/deals",
-        token=owner.token,
-        payload={
-            "dealName": "V1 Supply Deal",
-            "dealDescription": "Deal created by deals_flow.py",
-            "dealValue": 50000,
-            "dealType": "supply",
-            "attachments": [],
-        },
-        expected_statuses=[201],
-    )
-    deal_id = runner.extract_id(runner.extract_data(deal_resp), ["id"])
+    def create_deal(step_id: str, name: str):
+        deal_resp = runner.step(
+            step_id=step_id,
+            role=owner.label,
+            method="POST",
+            path="/deals",
+            token=owner.token,
+            payload={
+                "dealName": name,
+                "dealDescription": "Deal created by deals_flow.py",
+                "dealValue": 50000,
+                "dealType": "supply",
+                "attachments": [],
+            },
+            expected_statuses=[201],
+        )
+        return runner.require_id(runner.extract_data(deal_resp), keys=["id"], context=step_id)
+
+    deal_cancel_id = create_deal("owner.create_deal.cancel_track", "V1 Supply Deal - Cancel")
+    deal_accept_id = create_deal("owner.create_deal.accept_track", "V1 Supply Deal - Accept")
+    deal_withdraw_id = create_deal("owner.create_deal.withdraw_track", "V1 Supply Deal - Withdraw")
 
     runner.step(
         step_id="applicant.list_deals",
@@ -63,137 +68,226 @@ def run():
         params={"sortBy": "date", "sortOrder": "desc", "limit": 20},
         expected_statuses=[200],
     )
-    runner.step(
-        step_id="applicant.get_deal",
-        role=applicant.label,
-        method="GET",
-        path=f"/deals/{deal_id}",
-        token=applicant.token,
-        expected_statuses=[200],
-    )
 
-    cancel_req_resp = runner.step(
-        step_id="applicant.submit_request_cancel_path",
-        role=applicant.label,
-        method="POST",
-        path=f"/deals/{deal_id}/requests",
-        token=applicant.token,
-        payload={
-            "requestKind": "supply",
-            "supplyDetails": {
-                "productServiceName": "Steel sheets",
-                "category": "rawMaterial",
-                "quantityRequired": 70,
+    if deal_accept_id:
+        runner.step(
+            step_id="applicant.get_deal",
+            role=applicant.label,
+            method="GET",
+            path=f"/deals/{deal_accept_id}",
+            token=applicant.token,
+            expected_statuses=[200],
+        )
+
+    # Track 1: submit -> pause -> cancel -> reapply
+    cancel_req_id = None
+    if deal_cancel_id:
+        cancel_req_resp = runner.step(
+            step_id="applicant.submit_request_cancel_path",
+            role=applicant.label,
+            method="POST",
+            path=f"/deals/{deal_cancel_id}/requests",
+            token=applicant.token,
+            payload={
+                "requestKind": "supply",
+                "supplyDetails": {
+                    "productServiceName": "Steel sheets",
+                    "category": "rawMaterial",
+                    "quantityRequired": 70,
+                },
+                "attachments": [],
             },
-            "attachments": [],
-        },
-        expected_statuses=[201],
-    )
-    cancel_req_id = runner.extract_id(runner.extract_data(cancel_req_resp), ["id", "requestId"])
+            expected_statuses=[201],
+        )
+        cancel_req_id = runner.require_id(
+            runner.extract_data(cancel_req_resp),
+            keys=["id", "requestId"],
+            context="applicant.submit_request_cancel_path",
+        )
 
-    runner.step(
-        step_id="applicant.pause_request",
-        role=applicant.label,
-        method="PATCH",
-        path=f"/deals/requests/{cancel_req_id}/pause",
-        token=applicant.token,
-        expected_statuses=[200],
-    )
-    runner.step(
-        step_id="applicant.cancel_request",
-        role=applicant.label,
-        method="PATCH",
-        path=f"/deals/requests/{cancel_req_id}/cancel",
-        token=applicant.token,
-        payload={"cancelReason": "Found another supplier"},
-        expected_statuses=[200],
-    )
+    if cancel_req_id:
+        runner.step(
+            step_id="applicant.pause_request",
+            role=applicant.label,
+            method="PATCH",
+            path=f"/deals/requests/{cancel_req_id}/pause",
+            token=applicant.token,
+            expected_statuses=[200],
+        )
+        runner.step(
+            step_id="applicant.cancel_request",
+            role=applicant.label,
+            method="PATCH",
+            path=f"/deals/requests/{cancel_req_id}/cancel",
+            token=applicant.token,
+            payload={"cancelReason": "Found another supplier"},
+            expected_statuses=[200],
+        )
 
-    accepted_req_resp = runner.step(
-        step_id="applicant.submit_request_accept_path",
-        role=applicant.label,
-        method="POST",
-        path=f"/deals/{deal_id}/requests",
-        token=applicant.token,
-        payload={
-            "requestKind": "demand",
-            "demandDetails": {
-                "productServiceName": "Steel sheets",
-                "availableQuantity": 120,
-                "unitPrice": 410,
-                "currency": "USD",
+        runner.step(
+            step_id="applicant.reapply_after_cancel",
+            role=applicant.label,
+            method="POST",
+            path=f"/deals/{deal_cancel_id}/requests",
+            token=applicant.token,
+            payload={
+                "requestKind": "supply",
+                "supplyDetails": {
+                    "productServiceName": "Steel sheets",
+                    "category": "rawMaterial",
+                    "quantityRequired": 40,
+                },
+                "attachments": [],
             },
-            "attachments": [],
-        },
-        expected_statuses=[201],
-    )
-    accepted_req_id = runner.extract_id(runner.extract_data(accepted_req_resp), ["id", "requestId"])
+            expected_statuses=[201],
+        )
+    else:
+        runner.blocked_step(
+            step_id="applicant.pause_request",
+            role=applicant.label,
+            method="PATCH",
+            path="/deals/requests/<requestId>/pause",
+            reason="missing request id from applicant.submit_request_cancel_path",
+            expected_statuses=[200],
+        )
+        runner.blocked_step(
+            step_id="applicant.cancel_request",
+            role=applicant.label,
+            method="PATCH",
+            path="/deals/requests/<requestId>/cancel",
+            reason="missing request id from applicant.submit_request_cancel_path",
+            expected_statuses=[200],
+        )
+        runner.blocked_step(
+            step_id="applicant.reapply_after_cancel",
+            role=applicant.label,
+            method="POST",
+            path="/deals/<dealId>/requests",
+            reason="cancel track did not create a request",
+            expected_statuses=[201],
+        )
 
-    runner.step(
-        step_id="owner.list_requests",
-        role=owner.label,
-        method="GET",
-        path=f"/deals/{deal_id}/requests",
-        token=owner.token,
-        expected_statuses=[200],
-    )
-    runner.step(
-        step_id="owner.accept_request",
-        role=owner.label,
-        method="PATCH",
-        path=f"/deals/{deal_id}/requests/{accepted_req_id}/status",
-        token=owner.token,
-        payload={"status": "accepted"},
-        expected_statuses=[200],
-    )
-
-    withdraw_req_resp = runner.step(
-        step_id="applicant.submit_request_withdraw_alias",
-        role=applicant.label,
-        method="POST",
-        path=f"/deals/{deal_id}/requests",
-        token=applicant.token,
-        payload={
-            "requestKind": "rfq",
-            "supplyDetails": {
-                "productServiceName": "Steel sheets",
-                "category": "rawMaterial",
-                "quantityRequired": 50,
+    # Track 2: submit -> owner accepts
+    accepted_req_id = None
+    if deal_accept_id:
+        accepted_req_resp = runner.step(
+            step_id="applicant.submit_request_accept_path",
+            role=applicant.label,
+            method="POST",
+            path=f"/deals/{deal_accept_id}/requests",
+            token=applicant.token,
+            payload={
+                "requestKind": "demand",
+                "demandDetails": {
+                    "productServiceName": "Steel sheets",
+                    "availableQuantity": 120,
+                    "unitPrice": 410,
+                    "currency": "USD",
+                },
+                "attachments": [],
             },
-            "attachments": [],
-        },
-        expected_statuses=[201],
-    )
-    withdraw_req_id = runner.extract_id(runner.extract_data(withdraw_req_resp), ["id", "requestId"])
+            expected_statuses=[201],
+        )
+        accepted_req_id = runner.require_id(
+            runner.extract_data(accepted_req_resp),
+            keys=["id", "requestId"],
+            context="applicant.submit_request_accept_path",
+        )
 
-    runner.step(
-        step_id="applicant.withdraw_alias",
-        role=applicant.label,
-        method="DELETE",
-        path=f"/deals/requests/{withdraw_req_id}",
-        token=applicant.token,
-        params={"cancelReason": "No longer interested"},
-        expected_statuses=[200],
-    )
+        runner.step(
+            step_id="owner.list_requests",
+            role=owner.label,
+            method="GET",
+            path=f"/deals/{deal_accept_id}/requests",
+            token=owner.token,
+            expected_statuses=[200],
+        )
 
-    runner.step(
-        step_id="owner.close_deal",
-        role=owner.label,
-        method="PUT",
-        path=f"/deals/{deal_id}",
-        token=owner.token,
-        payload={"status": "closed"},
-        expected_statuses=[200],
-    )
-    runner.step(
-        step_id="owner.reopen_deal",
-        role=owner.label,
-        method="PUT",
-        path=f"/deals/{deal_id}",
-        token=owner.token,
-        payload={"status": "open"},
-        expected_statuses=[200],
-    )
+    if deal_accept_id and accepted_req_id:
+        runner.step(
+            step_id="owner.accept_request",
+            role=owner.label,
+            method="PATCH",
+            path=f"/deals/{deal_accept_id}/requests/{accepted_req_id}/status",
+            token=owner.token,
+            payload={"status": "accepted"},
+            expected_statuses=[200],
+        )
+    else:
+        runner.blocked_step(
+            step_id="owner.accept_request",
+            role=owner.label,
+            method="PATCH",
+            path="/deals/<dealId>/requests/<requestId>/status",
+            reason="accept track missing deal id or request id",
+            expected_statuses=[200],
+        )
+
+    # Track 3: submit -> withdraw alias
+    withdraw_req_id = None
+    if deal_withdraw_id:
+        withdraw_req_resp = runner.step(
+            step_id="applicant.submit_request_withdraw_alias",
+            role=applicant.label,
+            method="POST",
+            path=f"/deals/{deal_withdraw_id}/requests",
+            token=applicant.token,
+            payload={
+                "requestKind": "rfq",
+                "supplyDetails": {
+                    "productServiceName": "Steel sheets",
+                    "category": "rawMaterial",
+                    "quantityRequired": 50,
+                },
+                "attachments": [],
+            },
+            expected_statuses=[201],
+        )
+        withdraw_req_id = runner.require_id(
+            runner.extract_data(withdraw_req_resp),
+            keys=["id", "requestId"],
+            context="applicant.submit_request_withdraw_alias",
+        )
+
+    if withdraw_req_id:
+        runner.step(
+            step_id="applicant.withdraw_alias",
+            role=applicant.label,
+            method="DELETE",
+            path=f"/deals/requests/{withdraw_req_id}",
+            token=applicant.token,
+            params={"cancelReason": "No longer interested"},
+            expected_statuses=[200],
+        )
+    else:
+        runner.blocked_step(
+            step_id="applicant.withdraw_alias",
+            role=applicant.label,
+            method="DELETE",
+            path="/deals/requests/<requestId>",
+            reason="missing request id from applicant.submit_request_withdraw_alias",
+            expected_statuses=[200],
+        )
+
+    if deal_accept_id:
+        runner.step(
+            step_id="owner.close_deal",
+            role=owner.label,
+            method="PUT",
+            path=f"/deals/{deal_accept_id}",
+            token=owner.token,
+            payload={"status": "closed"},
+            expected_statuses=[200],
+        )
+        runner.step(
+            step_id="owner.reopen_deal",
+            role=owner.label,
+            method="PUT",
+            path=f"/deals/{deal_accept_id}",
+            token=owner.token,
+            payload={"status": "open"},
+            expected_statuses=[200],
+        )
 
     runner.step(
         step_id="owner.my_deals",
@@ -212,14 +306,15 @@ def run():
         expected_statuses=[200],
     )
 
-    runner.step(
-        step_id="owner.archive_deal",
-        role=owner.label,
-        method="DELETE",
-        path=f"/deals/{deal_id}",
-        token=owner.token,
-        expected_statuses=[200],
-    )
+    if deal_accept_id:
+        runner.step(
+            step_id="owner.archive_deal",
+            role=owner.label,
+            method="DELETE",
+            path=f"/deals/{deal_accept_id}",
+            token=owner.token,
+            expected_statuses=[200],
+        )
 
     runner.step(
         step_id="negative.removed_ads",

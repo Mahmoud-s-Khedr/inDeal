@@ -33,7 +33,6 @@ REMOVED_EXPECTED_404 = [
     "/notifications",
     "/support/tickets",
     "/support/chat",
-    "/users/me/devices",
     "/auth/admin/login",
     "/auth/resend-verification",
     "/auth/verify-email",
@@ -98,6 +97,22 @@ def run():
             path=path,
             expected_statuses=[404],
         )
+
+    runner.step(
+        step_id="removed.devices.guest_unauthorized",
+        role="guest",
+        method="GET",
+        path="/users/me/devices",
+        expected_statuses=[401],
+    )
+    runner.step(
+        step_id="removed.devices.authenticated_missing_route",
+        role=actor.label,
+        method="GET",
+        path="/users/me/devices",
+        token=actor.token,
+        expected_statuses=[404],
+    )
 
     runner.save(
         output_path,

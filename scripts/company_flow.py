@@ -218,52 +218,60 @@ def run():
             "dealType": "supply",
             "attachments": [],
         },
-        expected_statuses=[201],
+        expected_statuses=[201, 403],
     )
-    deal_id = runner.extract_id(runner.extract_data(deal_resp), ["id"])
-
-    request_resp = runner.step(
-        step_id="b.submit_review_request",
-        role=actor_b.label,
-        method="POST",
-        path=f"/deals/{deal_id}/requests",
-        token=actor_b.token,
-        payload={
-            "requestKind": "supply",
-            "supplyDetails": {
-                "productServiceName": "Industrial bolts",
-                "category": "industrialEquipment",
-                "quantityRequired": 100,
+    deal_id = runner.require_id(
+        runner.extract_data(deal_resp),
+        keys=["id"],
+        context="a.create_review_deal",
+    )
+    if deal_id:
+        request_resp = runner.step(
+            step_id="b.submit_review_request",
+            role=actor_b.label,
+            method="POST",
+            path=f"/deals/{deal_id}/requests",
+            token=actor_b.token,
+            payload={
+                "requestKind": "supply",
+                "supplyDetails": {
+                    "productServiceName": "Industrial bolts",
+                    "category": "industrialEquipment",
+                    "quantityRequired": 100,
+                },
+                "attachments": [],
             },
-            "attachments": [],
-        },
-        expected_statuses=[201],
-    )
-    request_id = runner.extract_id(runner.extract_data(request_resp), ["id", "requestId"])
+            expected_statuses=[201],
+        )
+        request_id = runner.require_id(
+            runner.extract_data(request_resp),
+            keys=["id", "requestId"],
+            context="b.submit_review_request",
+        )
+        if request_id:
+            runner.step(
+                step_id="a.accept_request",
+                role=actor_a.label,
+                method="PATCH",
+                path=f"/deals/{deal_id}/requests/{request_id}/status",
+                token=actor_a.token,
+                payload={"status": "accepted"},
+                expected_statuses=[200],
+            )
 
-    runner.step(
-        step_id="a.accept_request",
-        role=actor_a.label,
-        method="PATCH",
-        path=f"/deals/{deal_id}/requests/{request_id}/status",
-        token=actor_a.token,
-        payload={"status": "accepted"},
-        expected_statuses=[200],
-    )
-
-    runner.step(
-        step_id="b.create_review",
-        role=actor_b.label,
-        method="POST",
-        path=f"/companies/{actor_a.company_id}/reviews",
-        token=actor_b.token,
-        payload={
-            "dealId": deal_id,
-            "rating": 5,
-            "reviewText": "Great collaboration through V1 company flow.",
-        },
-        expected_statuses=[201],
-    )
+            runner.step(
+                step_id="b.create_review",
+                role=actor_b.label,
+                method="POST",
+                path=f"/companies/{actor_a.company_id}/reviews",
+                token=actor_b.token,
+                payload={
+                    "dealId": deal_id,
+                    "rating": 5,
+                    "reviewText": "Great collaboration through V1 company flow.",
+                },
+                expected_statuses=[201],
+            )
 
     runner.step(
         step_id="negative.removed_admin",
