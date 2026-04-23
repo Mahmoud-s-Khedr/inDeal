@@ -32,9 +32,9 @@ fi
 if [ "$needs_install" -eq 1 ]; then
   echo "📦 Syncing npm dependencies..."
   if [ -f "$LOCKFILE" ]; then
-    npm ci --no-package-lock --no-audit --no-fund
+    HUSKY=0 npm ci --no-package-lock --no-audit --no-fund
   else
-    npm install --no-package-lock --no-audit --no-fund
+    HUSKY=0 npm install --no-package-lock --no-audit --no-fund
   fi
   echo "$current_hash" > "$HASH_FILE"
 fi

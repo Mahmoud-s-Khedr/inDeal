@@ -1,245 +1,108 @@
 #!/usr/bin/env python3
-import json
 import os
 import sys
 import time
-from urllib import request, error
-from urllib.parse import urljoin
+
+from v1_scenario_lib import ScenarioRunner, load_env_files, register_actor
 
 
-def load_env_files():
-    for name in (".env", ".env.docker", ".env.backup", ".env.example"):
-        path = os.path.join(os.getcwd(), name)
-        if not os.path.isfile(path):
-            continue
-        try:
-            with open(path, "r", encoding="utf-8") as handle:
-                for line in handle:
-                    line = line.strip()
-                    if not line or line.startswith("#") or "=" not in line:
-                        continue
-                    key, value = line.split("=", 1)
-                    key = key.strip()
-                    value = value.strip().strip("\"'")
-                    if key and key not in os.environ:
-                        os.environ[key] = value
-        except OSError:
-            continue
+PUBLIC_GET_ENDPOINTS = [
+    "/health",
+    "/system/stats",
+    "/system/config",
+    "/companies/search",
+    "/deals",
+    "/support/info",
+    "/support/email-redirect",
+]
 
+AUTH_GET_ENDPOINTS = [
+    "/users/me",
+    "/companies/me",
+    "/companies/me/gallery",
+    "/companies/me/documents",
+    "/companies/me/contributions",
+    "/deals/me/deals",
+    "/deals/me/requests",
+    "/chats",
+]
 
-class NoRedirect(request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, hdrs, newurl):
-        return None
-
-
-def build_opener():
-    return request.build_opener(NoRedirect())
-
-
-def read_body_bytes(response):
-    try:
-        return response.read()
-    except Exception:
-        return b""
-
-
-def decode_body(body_bytes):
-    try:
-        return body_bytes.decode("utf-8")
-    except Exception:
-        return body_bytes.decode("utf-8", errors="replace")
-
-
-def http_request(method, base_url, path, payload=None, token=None, timeout=30):
-    url = urljoin(base_url, path.lstrip("/"))
-    headers = {"Accept": "application/json"}
-    data = None
-    if payload is not None:
-        data = json.dumps(payload).encode("utf-8")
-        headers["Content-Type"] = "application/json"
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    req = request.Request(url, method=method, headers=headers, data=data)
-    opener = build_opener()
-
-    try:
-        resp = opener.open(req, timeout=timeout)
-        body_bytes = read_body_bytes(resp)
-        return {
-            "url": url,
-            "status": resp.getcode(),
-            "headers": dict(resp.headers.items()),
-            "body": decode_body(body_bytes),
-        }
-    except error.HTTPError as http_err:
-        body_bytes = read_body_bytes(http_err)
-        return {
-            "url": url,
-            "status": http_err.code,
-            "headers": dict(getattr(http_err, "headers", {}).items()),
-            "body": decode_body(body_bytes),
-        }
-    except error.URLError as url_err:
-        return {
-            "url": url,
-            "status": None,
-            "headers": {},
-            "body": "",
-            "error": str(url_err),
-        }
-
-
-def login(base_url, email, password, is_admin=False):
-    path = "/auth/admin/login" if is_admin else "/auth/login"
-    result = http_request(
-        "POST",
-        base_url,
-        path,
-        payload={"email": email, "password": password},
-        token=None,
-    )
-    token = None
-    try:
-        parsed = json.loads(result.get("body") or "{}")
-        token = parsed.get("data", {}).get("token")
-    except json.JSONDecodeError:
-        token = None
-    return token, result
-
-
-def build_endpoints():
-    return [
-        "/health",
-        "/system/stats",
-        "/system/config",
-        "/auth/verify-email?email=admin@indeal.local&token=invalidinvalidinvalid",
-        "/companies/search",
-        "/companies/me",
-        "/companies/me/gallery",
-        "/companies/me/documents",
-        "/companies/me/contributions",
-        "/companies/me/contributions/1/media",
-        "/companies/1",
-        "/companies/1/gallery",
-        "/companies/1/reviews",
-        "/deals",
-        "/deals/1",
-        "/deals/me/deals",
-        "/deals/me/requests",
-        "/deals/1/requests",
-        "/chats",
-        "/chats/1",
-        "/chats/1/messages",
-        "/ads/active",
-        "/ads/1/click",
-        "/ads/1",
-        "/ads/1/analytics",
-        "/support/info",
-        "/support/tickets",
-        "/support/tickets/1",
-        "/support/chat",
-        "/support/chat/1/messages",
-        "/notifications",
-        "/users/me",
-        "/users/me/devices",
-        "/admin/companies",
-        "/admin/companies/pending",
-        "/admin/companies/1",
-        "/admin/companies/1/reviews",
-        "/admin/companies/1/gallery",
-        "/admin/companies/1/documents",
-        "/admin/companies/1/contributions",
-        "/admin/deals",
-        "/admin/deals/1",
-        "/admin/ads",
-        "/admin/ads/1",
-        "/admin/tickets",
-        "/admin/tickets/1",
-        "/admin/companies/pending-updates",
-        "/admin/companies/pending-updates/1",
-        "/admin/support/chats",
-        "/admin/support/chats/waiting",
-        "/admin/support/chats/1",
-    ]
+REMOVED_EXPECTED_404 = [
+    "/admin/companies",
+    "/ads/active",
+    "/notifications",
+    "/support/tickets",
+    "/support/chat",
+    "/users/me/devices",
+    "/auth/admin/login",
+    "/auth/resend-verification",
+    "/auth/verify-email",
+]
 
 
 def run():
     load_env_files()
-
-    base_url = os.environ.get("BASE_URL", "http://localhost:3000/api/v1/")
-    if not base_url.endswith("/"):
-        base_url += "/"
-
-    admin_email = os.environ.get("ADMIN_EMAIL") or os.environ.get("SEED_ADMIN_EMAIL") or "admin@indeal.local"
-    admin_password = (
-        os.environ.get("ADMIN_PASSWORD")
-        or os.environ.get("SEED_ADMIN_PASSWORD")
-        or "Password123!"
-    )
-
-    agent_password = os.environ.get("AGENT_PASSWORD") or os.environ.get("SEED_TEST_PASSWORD") or "Password123!"
-    agent_prefix = os.environ.get("SEED_TEST_AGENT_PREFIX") or "agent"
-    agent_domain = os.environ.get("SEED_TEST_EMAIL_DOMAIN") or "indeal.test"
-    agent_index = os.environ.get("AGENT_INDEX") or "1"
-    agent_email = os.environ.get("AGENT_EMAIL") or f"{agent_prefix}{agent_index}@{agent_domain}"
-
+    ts = int(time.time())
+    base_url = os.environ.get("BASE_URL", "http://localhost:3000/api/v1")
     output_path = os.environ.get(
         "GET_API_OUTPUT_FILE",
         os.path.join("scripts", "output", "get_api_responses.json"),
     )
 
-    endpoints = build_endpoints()
+    password = f"Password123!{ts}"
+    runner = ScenarioRunner(base_url)
 
-    started_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    actor = register_actor(
+        runner,
+        role="get_actor",
+        email=f"v1.get.actor.{ts}@indeal.test",
+        password=password,
+        company_name=f"V1 GET Actor Co {ts}",
+        first_name="Get",
+        last_name="Actor",
+    )
 
-    agent_token, agent_login = login(base_url, agent_email, agent_password, is_admin=False)
-    admin_token, admin_login = login(base_url, admin_email, admin_password, is_admin=True)
-
-    results = {
-        "meta": {
-            "baseUrl": base_url,
-            "startedAt": started_at,
-            "agentEmail": agent_email,
-            "adminEmail": admin_email,
-        },
-        "auth": {
-            "agentLogin": agent_login,
-            "adminLogin": admin_login,
-        },
-        "anonymous": [],
-        "agent": [],
-        "admin": [],
-    }
-
-    for path in endpoints:
-        results["anonymous"].append(
-            {
-                "method": "GET",
-                "path": path,
-                "response": http_request("GET", base_url, path),
-            }
+    for idx, path in enumerate(PUBLIC_GET_ENDPOINTS, start=1):
+        runner.step(
+            step_id=f"public.get.{idx}",
+            role="guest",
+            method="GET",
+            path=path,
+            expected_status_family="2xx",
         )
 
-        results["agent"].append(
-            {
-                "method": "GET",
-                "path": path,
-                "response": http_request("GET", base_url, path, token=agent_token),
-            }
+    for idx, path in enumerate(AUTH_GET_ENDPOINTS, start=1):
+        runner.step(
+            step_id=f"auth.get.{idx}",
+            role=actor.label,
+            method="GET",
+            path=path,
+            token=actor.token,
+            expected_status_family="2xx",
         )
 
-        results["admin"].append(
-            {
-                "method": "GET",
-                "path": path,
-                "response": http_request("GET", base_url, path, token=admin_token),
-            }
+    runner.step(
+        step_id="auth.get.company_public_profile",
+        role=actor.label,
+        method="GET",
+        path=f"/companies/{actor.company_id}",
+        token=actor.token,
+        expected_statuses=[200],
+    )
+
+    for idx, path in enumerate(REMOVED_EXPECTED_404, start=1):
+        runner.step(
+            step_id=f"removed.get.{idx}",
+            role="guest",
+            method="GET",
+            path=path,
+            expected_statuses=[404],
         )
 
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as handle:
-        json.dump(results, handle, ensure_ascii=False, indent=2)
-
+    runner.save(
+        output_path,
+        extra_meta={"scenario": "v1_get_matrix", "actorEmail": actor.email},
+    )
     print(f"Saved GET API responses to {output_path}")
 
 

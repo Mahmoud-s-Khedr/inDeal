@@ -1,6 +1,6 @@
 const dotenv = require('dotenv');
 dotenv.config();
-const { pool } = require('../src/config/db');
+const { pool } = require('../src/infrastructure/config/db');
 const { execSync } = require('child_process');
 
 async function checkDatabase() {
@@ -14,8 +14,28 @@ async function checkDatabase() {
     console.log('⚙️  Applying Prisma schema...');
     execSync('npm run prisma:db:push', { stdio: 'inherit' });
 
-    // Seed only when required tables exist and users is empty.
-    const requiredSeedTables = ['users', 'companies'];
+    // Require all critical V1 runtime tables before starting the app.
+    const requiredTables = [
+      'users',
+      'user_password_history',
+      'files',
+      'companies',
+      'company_gallery',
+      'company_documents',
+      'company_contributions',
+      'company_contribution_media',
+      'company_reviews',
+      'deals',
+      'deal_attachments',
+      'deal_requests',
+      'deal_request_supply_details',
+      'deal_request_demand_details',
+      'deal_request_attachments',
+      'chat_rooms',
+      'chat_messages',
+      'chat_message_reads',
+      'email_logs',
+    ];
     const tableCheck = await pool.query(
       `
       SELECT tablename
@@ -23,18 +43,15 @@ async function checkDatabase() {
       WHERE schemaname = 'public'
         AND tablename = ANY($1::text[])
       `,
-      [requiredSeedTables]
+      [requiredTables]
     );
     const availableTables = new Set(tableCheck.rows.map((row) => row.tablename));
-    const missingTables = requiredSeedTables.filter((name) => !availableTables.has(name));
+    const missingTables = requiredTables.filter((name) => !availableTables.has(name));
 
     if (missingTables.length) {
-      console.warn(
-        `⚠️  Skipping auto-seed. Missing tables: ${missingTables.join(', ')}. ` +
-          'This is expected while migration to Prisma is still partial.'
+      throw new Error(
+        `Critical schema is incomplete after Prisma db push. Missing tables: ${missingTables.join(', ')}`
       );
-      console.log('✅ Database is ready.');
-      return;
     }
 
     const countResult = await pool.query('SELECT count(*) FROM users');

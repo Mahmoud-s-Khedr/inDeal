@@ -1,6 +1,6 @@
-const apiRoutes = require('../src/routes');
-const { swaggerSpec } = require('../src/config/swagger');
-const { discoverRouterOperations } = require('../src/config/swaggerRouteDiscovery');
+const apiRoutes = require('../src/app/routing');
+const { swaggerSpec } = require('../src/infrastructure/config/swagger');
+const { discoverRouterOperations } = require('../src/infrastructure/config/swaggerRouteDiscovery');
 
 const discoveredOperations = discoverRouterOperations(apiRoutes, { basePath: '/api' });
 const discoveredSet = new Set(discoveredOperations.map((item) => `${item.method} ${item.path}`));

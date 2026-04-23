@@ -17,7 +17,7 @@ COPY package*.json ./
 FROM base AS development
 
 # Install all dependencies (including devDependencies)
-RUN npm install && npm cache clean --force
+RUN HUSKY=0 npm install && npm cache clean --force
 
 # Copy source code
 COPY . .
@@ -39,7 +39,7 @@ CMD ["dumb-init", "npm", "run", "dev"]
 FROM base AS prod-deps
 
 # Install only production dependencies with clean cache
-RUN npm ci --omit=dev && npm cache clean --force
+RUN HUSKY=0 npm ci --omit=dev && npm cache clean --force
 
 # ============================================
 # Production Stage - Minimal final image

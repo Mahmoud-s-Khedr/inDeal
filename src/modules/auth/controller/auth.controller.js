@@ -35,12 +35,12 @@ const logout = catchAsync(async (req, res) => {
 });
 
 const forgotPassword = catchAsync(async (req, res) => {
-  await authService.forgotPassword({
+  const result = await authService.forgotPassword({
     email: req.body.email,
     ipAddress: req.ip,
     userAgent: req.get('user-agent'),
   });
-  const payload = { message: 'If the email exists, instructions were sent.' };
+  const payload = result || { message: 'If the email exists, instructions were sent.' };
   sendResponse(res, 200, payload, payload.message);
 });
 

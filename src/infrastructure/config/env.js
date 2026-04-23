@@ -8,6 +8,12 @@ const emptyStringToUndefined = (val) => (val === '' ? undefined : val);
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
+  AUTH_DEBUG_OTP_ENABLED: z
+    .preprocess((val) => {
+      if (val === undefined || val === null || val === '') return undefined;
+      return val === 'true' || val === true;
+    }, z.boolean().optional())
+    .optional(),
 
   // Logging configuration
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
@@ -113,11 +119,18 @@ if (!parsed.success) {
 }
 
 const env = parsed.data;
+const authDebugOtpEnabled =
+  typeof env.AUTH_DEBUG_OTP_ENABLED === 'boolean'
+    ? env.AUTH_DEBUG_OTP_ENABLED
+    : env.NODE_ENV !== 'production';
 
 module.exports = {
   app: {
     env: env.NODE_ENV,
     port: env.PORT,
+  },
+  auth: {
+    debugOtpEnabled: authDebugOtpEnabled,
   },
   db: {
     host: env.DB_HOST,

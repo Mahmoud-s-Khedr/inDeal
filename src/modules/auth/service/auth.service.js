@@ -149,6 +149,16 @@ const applyRateLimits = async (type, email, ipAddress) => {
 };
 
 const generateOtp = () => crypto.randomInt(0, 1_000_000).toString().padStart(6, '0');
+const shouldExposeDebugOtp = () => Boolean(config.auth?.debugOtpEnabled);
+const buildDebugOtpPayload = (purpose, otp) => {
+  if (!shouldExposeDebugOtp() || !otp) return null;
+  return {
+    purpose,
+    otp,
+    ttlMinutes: otpSettings.otpTtlMinutes,
+    env: config.app.env,
+  };
+};
 
 const storeOtpPayload = async (email, payload) => {
   const ttlSeconds = otpSettings.otpTtlMinutes * 60;
@@ -340,11 +350,18 @@ const register = async (payload, { ipAddress, userAgent } = {}) => {
       );
     }
 
-    return {
+    const registrationDebugOtp = buildDebugOtpPayload('registration', generateOtp());
+
+    const result = {
       token,
       user: sanitizeUser(newUser),
       company: companyPayload,
     };
+    if (registrationDebugOtp) {
+      result.debugOtp = registrationDebugOtp;
+    }
+
+    return result;
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -462,7 +479,7 @@ const forgotPassword = async ({ email, ipAddress, userAgent }) => {
 
   const user = await userRepository.findByEmail(normalizedEmail);
   if (!user) {
-    return;
+    return { message: 'If the email exists, instructions were sent.' };
   }
 
   const otp = generateOtp();
@@ -480,11 +497,18 @@ const forgotPassword = async ({ email, ipAddress, userAgent }) => {
     userAgent,
     ipAddress,
   });
+
+  const result = { message: 'If the email exists, instructions were sent.' };
+  const debugOtp = buildDebugOtpPayload('forgot-password', otp);
+  if (debugOtp) {
+    result.debugOtp = debugOtp;
+  }
+  return result;
 };
 
 const resendForgotPasswordOtp = async ({ email, ipAddress, userAgent }) => {
-  await forgotPassword({ email, ipAddress, userAgent });
-  return { message: 'If the email exists, instructions were sent.' };
+  const result = await forgotPassword({ email, ipAddress, userAgent });
+  return result || { message: 'If the email exists, instructions were sent.' };
 };
 
 const resetPassword = async ({ email, otp, password, ipAddress }) => {
@@ -577,5 +601,6 @@ module.exports = {
     toRegistrationDocType,
     toExternalDocType,
     sanitizeUser,
+    buildDebugOtpPayload,
   },
 };

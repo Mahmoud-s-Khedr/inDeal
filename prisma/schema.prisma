@@ -56,14 +56,270 @@ model UserPasswordHistory {
 }
 
 model File {
-  id          Int       @id @default(autoincrement())
-  file_name   String    @db.VarChar(100)
-  file_metadata Json?   @db.JsonB
-  file_path   String    @db.VarChar(255)
-  uploaded_at DateTime? @default(now()) @db.Timestamp(6)
-  deleted_at  DateTime? @db.Timestamp(6)
+  id            Int       @id @default(autoincrement())
+  file_name     String    @db.VarChar(100)
+  file_metadata Json?     @db.JsonB
+  file_path     String    @db.VarChar(255)
+  uploaded_at   DateTime? @default(now()) @db.Timestamp(6)
+  deleted_at    DateTime? @db.Timestamp(6)
 
   @@map("files")
+}
+
+model Company {
+  id                     Int           @id @default(autoincrement())
+  agent_id               Int           @unique
+  name                   String        @db.VarChar(100)
+  description            String?
+  address                String?
+  phone                  String?       @db.VarChar(20)
+  email                  String?       @db.VarChar(100)
+  website                String?       @db.VarChar(255)
+  logo                   Int?
+  company_type           String?       @db.VarChar(50)
+  company_industry       String?       @db.VarChar(50)
+  manufacturing_strategy String?       @db.VarChar(50)
+  status                 String        @default("active") @db.VarChar(32)
+  rejection_reason       String?
+  contacts               Json?         @db.JsonB
+  locations              Json?         @db.JsonB
+  social_media_links     Json?         @db.JsonB
+  created_at             DateTime      @default(now()) @db.Timestamp(6)
+  updated_at             DateTime      @default(now()) @db.Timestamp(6)
+
+  @@index([agent_id], map: "idx_companies_agent_id")
+  @@index([status], map: "idx_companies_status")
+  @@map("companies")
+}
+
+model CompanyGallery {
+  id            Int      @id @default(autoincrement())
+  company_id    Int
+  image_file_id Int
+  description   String?
+  uploaded_at   DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([company_id], map: "idx_company_gallery_company_id")
+  @@map("company_gallery")
+}
+
+model CompanyDocument {
+  id          Int       @id @default(autoincrement())
+  company_id  Int
+  file_id     Int?
+  doc_type    String?   @db.VarChar(100)
+  title       String?   @db.VarChar(150)
+  issuer      String?   @db.VarChar(150)
+  url         String?   @db.VarChar(255)
+  description String?
+  issue_date  DateTime? @db.Timestamp(6)
+  expiry_date DateTime? @db.Timestamp(6)
+  uploaded_at DateTime  @default(now()) @db.Timestamp(6)
+
+  @@index([company_id], map: "idx_company_documents_company_id")
+  @@map("company_documents")
+}
+
+model CompanyContribution {
+  id            Int                    @id @default(autoincrement())
+  company_id    Int
+  media_file_id Int?
+  media_type    String?                @db.VarChar(20)
+  media_url     String?                @db.VarChar(255)
+  type          String                 @db.VarChar(32)
+  title         String                 @db.VarChar(150)
+  description   String?
+  details       Json?                  @db.JsonB
+  created_at    DateTime               @default(now()) @db.Timestamp(6)
+  updated_at    DateTime               @default(now()) @db.Timestamp(6)
+
+  @@index([company_id], map: "idx_company_contributions_company_id")
+  @@map("company_contributions")
+}
+
+model CompanyContributionMedia {
+  id              Int                   @id @default(autoincrement())
+  contribution_id Int
+  file_id         Int?
+  media_type      String                @db.VarChar(20)
+  media_url       String?               @db.VarChar(255)
+  sort_order      Int                   @default(0)
+  caption         String?
+  created_at      DateTime              @default(now()) @db.Timestamp(6)
+
+  @@index([contribution_id], map: "idx_ccm_contribution_id")
+  @@map("company_contribution_media")
+}
+
+model CompanyReview {
+  id                  Int      @id @default(autoincrement())
+  company_id          Int
+  reviewer_company_id Int
+  deal_id             Int?
+  review_text         String?
+  rating              Int
+  created_at          DateTime @default(now()) @db.Timestamp(6)
+
+  @@unique([deal_id, company_id, reviewer_company_id])
+  @@index([company_id], map: "idx_company_reviews_company_id")
+  @@map("company_reviews")
+}
+
+model Deal {
+  id               Int        @id @default(autoincrement())
+  company_id       Int
+  deal_name        String     @db.VarChar(100)
+  deal_description String?
+  deal_value       Decimal?   @db.Decimal(14, 2)
+  deal_type        String     @db.VarChar(16)
+  status           String     @default("open") @db.VarChar(16)
+  created_at       DateTime   @default(now()) @db.Timestamp(6)
+  updated_at       DateTime   @default(now()) @db.Timestamp(6)
+
+  @@index([company_id], map: "idx_deals_company_id")
+  @@index([status], map: "idx_deals_status")
+  @@map("deals")
+}
+
+model DealAttachment {
+  id         Int                @id @default(autoincrement())
+  deal_id    Int
+  file_id    Int
+  kind       String             @db.VarChar(16)
+  sort_order Int                @default(0)
+  created_at DateTime           @default(now()) @db.Timestamp(6)
+
+  @@map("deal_attachments")
+}
+
+model DealRequest {
+  id                    Int               @id @default(autoincrement())
+  deal_id               Int
+  applicant_company_id  Int
+  request_kind          String            @db.VarChar(16)
+  request_details       String?
+  request_offer         Decimal?          @db.Decimal(14, 2)
+  status                String            @default("pending") @db.VarChar(16)
+  canceled_at           DateTime?         @db.Timestamp(6)
+  canceled_by_company_id Int?
+  cancel_reason         String?
+  paused_at             DateTime?         @db.Timestamp(6)
+  paused_by_company_id  Int?
+  created_at            DateTime          @default(now()) @db.Timestamp(6)
+  updated_at            DateTime          @default(now()) @db.Timestamp(6)
+
+  @@unique([deal_id, applicant_company_id])
+  @@index([deal_id], map: "idx_deal_requests_deal_id")
+  @@index([applicant_company_id], map: "idx_deal_requests_applicant")
+  @@map("deal_requests")
+}
+
+model DealRequestSupplyDetails {
+  id                         Int       @id @default(autoincrement())
+  request_id                 Int       @unique
+  product_service_name       String    @db.VarChar(200)
+  category                   String    @db.VarChar(64)
+  quantity_required          Decimal?  @db.Decimal(14, 2)
+  delivery_location          String?   @db.VarChar(255)
+  delivery_date              DateTime? @db.Timestamp(6)
+  target_price_min           Decimal?  @db.Decimal(14, 2)
+  target_price_max           Decimal?  @db.Decimal(14, 2)
+  currency                   String?   @db.VarChar(10)
+  payment_terms_preference   String?   @db.VarChar(500)
+  incoterm                   String?   @db.VarChar(10)
+  bulk_discount_expectation  String?   @db.VarChar(500)
+  supply_type                String?   @db.VarChar(32)
+  key_specifications         String?
+  material                   String?   @db.VarChar(200)
+  dimensions_size            String?   @db.VarChar(200)
+  certifications_required    Json?     @db.JsonB
+  quality_level              String?   @db.VarChar(64)
+  color_finish               String?   @db.VarChar(100)
+  country_of_origin          String?   @db.VarChar(100)
+  max_lead_time_accepted     String?   @db.VarChar(100)
+  delivery_method_preference String?   @db.VarChar(64)
+  packaging_requirements     String?
+  special_conditions_notes   String?
+  created_at                 DateTime  @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime  @default(now()) @db.Timestamp(6)
+
+  @@map("deal_request_supply_details")
+}
+
+model DealRequestDemandDetails {
+  id                         Int       @id @default(autoincrement())
+  request_id                 Int       @unique
+  product_service_name       String    @db.VarChar(200)
+  available_quantity         Decimal?  @db.Decimal(14, 2)
+  offer_validity_days        Int?
+  unit_price                 Decimal?  @db.Decimal(14, 2)
+  currency                   String?   @db.VarChar(10)
+  total_price                Decimal?  @db.Decimal(14, 2)
+  volume_discount_tiers      Json?     @db.JsonB
+  moq                        Decimal?  @db.Decimal(14, 2)
+  availability_type          String?   @db.VarChar(32)
+  quantity_in_stock          Decimal?  @db.Decimal(14, 2)
+  max_produce_quantity       Decimal?  @db.Decimal(14, 2)
+  stock_delivery_time        String?   @db.VarChar(100)
+  production_lead_time       String?   @db.VarChar(100)
+  specs_match_rfq            String?   @db.VarChar(32)
+  differences_from_rfq       String?
+  material_offered           String?   @db.VarChar(200)
+  dimensions                 String?   @db.VarChar(200)
+  certifications_held        Json?     @db.JsonB
+  payment_terms              String?   @db.VarChar(500)
+  delivery_terms             String?   @db.VarChar(10)
+  warranty_return_policy     String?
+  exclusivity_confidentiality String?
+  additional_notes           String?
+  created_at                 DateTime  @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime  @default(now()) @db.Timestamp(6)
+
+  @@map("deal_request_demand_details")
+}
+
+model DealRequestAttachment {
+  id         Int      @id @default(autoincrement())
+  request_id Int
+  file_id    Int
+  sort_order Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  @@map("deal_request_attachments")
+}
+
+model ChatRoom {
+  id             Int            @id @default(autoincrement())
+  company_a_id   Int
+  company_b_id   Int
+  status         String         @default("active") @db.VarChar(16)
+  encryption_key String
+  created_at     DateTime       @default(now()) @db.Timestamp(6)
+
+  @@unique([company_a_id, company_b_id])
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id                 Int      @id @default(autoincrement())
+  room_id            Int
+  sender_user_id     Int
+  message_text       String?
+  attachment_file_id Int?
+  sent_at            DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([room_id], map: "idx_chat_messages_room_id")
+  @@index([sent_at(sort: Desc)], map: "idx_chat_messages_sent_at")
+  @@map("chat_messages")
+}
+
+model ChatMessageRead {
+  message_id Int
+  company_id Int
+  read_at    DateTime @default(now()) @db.Timestamp(6)
+
+  @@id([message_id, company_id])
+  @@map("chat_message_reads")
 }
 
 model EmailLog {

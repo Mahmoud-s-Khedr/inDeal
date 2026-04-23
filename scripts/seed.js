@@ -1,8 +1,8 @@
 const { seedDevData } = require('../src/seed/devSeeder');
 const { seedProdData } = require('../src/seed/prodSeeder');
 const { seedTestData } = require('../src/seed/testSeeder');
-const { pool } = require('../src/config/db');
-const redis = require('../src/config/redis');
+const { pool } = require('../src/infrastructure/config/db');
+const redis = require('../src/infrastructure/config/redis');
 
 async function run() {
   try {
