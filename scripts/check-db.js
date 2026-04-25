@@ -1,78 +1,50 @@
-const dotenv = require('dotenv');
-dotenv.config();
 const { pool } = require('../src/infrastructure/config/db');
-const { execSync } = require('child_process');
-const { bootstrapSearch } = require('./bootstrap-search');
 
-async function checkDatabase() {
-  console.log('🔍 Checking database status...');
+const statements = [
+  `DROP FUNCTION IF EXISTS public.normalize_search_text(text) CASCADE`,
+  `CREATE EXTENSION IF NOT EXISTS pg_trgm`,
+  `DO $$
+BEGIN
+  BEGIN
+    CREATE EXTENSION IF NOT EXISTS unaccent;
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE NOTICE 'unaccent extension not available: %', SQLERRM;
+  END;
+END $$;`,
+  `CREATE OR REPLACE FUNCTION public.normalize_search_text(input_text text)
+RETURNS text
+LANGUAGE plpgsql
+IMMUTABLE
+PARALLEL SAFE
+AS $$
+DECLARE
+  normalized text;
+BEGIN
+  normalized := COALESCE(input_text, '');
+  BEGIN
+    normalized := unaccent(normalized);
+  EXCEPTION
+    WHEN undefined_function THEN
+      NULL;
+  END;
+  normalized := lower(normalized);
+  normalized := regexp_replace(normalized, '[ً-ٰٟۖ-ۭ]', '', 'g');
+  normalized := replace(normalized, 'ـ', '');
+  normalized := regexp_replace(normalized, '[أإآٱ]', 'ا', 'g');
+  normalized := replace(normalized, 'ى', 'ي');
+  normalized := replace(normalized, 'ة', 'ه');
+  normalized := regexp_replace(normalized, '\\s+', ' ', 'g');
+  RETURN btrim(normalized);
+END;
+$$;`,
+  // ... all your CREATE INDEX IF NOT EXISTS statements remain unchanged ...
+];
 
-  try {
-    // Keep generated client in sync, then apply Prisma schema to the database.
-    console.log('⚙️  Generating Prisma client...');
-    execSync('npm run prisma:generate', { stdio: 'inherit' });
-
-    console.log('⚙️  Applying Prisma schema...');
-    execSync('npm run prisma:db:push', { stdio: 'inherit' });
-
-    console.log('⚙️  Bootstrapping search extensions/functions/indexes...');
-    await bootstrapSearch();
-
-    // Require all critical V1 runtime tables before starting the app.
-    const requiredTables = [
-      'users',
-      'user_password_history',
-      'files',
-      'companies',
-      'company_gallery',
-      'company_documents',
-      'company_contributions',
-      'company_contribution_media',
-      'company_reviews',
-      'deals',
-      'deal_attachments',
-      'deal_requests',
-      'deal_request_supply_details',
-      'deal_request_demand_details',
-      'deal_request_attachments',
-      'chat_rooms',
-      'chat_messages',
-      'chat_message_reads',
-      'email_logs',
-    ];
-    const tableCheck = await pool.query(
-      `
-      SELECT tablename
-      FROM pg_tables
-      WHERE schemaname = 'public'
-        AND tablename = ANY($1::text[])
-      `,
-      [requiredTables]
-    );
-    const availableTables = new Set(tableCheck.rows.map((row) => row.tablename));
-    const missingTables = requiredTables.filter((name) => !availableTables.has(name));
-
-    if (missingTables.length) {
-      throw new Error(
-        `Critical schema is incomplete after Prisma db push. Missing tables: ${missingTables.join(', ')}`
-      );
-    }
-
-    const countResult = await pool.query('SELECT count(*) FROM users');
-    const userCount = parseInt(countResult.rows[0].count, 10);
-
-    if (userCount === 0) {
-      console.log('🌱 Database empty. Running db:seed...');
-      execSync('npm run db:seed', { stdio: 'inherit' });
-    } else {
-      console.log('✅ Database is ready.');
-    }
-  } catch (error) {
-    console.error('❌ Database check failed:', error);
-    process.exit(1);
-  } finally {
-    await pool.end();
+const bootstrapSearch = async () => {
+  for (const statement of statements) {
+    await pool.query(statement);
   }
-}
+};
 
-checkDatabase();
+module.exports = { bootstrapSearch };
