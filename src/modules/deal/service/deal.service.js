@@ -247,6 +247,18 @@ const inferRequestDetailsSummary = (payload) => {
   return name ? `Supply request: ${name}` : 'Supply request';
 };
 
+const getOpenDealLimitErrorMessage = () =>
+  `Open deal limit reached (${config.deals.maxOpenPerCompany}). Close existing deals before creating new ones.`;
+
+const ensureCanTransitionToOpen = async ({ companyId, currentStatus, nextStatus }) => {
+  if (nextStatus !== 'open' || currentStatus === 'open') return;
+
+  const openDeals = await dealRepository.countOpenByCompanyId(companyId);
+  if (openDeals >= config.deals.maxOpenPerCompany) {
+    throw new AppError(getOpenDealLimitErrorMessage(), 400);
+  }
+};
+
 const createDeal = async (companyId, payload) => {
   const company = await companyRepository.findById(companyId);
   if (!company) {
@@ -258,10 +270,7 @@ const createDeal = async (companyId, payload) => {
 
   const openDeals = await dealRepository.countOpenByCompanyId(companyId);
   if (openDeals >= config.deals.maxOpenPerCompany) {
-    throw new AppError(
-      `Open deal limit reached (${config.deals.maxOpenPerCompany}). Close existing deals before creating new ones.`,
-      400
-    );
+    throw new AppError(getOpenDealLimitErrorMessage(), 400);
   }
 
   const attachments = payload.attachments || [];
@@ -378,6 +387,12 @@ const updateDeal = async (dealId, companyId, updates) => {
   if (deal.company_id !== companyId) {
     throw new AppError('Unauthorized to update this deal', 403);
   }
+
+  await ensureCanTransitionToOpen({
+    companyId,
+    currentStatus: deal.status,
+    nextStatus: updates.status,
+  });
 
   const attachments = updates.attachments;
   if (attachments) {
@@ -688,5 +703,7 @@ module.exports = {
     sanitizeRequest,
     inferRequestOffer,
     inferRequestDetailsSummary,
+    getOpenDealLimitErrorMessage,
+    ensureCanTransitionToOpen,
   },
 };
