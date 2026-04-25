@@ -10,8 +10,8 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load .env from project root
-dotenvConfig({ path: join(__dirname, '../../.env') });
+// Load .env from api_test_scripts directory
+dotenvConfig({ path: join(__dirname, '../.env') });
 
 export const config = {
   // API Configuration

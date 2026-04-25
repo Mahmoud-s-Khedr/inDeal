@@ -25,97 +25,118 @@ export async function runRegistrationFlow(customData = null) {
       // Clear any existing auth
       apiClient.clearTokens();
 
-      // Load test data or generate new
-      let userData, companyData;
+      // Get all users from test-data.json
+      let testData;
+      try {
+        testData = JSON.parse(readFileSync(config.paths.testData, 'utf-8'));
+      } catch {
+        console.log(chalk.red('  ✗ No test data found. Run: npm run generate-data'));
+        throw new Error('Test data file not found');
+      }
 
-      if (customData) {
-        userData = customData.user;
-        companyData = customData.company;
-      } else {
-        try {
-          const testData = JSON.parse(readFileSync(config.paths.testData, 'utf-8'));
-          userData = testData.users[0];
-          companyData = testData.companies.find((c) => c.userId === userData.id);
-        } catch {
-          // Generate fresh data if file doesn't exist
-          userData = generateUser();
-          companyData = generateCompany();
+      const users = testData.users;
+      const companies = testData.companies;
+
+      const registeredUsers = [];
+
+      for (let i = 0; i < users.length; i++) {
+        const userData = users[i];
+        const companyData = companies.find((c) => c.userId === userData.id);
+
+        console.log(chalk.gray(`\n  --- Registering User ${i + 1}/${users.length} ---`));
+        console.log(chalk.gray(`  User: ${userData.email}`));
+        console.log(chalk.gray(`  Company: ${companyData?.name || 'None'}`));
+
+        if (!companyData) {
+          console.log(chalk.yellow(`  ⚠ Skipping user ${userData.email} (No company data)`));
+          continue;
         }
-      }
 
-      console.log(chalk.gray(`  User: ${userData.email}`));
-      console.log(chalk.gray(`  Company: ${companyData.name}`));
-
-      // Step 1: Get upload URL for document
-      let uploadedFile;
-      results.push(
-        await step('Get document upload URL', async () => {
-          uploadedFile = await uploadFile(apiClient, 'document', true);
-          return uploadedFile;
-        })
-      );
-
-      if (!results[results.length - 1].success) {
-        console.log(
-          chalk.yellow('  ⚠ Skipping document attachment, continuing with registration...')
+        // Step 1: Get upload URL for document
+        let uploadedFile;
+        results.push(
+          await step(`Get document upload URL (${userData.email})`, async () => {
+            uploadedFile = await uploadFile(apiClient, 'document', true);
+            return uploadedFile;
+          })
         );
-        uploadedFile = null;
+
+        if (!results[results.length - 1].success) {
+          console.log(
+            chalk.yellow('  ⚠ Skipping document attachment, continuing with registration...')
+          );
+          uploadedFile = null;
+        }
+
+        await delayBetweenRequests();
+
+        // Step 2: Register user + company
+        let registrationResult;
+        results.push(
+          await step(`Register agent + company (${userData.email})`, async () => {
+            const userPayload = {
+              username: userData.username,
+              email: userData.email,
+              password: userData.password,
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              jobTitle: userData.jobTitle,
+            };
+
+            const companyPayload = {
+              name: companyData.name,
+              description: companyData.description,
+              address: companyData.address,
+              phone: companyData.phone,
+              website: companyData.website,
+              companyType: companyData.companyType,
+              companyIndustry: companyData.companyIndustry,
+              contacts: companyData.contacts,
+              locations: companyData.locations,
+              documents: uploadedFile
+                ? [
+                    {
+                      fileId: uploadedFile.fileId,
+                      docType: 'license',
+                      description: 'Business registration license',
+                    },
+                  ]
+                : [],
+            };
+
+            if (companyData.manufacturingStrategy) {
+              companyPayload.manufacturingStrategy = companyData.manufacturingStrategy;
+            }
+
+            registrationResult = await apiClient.register(userPayload, companyPayload);
+            return registrationResult;
+          })
+        );
+
+        if (!results[results.length - 1].success) {
+          console.log(chalk.red(`  ✗ Registration failed for ${userData.email}, skipping login`));
+          continue;
+        }
+
+        await delayBetweenRequests();
+
+        // Step 3: Attempt login
+        results.push(
+          await step(`Initial login attempt (${userData.email})`, async () => {
+            const loginResult = await apiClient.login(userData.email, userData.password);
+            console.log(chalk.green(`    ✓ Login successful! Token received`));
+            return loginResult;
+          })
+        );
+
+        registeredUsers.push({
+          user: userData,
+          company: companyData,
+          registrationResult,
+        });
       }
 
-      await delayBetweenRequests();
-
-      // Step 2: Register user + company
-      let registrationResult;
-      results.push(
-        await step('Register agent + company', async () => {
-          const userPayload = {
-            username: userData.username,
-            email: userData.email,
-            password: userData.password,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            jobTitle: userData.jobTitle,
-          };
-
-          const companyPayload = {
-            name: companyData.name,
-            description: companyData.description,
-            address: companyData.address,
-            phone: companyData.phone,
-            website: companyData.website,
-            companyType: companyData.companyType,
-            companyIndustry: companyData.companyIndustry,
-            contacts: companyData.contacts,
-            locations: companyData.locations,
-            documents: uploadedFile
-              ? [
-                  {
-                    fileId: uploadedFile.fileId,
-                    docType: 'license',
-                    description: 'Business registration license',
-                  },
-                ]
-              : [],
-          };
-
-          // Only include manufacturingStrategy if it's defined
-          if (companyData.manufacturingStrategy) {
-            companyPayload.manufacturingStrategy = companyData.manufacturingStrategy;
-          }
-
-          registrationResult = await apiClient.register(userPayload, companyPayload);
-          return registrationResult;
-        })
-      );
-
-      if (!results[results.length - 1].success) {
-        console.log(chalk.red('  ✗ Registration failed, cannot continue flow'));
-        return;
-      }
-
-      await delayBetweenRequests();
-
-      // Step 3: V1 note
+      // Step 4: V1 note
       results.push(
         await step('V1 auth mode (info)', async () => {
           console.log(chalk.gray('    Email verification endpoints are removed in v1.'));
@@ -124,23 +145,12 @@ export async function runRegistrationFlow(customData = null) {
         })
       );
 
-      await delayBetweenRequests();
-
-      // Step 4: Attempt login
-      results.push(
-        await step('Initial login attempt', async () => {
-          const loginResult = await apiClient.login(userData.email, userData.password);
-          console.log(chalk.green(`    ✓ Login successful! Token received`));
-          return loginResult;
-        })
-      );
-
-      // Store created user info for other flows
+      // Store created user info for other flows (returning the first one for compatibility)
       return {
-        user: userData,
-        company: companyData,
-        uploadedFile,
-        registrationResult,
+        user: registeredUsers[0]?.user,
+        company: registeredUsers[0]?.company,
+        registrationResult: registeredUsers[0]?.registrationResult,
+        allRegisteredUsers: registeredUsers,
       };
     }
   );

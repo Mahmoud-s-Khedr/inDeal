@@ -105,8 +105,10 @@ class ApiClient {
 
   async login(email, password) {
     const res = await this.client.post('/auth/login', { email, password });
-    if (res.data.data?.accessToken) {
-      this.setTokens(res.data.data.accessToken, res.data.data.refreshToken);
+    // Token could be named 'token' or 'accessToken' depending on the endpoint version
+    const token = res.data.data?.token || res.data.data?.accessToken;
+    if (token) {
+      this.setTokens(token, res.data.data?.refreshToken);
     }
     return res.data;
   }
@@ -301,11 +303,122 @@ class ApiClient {
     return res.data;
   }
 
-  async createCompanyReview(companyId, rating, reviewText) {
+  async createCompanyReview(companyId, dealId, rating, reviewText) {
     const res = await this.client.post(`/companies/${companyId}/reviews`, {
+      dealId,
       rating,
       reviewText,
     });
+    return res.data;
+  }
+
+  // ============ DEALS ENDPOINTS ============
+
+  async getDeals(params = {}) {
+    const res = await this.client.get('/deals', { params });
+    return res.data;
+  }
+
+  async getDeal(dealId) {
+    const res = await this.client.get(`/deals/${dealId}`);
+    return res.data;
+  }
+
+  async getMyDeals() {
+    const res = await this.client.get('/deals/me/deals');
+    return res.data;
+  }
+
+  async createDeal(data) {
+    const res = await this.client.post('/deals', data);
+    return res.data;
+  }
+
+  async updateDeal(dealId, data) {
+    const res = await this.client.put(`/deals/${dealId}`, data);
+    return res.data;
+  }
+
+  async deleteDeal(dealId) {
+    const res = await this.client.delete(`/deals/${dealId}`);
+    return res.data;
+  }
+
+  // ============ DEAL REQUESTS (APPLICATIONS) ============
+
+  async getMyRequests() {
+    const res = await this.client.get('/deals/me/requests');
+    return res.data;
+  }
+
+  async createDealRequest(dealId, data) {
+    const res = await this.client.post(`/deals/${dealId}/requests`, data);
+    return res.data;
+  }
+
+  async getDealRequests(dealId) {
+    const res = await this.client.get(`/deals/${dealId}/requests`);
+    return res.data;
+  }
+
+  async updateRequestStatus(dealId, requestId, status) {
+    const res = await this.client.patch(`/deals/${dealId}/requests/${requestId}/status`, {
+      status,
+    });
+    return res.data;
+  }
+
+  async pauseRequest(requestId) {
+    const res = await this.client.patch(`/deals/requests/${requestId}/pause`);
+    return res.data;
+  }
+
+  async cancelRequest(requestId, cancellationReason) {
+    const res = await this.client.patch(`/deals/requests/${requestId}/cancel`, {
+      cancellationReason,
+    });
+    return res.data;
+  }
+
+  async deleteRequest(requestId) {
+    const res = await this.client.delete(`/deals/requests/${requestId}`);
+    return res.data;
+  }
+
+  // ============ CHATS ENDPOINTS ============
+
+  async getChats() {
+    const res = await this.client.get('/chats');
+    return res.data;
+  }
+
+  async createChat(data) {
+    const res = await this.client.post('/chats', data);
+    return res.data;
+  }
+
+  async getChatRoom(roomId) {
+    const res = await this.client.get(`/chats/${roomId}`);
+    return res.data;
+  }
+
+  async archiveChatRoom(roomId) {
+    const res = await this.client.patch(`/chats/${roomId}/archive`);
+    return res.data;
+  }
+
+  async getChatMessages(roomId, params = {}) {
+    const res = await this.client.get(`/chats/${roomId}/messages`, { params });
+    return res.data;
+  }
+
+  async sendChatMessage(roomId, data) {
+    const res = await this.client.post(`/chats/${roomId}/messages`, data);
+    return res.data;
+  }
+
+  async markChatAsRead(roomId) {
+    const res = await this.client.post(`/chats/${roomId}/read`);
     return res.data;
   }
 

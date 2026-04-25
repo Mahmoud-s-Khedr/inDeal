@@ -1,0 +1,3 @@
+{
+  "ignore": ["api_test_scripts/*", "tests/*", "scripts/*", "docs/*"]
+}

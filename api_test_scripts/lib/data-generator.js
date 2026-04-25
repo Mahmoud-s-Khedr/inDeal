@@ -263,6 +263,42 @@ export function generateContributionMedia(fileId = null, overrides = {}) {
 }
 
 /**
+ * Generate deal data
+ */
+export function generateDeal(overrides = {}) {
+  const dealType = faker.helpers.arrayElement(['supply', 'demand']);
+
+  return {
+    dealName: faker.commerce.productName(),
+    description: faker.lorem.paragraphs(2),
+    dealType,
+    price: parseFloat(faker.commerce.price({ min: 1000, max: 100000 })),
+    ...overrides,
+  };
+}
+
+/**
+ * Generate deal request (application) data
+ */
+export function generateDealRequest(overrides = {}) {
+  return {
+    message: faker.lorem.paragraph(),
+    proposedPrice: parseFloat(faker.commerce.price({ min: 1000, max: 100000 })),
+    ...overrides,
+  };
+}
+
+/**
+ * Generate chat message data
+ */
+export function generateChatMessage(overrides = {}) {
+  return {
+    messageText: faker.lorem.sentence(),
+    ...overrides,
+  };
+}
+
+/**
  * Generate review data
  */
 export function generateReview(overrides = {}) {
@@ -328,6 +364,9 @@ export default {
   generateGalleryItem,
   generateContribution,
   generateContributionMedia,
+  generateDeal,
+  generateDealRequest,
+  generateChatMessage,
   generateReview,
   generateTestDataSet,
 };
