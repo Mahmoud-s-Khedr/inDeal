@@ -38,7 +38,10 @@ model User {
   created_at    DateTime?  @default(now()) @db.Timestamp(6)
   updated_at    DateTime?  @default(now()) @db.Timestamp(6)
 
-  password_history UserPasswordHistory[]
+  password_history   UserPasswordHistory[]
+  company            Company?              @relation("CompanyAgent")
+  profile_image_file File?                 @relation("UserProfileImage", fields: [profile_image], references: [id])
+  sent_chat_messages ChatMessage[]         @relation("ChatMessageSender")
 
   @@map("users")
 }
@@ -63,29 +66,54 @@ model File {
   uploaded_at   DateTime? @default(now()) @db.Timestamp(6)
   deleted_at    DateTime? @db.Timestamp(6)
 
+  company_logos                          Company[]                  @relation("CompanyLogo")
+  user_profile_images                    User[]                     @relation("UserProfileImage")
+  company_gallery_images                 CompanyGallery[]           @relation("CompanyGalleryImageFile")
+  company_document_files                 CompanyDocument[]          @relation("CompanyDocumentFile")
+  company_contribution_media_files       CompanyContribution[]      @relation("CompanyContributionMediaFile")
+  company_contribution_media_attachments CompanyContributionMedia[] @relation("CompanyContributionMediaFile")
+  deal_attachment_files                  DealAttachment[]           @relation("DealAttachmentFile")
+  deal_request_attachment_files          DealRequestAttachment[]    @relation("DealRequestAttachmentFile")
+  chat_message_attachment_files          ChatMessage[]              @relation("ChatMessageAttachmentFile")
+
   @@map("files")
 }
 
 model Company {
-  id                     Int           @id @default(autoincrement())
-  agent_id               Int           @unique
-  name                   String        @db.VarChar(100)
+  id                     Int      @id @default(autoincrement())
+  agent_id               Int      @unique
+  name                   String   @db.VarChar(100)
   description            String?
   address                String?
-  phone                  String?       @db.VarChar(20)
-  email                  String?       @db.VarChar(100)
-  website                String?       @db.VarChar(255)
+  phone                  String?  @db.VarChar(20)
+  email                  String?  @db.VarChar(100)
+  website                String?  @db.VarChar(255)
   logo                   Int?
-  company_type           String?       @db.VarChar(50)
-  company_industry       String?       @db.VarChar(50)
-  manufacturing_strategy String?       @db.VarChar(50)
-  status                 String        @default("active") @db.VarChar(32)
+  company_type           String?  @db.VarChar(50)
+  company_industry       String?  @db.VarChar(50)
+  manufacturing_strategy String?  @db.VarChar(50)
+  status                 String   @default("active") @db.VarChar(32)
   rejection_reason       String?
-  contacts               Json?         @db.JsonB
-  locations              Json?         @db.JsonB
-  social_media_links     Json?         @db.JsonB
-  created_at             DateTime      @default(now()) @db.Timestamp(6)
-  updated_at             DateTime      @default(now()) @db.Timestamp(6)
+  contacts               Json?    @db.JsonB
+  locations              Json?    @db.JsonB
+  social_media_links     Json?    @db.JsonB
+  created_at             DateTime @default(now()) @db.Timestamp(6)
+  updated_at             DateTime @default(now()) @db.Timestamp(6)
+
+  agent                    User                  @relation("CompanyAgent", fields: [agent_id], references: [id])
+  logo_file                File?                 @relation("CompanyLogo", fields: [logo], references: [id])
+  galleries                CompanyGallery[]
+  documents                CompanyDocument[]
+  contributions            CompanyContribution[]
+  owned_deals              Deal[]                @relation("DealCompany")
+  deal_requests            DealRequest[]         @relation("DealRequestApplicantCompany")
+  deal_requests_canceled   DealRequest[]         @relation("DealRequestCanceledByCompany")
+  deal_requests_paused     DealRequest[]         @relation("DealRequestPausedByCompany")
+  chat_rooms_as_a          ChatRoom[]            @relation("ChatRoomCompanyA")
+  chat_rooms_as_b          ChatRoom[]            @relation("ChatRoomCompanyB")
+  chat_message_reads       ChatMessageRead[]
+  received_company_reviews CompanyReview[]       @relation("CompanyReviewTarget")
+  written_company_reviews  CompanyReview[]       @relation("CompanyReviewReviewer")
 
   @@index([agent_id], map: "idx_companies_agent_id")
   @@index([status], map: "idx_companies_status")
@@ -98,6 +126,9 @@ model CompanyGallery {
   image_file_id Int
   description   String?
   uploaded_at   DateTime @default(now()) @db.Timestamp(6)
+
+  company    Company @relation(fields: [company_id], references: [id])
+  image_file File    @relation("CompanyGalleryImageFile", fields: [image_file_id], references: [id])
 
   @@index([company_id], map: "idx_company_gallery_company_id")
   @@map("company_gallery")
@@ -116,36 +147,46 @@ model CompanyDocument {
   expiry_date DateTime? @db.Timestamp(6)
   uploaded_at DateTime  @default(now()) @db.Timestamp(6)
 
+  company Company @relation(fields: [company_id], references: [id])
+  file    File?   @relation("CompanyDocumentFile", fields: [file_id], references: [id])
+
   @@index([company_id], map: "idx_company_documents_company_id")
   @@map("company_documents")
 }
 
 model CompanyContribution {
-  id            Int                    @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
   company_id    Int
   media_file_id Int?
-  media_type    String?                @db.VarChar(20)
-  media_url     String?                @db.VarChar(255)
-  type          String                 @db.VarChar(32)
-  title         String                 @db.VarChar(150)
+  media_type    String?  @db.VarChar(20)
+  media_url     String?  @db.VarChar(255)
+  type          String   @db.VarChar(32)
+  title         String   @db.VarChar(150)
   description   String?
-  details       Json?                  @db.JsonB
-  created_at    DateTime               @default(now()) @db.Timestamp(6)
-  updated_at    DateTime               @default(now()) @db.Timestamp(6)
+  details       Json?    @db.JsonB
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_at    DateTime @default(now()) @db.Timestamp(6)
+
+  company     Company                    @relation(fields: [company_id], references: [id])
+  media_file  File?                      @relation("CompanyContributionMediaFile", fields: [media_file_id], references: [id])
+  media_items CompanyContributionMedia[]
 
   @@index([company_id], map: "idx_company_contributions_company_id")
   @@map("company_contributions")
 }
 
 model CompanyContributionMedia {
-  id              Int                   @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   contribution_id Int
   file_id         Int?
-  media_type      String                @db.VarChar(20)
-  media_url       String?               @db.VarChar(255)
-  sort_order      Int                   @default(0)
+  media_type      String   @db.VarChar(20)
+  media_url       String?  @db.VarChar(255)
+  sort_order      Int      @default(0)
   caption         String?
-  created_at      DateTime              @default(now()) @db.Timestamp(6)
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+
+  contribution CompanyContribution @relation(fields: [contribution_id], references: [id])
+  file         File?               @relation("CompanyContributionMediaFile", fields: [file_id], references: [id])
 
   @@index([contribution_id], map: "idx_ccm_contribution_id")
   @@map("company_contribution_media")
@@ -160,21 +201,30 @@ model CompanyReview {
   rating              Int
   created_at          DateTime @default(now()) @db.Timestamp(6)
 
+  company          Company @relation("CompanyReviewTarget", fields: [company_id], references: [id])
+  reviewer_company Company @relation("CompanyReviewReviewer", fields: [reviewer_company_id], references: [id])
+  deal             Deal?   @relation("CompanyReviewDeal", fields: [deal_id], references: [id])
+
   @@unique([deal_id, company_id, reviewer_company_id])
   @@index([company_id], map: "idx_company_reviews_company_id")
   @@map("company_reviews")
 }
 
 model Deal {
-  id               Int        @id @default(autoincrement())
+  id               Int      @id @default(autoincrement())
   company_id       Int
-  deal_name        String     @db.VarChar(100)
+  deal_name        String   @db.VarChar(100)
   deal_description String?
-  deal_value       Decimal?   @db.Decimal(14, 2)
-  deal_type        String     @db.VarChar(16)
-  status           String     @default("open") @db.VarChar(16)
-  created_at       DateTime   @default(now()) @db.Timestamp(6)
-  updated_at       DateTime   @default(now()) @db.Timestamp(6)
+  deal_value       Decimal? @db.Decimal(14, 2)
+  deal_type        String   @db.VarChar(16)
+  status           String   @default("open") @db.VarChar(16)
+  created_at       DateTime @default(now()) @db.Timestamp(6)
+  updated_at       DateTime @default(now()) @db.Timestamp(6)
+
+  company         Company          @relation("DealCompany", fields: [company_id], references: [id])
+  attachments     DealAttachment[]
+  requests        DealRequest[]
+  company_reviews CompanyReview[]  @relation("CompanyReviewDeal")
 
   @@index([company_id], map: "idx_deals_company_id")
   @@index([status], map: "idx_deals_status")
@@ -182,31 +232,42 @@ model Deal {
 }
 
 model DealAttachment {
-  id         Int                @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   deal_id    Int
   file_id    Int
-  kind       String             @db.VarChar(16)
-  sort_order Int                @default(0)
-  created_at DateTime           @default(now()) @db.Timestamp(6)
+  kind       String   @db.VarChar(16)
+  sort_order Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  deal Deal @relation(fields: [deal_id], references: [id])
+  file File @relation("DealAttachmentFile", fields: [file_id], references: [id])
 
   @@map("deal_attachments")
 }
 
 model DealRequest {
-  id                    Int               @id @default(autoincrement())
-  deal_id               Int
-  applicant_company_id  Int
-  request_kind          String            @db.VarChar(16)
-  request_details       String?
-  request_offer         Decimal?          @db.Decimal(14, 2)
-  status                String            @default("pending") @db.VarChar(16)
-  canceled_at           DateTime?         @db.Timestamp(6)
+  id                     Int       @id @default(autoincrement())
+  deal_id                Int
+  applicant_company_id   Int
+  request_kind           String    @db.VarChar(16)
+  request_details        String?
+  request_offer          Decimal?  @db.Decimal(14, 2)
+  status                 String    @default("pending") @db.VarChar(16)
+  canceled_at            DateTime? @db.Timestamp(6)
   canceled_by_company_id Int?
-  cancel_reason         String?
-  paused_at             DateTime?         @db.Timestamp(6)
-  paused_by_company_id  Int?
-  created_at            DateTime          @default(now()) @db.Timestamp(6)
-  updated_at            DateTime          @default(now()) @db.Timestamp(6)
+  cancel_reason          String?
+  paused_at              DateTime? @db.Timestamp(6)
+  paused_by_company_id   Int?
+  created_at             DateTime  @default(now()) @db.Timestamp(6)
+  updated_at             DateTime  @default(now()) @db.Timestamp(6)
+
+  deal                Deal                      @relation(fields: [deal_id], references: [id])
+  applicant_company   Company                   @relation("DealRequestApplicantCompany", fields: [applicant_company_id], references: [id])
+  canceled_by_company Company?                  @relation("DealRequestCanceledByCompany", fields: [canceled_by_company_id], references: [id])
+  paused_by_company   Company?                  @relation("DealRequestPausedByCompany", fields: [paused_by_company_id], references: [id])
+  supply_details      DealRequestSupplyDetails?
+  demand_details      DealRequestDemandDetails?
+  attachments         DealRequestAttachment[]
 
   @@index([deal_id], map: "idx_deal_requests_deal_id")
   @@index([applicant_company_id], map: "idx_deal_requests_applicant")
@@ -242,37 +303,41 @@ model DealRequestSupplyDetails {
   created_at                 DateTime  @default(now()) @db.Timestamp(6)
   updated_at                 DateTime  @default(now()) @db.Timestamp(6)
 
+  request DealRequest @relation(fields: [request_id], references: [id])
+
   @@map("deal_request_supply_details")
 }
 
 model DealRequestDemandDetails {
-  id                         Int       @id @default(autoincrement())
-  request_id                 Int       @unique
-  product_service_name       String    @db.VarChar(200)
-  available_quantity         Decimal?  @db.Decimal(14, 2)
-  offer_validity_days        Int?
-  unit_price                 Decimal?  @db.Decimal(14, 2)
-  currency                   String?   @db.VarChar(10)
-  total_price                Decimal?  @db.Decimal(14, 2)
-  volume_discount_tiers      Json?     @db.JsonB
-  moq                        Decimal?  @db.Decimal(14, 2)
-  availability_type          String?   @db.VarChar(32)
-  quantity_in_stock          Decimal?  @db.Decimal(14, 2)
-  max_produce_quantity       Decimal?  @db.Decimal(14, 2)
-  stock_delivery_time        String?   @db.VarChar(100)
-  production_lead_time       String?   @db.VarChar(100)
-  specs_match_rfq            String?   @db.VarChar(32)
-  differences_from_rfq       String?
-  material_offered           String?   @db.VarChar(200)
-  dimensions                 String?   @db.VarChar(200)
-  certifications_held        Json?     @db.JsonB
-  payment_terms              String?   @db.VarChar(500)
-  delivery_terms             String?   @db.VarChar(10)
-  warranty_return_policy     String?
+  id                          Int      @id @default(autoincrement())
+  request_id                  Int      @unique
+  product_service_name        String   @db.VarChar(200)
+  available_quantity          Decimal? @db.Decimal(14, 2)
+  offer_validity_days         Int?
+  unit_price                  Decimal? @db.Decimal(14, 2)
+  currency                    String?  @db.VarChar(10)
+  total_price                 Decimal? @db.Decimal(14, 2)
+  volume_discount_tiers       Json?    @db.JsonB
+  moq                         Decimal? @db.Decimal(14, 2)
+  availability_type           String?  @db.VarChar(32)
+  quantity_in_stock           Decimal? @db.Decimal(14, 2)
+  max_produce_quantity        Decimal? @db.Decimal(14, 2)
+  stock_delivery_time         String?  @db.VarChar(100)
+  production_lead_time        String?  @db.VarChar(100)
+  specs_match_rfq             String?  @db.VarChar(32)
+  differences_from_rfq        String?
+  material_offered            String?  @db.VarChar(200)
+  dimensions                  String?  @db.VarChar(200)
+  certifications_held         Json?    @db.JsonB
+  payment_terms               String?  @db.VarChar(500)
+  delivery_terms              String?  @db.VarChar(10)
+  warranty_return_policy      String?
   exclusivity_confidentiality String?
-  additional_notes           String?
-  created_at                 DateTime  @default(now()) @db.Timestamp(6)
-  updated_at                 DateTime  @default(now()) @db.Timestamp(6)
+  additional_notes            String?
+  created_at                  DateTime @default(now()) @db.Timestamp(6)
+  updated_at                  DateTime @default(now()) @db.Timestamp(6)
+
+  request DealRequest @relation(fields: [request_id], references: [id])
 
   @@map("deal_request_demand_details")
 }
@@ -284,16 +349,23 @@ model DealRequestAttachment {
   sort_order Int      @default(0)
   created_at DateTime @default(now()) @db.Timestamp(6)
 
+  request DealRequest @relation(fields: [request_id], references: [id])
+  file    File        @relation("DealRequestAttachmentFile", fields: [file_id], references: [id])
+
   @@map("deal_request_attachments")
 }
 
 model ChatRoom {
-  id             Int            @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   company_a_id   Int
   company_b_id   Int
-  status         String         @default("active") @db.VarChar(16)
+  status         String   @default("active") @db.VarChar(16)
   encryption_key String
-  created_at     DateTime       @default(now()) @db.Timestamp(6)
+  created_at     DateTime @default(now()) @db.Timestamp(6)
+
+  company_a Company       @relation("ChatRoomCompanyA", fields: [company_a_id], references: [id])
+  company_b Company       @relation("ChatRoomCompanyB", fields: [company_b_id], references: [id])
+  messages  ChatMessage[]
 
   @@unique([company_a_id, company_b_id])
   @@map("chat_rooms")
@@ -307,6 +379,11 @@ model ChatMessage {
   attachment_file_id Int?
   sent_at            DateTime @default(now()) @db.Timestamp(6)
 
+  room            ChatRoom          @relation(fields: [room_id], references: [id])
+  sender_user     User              @relation("ChatMessageSender", fields: [sender_user_id], references: [id])
+  attachment_file File?             @relation("ChatMessageAttachmentFile", fields: [attachment_file_id], references: [id])
+  reads           ChatMessageRead[]
+
   @@index([room_id], map: "idx_chat_messages_room_id")
   @@index([sent_at(sort: Desc)], map: "idx_chat_messages_sent_at")
   @@map("chat_messages")
@@ -316,6 +393,9 @@ model ChatMessageRead {
   message_id Int
   company_id Int
   read_at    DateTime @default(now()) @db.Timestamp(6)
+
+  message ChatMessage @relation(fields: [message_id], references: [id])
+  company Company     @relation(fields: [company_id], references: [id])
 
   @@id([message_id, company_id])
   @@map("chat_message_reads")
