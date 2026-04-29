@@ -18,6 +18,14 @@ const toJsonSchema = (schema) => {
 };
 
 const normalizeMethod = (method) => String(method || '').toLowerCase();
+const methodAllowsRequestBody = (method) => !['get', 'head'].includes(normalizeMethod(method));
+const hasMeaningfulBodySchema = (bodySchema) =>
+  !!bodySchema &&
+  !(
+    typeof bodySchema === 'object' &&
+    !Array.isArray(bodySchema) &&
+    !Object.keys(bodySchema).length
+  );
 
 const operationKey = (method, path) => `${normalizeMethod(method)} ${normalizeOpenApiPath(path)}`;
 
@@ -162,7 +170,7 @@ const buildOpenApiPathsFromContracts = ({ getTagFromPath }) => {
     };
 
     if (parameters.length) operation.parameters = parameters;
-    if (bodySchema) {
+    if (methodAllowsRequestBody(contract.method) && hasMeaningfulBodySchema(bodySchema)) {
       operation.requestBody = {
         required: true,
         content: {
