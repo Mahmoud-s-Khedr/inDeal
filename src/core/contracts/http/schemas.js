@@ -16,7 +16,6 @@ const errorEnvelopeSchema = z.object({
 const defaultRequestSchema = z.object({
   params: z.object({}).passthrough().optional(),
   query: z.object({}).passthrough().optional(),
-  body: z.unknown().optional(),
 });
 
 const defaultResponseSchema = successEnvelopeSchema(z.unknown());

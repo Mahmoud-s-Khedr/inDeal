@@ -19,12 +19,12 @@ const toJsonSchema = (schema) => {
 
 const normalizeMethod = (method) => String(method || '').toLowerCase();
 const methodAllowsRequestBody = (method) => !['get', 'head'].includes(normalizeMethod(method));
-const hasMeaningfulBodySchema = (bodySchema) =>
-  !!bodySchema &&
-  !(
-    typeof bodySchema === 'object' &&
-    !Array.isArray(bodySchema) &&
-    !Object.keys(bodySchema).length
+const hasBodyFieldInRequestSchema = (requestSchema) =>
+  !!(
+    requestSchema &&
+    typeof requestSchema.shape === 'object' &&
+    requestSchema.shape !== null &&
+    requestSchema.shape.body
   );
 
 const operationKey = (method, path) => `${normalizeMethod(method)} ${normalizeOpenApiPath(path)}`;
@@ -170,12 +170,15 @@ const buildOpenApiPathsFromContracts = ({ getTagFromPath }) => {
     };
 
     if (parameters.length) operation.parameters = parameters;
-    if (methodAllowsRequestBody(contract.method) && hasMeaningfulBodySchema(bodySchema)) {
+    if (
+      methodAllowsRequestBody(contract.method) &&
+      (bodySchema || hasBodyFieldInRequestSchema(contract.requestSchema))
+    ) {
       operation.requestBody = {
         required: true,
         content: {
           'application/json': {
-            schema: bodySchema,
+            schema: bodySchema || { type: 'object' },
           },
         },
       };
