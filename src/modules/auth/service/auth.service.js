@@ -151,7 +151,10 @@ const applyRateLimits = async (type, email, ipAddress) => {
 };
 
 const generateOtp = () => crypto.randomInt(0, 1_000_000).toString().padStart(6, '0');
-const shouldExposeDebugOtp = () => Boolean(config.auth?.debugOtpEnabled);
+const shouldExposeDebugOtp = () => {
+  if (config.app?.env === 'development') return true;
+  return Boolean(config.auth?.debugOtpEnabled);
+};
 const buildDebugOtpPayload = (purpose, otp) => {
   if (!shouldExposeDebugOtp() || !otp) return null;
   return {

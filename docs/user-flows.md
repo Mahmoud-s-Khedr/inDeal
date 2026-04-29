@@ -21,7 +21,7 @@ Base URL: `/api/v1`
 
 - HTTP operations: `73`
 - Socket events in contract registry: `11`
-- Module groups reviewed: `auth`, `users`, `companies`, `files`, `deals`, `chats`, `support`, `search`, `system`, `health`
+- Module groups reviewed: `auth`, `users`, `companies`, `files`, `deals`, `chats`, `search`, `system`, `health`
 
 ### 1.3 HTTP Module Matrix
 
@@ -33,7 +33,6 @@ Base URL: `/api/v1`
 | files     | `/files`     | mixed (`upload-url` protected, `GET /:id` public) |          2 |
 | deals     | `/deals`     | mixed (public search/read, protected mutations)   |         12 |
 | chats     | `/chats`     | all protected                                     |          7 |
-| support   | `/support`   | public                                            |          2 |
 | search    | `/search`    | optional auth (`optionalAuth`)                    |          1 |
 | system    | `/system`    | public                                            |          2 |
 | health    | `/health`    | public                                            |          1 |
@@ -52,7 +51,6 @@ Base URL: `/api/v1`
 | `chat:error`       | send      | required | server validation/business error event        |
 | `chat:room:new`    | send      | required | server notifies room created                  |
 | `notification:new` | send      | required | generic notification event                    |
-| `support:room:new` | send      | required | support realtime hook                         |
 
 ### 1.5 Deprecated/Removed Surface (README-aligned)
 
@@ -62,8 +60,6 @@ These are intentionally removed in V1 and should be treated as `404`:
 - `/api/v1/ads/*`
 - `/api/v1/notifications/*`
 - `/api/v1/users/me/devices*`
-- `/api/v1/support/tickets*`
-- `/api/v1/support/chat*`
 - `/api/v1/auth/admin/login`
 
 ---
@@ -91,14 +87,17 @@ HTTP sequence:
 
 1. `POST /auth/register/upload-url` (optional if profile/registration files are needed).
    - Example request:
+
    ```json
    { "fileName": "tax-card.pdf", "mimeType": "application/pdf" }
    ```
 
    - Expected response shape: signed upload URL + storage path metadata.
+
 2. Upload binary directly to storage using signed URL from step 1.
 3. `POST /auth/register`
    - Example request (minimal):
+
    ```json
    {
      "firstName": "Ali",
@@ -110,20 +109,25 @@ HTTP sequence:
    ```
 
    - Expected response shape: created user/company + auth/session token info.
+
 4. `POST /auth/verify-email`
    - Example request:
+
    ```json
    { "email": "ali@example.com", "otp": "123456" }
    ```
 
    - Expected response shape: email verification success.
+
 5. `POST /auth/login`
    - Example request:
+
    ```json
    { "email": "ali@example.com", "password": "StrongPass123!" }
    ```
 
    - Expected response shape: auth token/cookie and user context.
+
 6. `POST /auth/logout` (authenticated).
 
 Socket sequence:
@@ -355,11 +359,13 @@ Socket sequence:
    ```
 3. Send message:
    - emit `chat:message`
+
    ```json
    { "roomId": 10, "messageText": "Hello", "attachmentFileId": 123 }
    ```
 
    - listen for `chat:message` broadcast.
+
 4. Typing indicator:
    - emit `chat:typing` with `{ "roomId": 10, "isTyping": true }`
    - listen for `chat:typing`.
@@ -376,28 +382,7 @@ Failure/client handling:
 - Room inactive/unauthorized (`400/403/404`): refresh rooms list and lock input.
 - Attachment ownership check (`403`): prompt re-upload from current account.
 
-## Flow H: Support Access
-
-Goal: allow user to contact support through backend-provided metadata.
-
-Preconditions:
-
-- None.
-
-HTTP sequence:
-
-1. `GET /support/info`
-2. `GET /support/email-redirect`
-
-Socket sequence:
-
-- Optional listen: `support:room:new` if support realtime is used by client app.
-
-Failure/client handling:
-
-- If support endpoint unavailable, show static fallback contact channel from app config.
-
-## Flow I: Unified Search
+## Flow H: Unified Search
 
 Goal: global search experience with optional auth context.
 

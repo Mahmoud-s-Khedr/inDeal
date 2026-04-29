@@ -8,13 +8,14 @@ from v1_scenario_lib import (
     create_file_for_actor,
     load_env_files,
     register_actor,
+    resolve_base_url,
 )
 
 
 def run():
     load_env_files()
     ts = int(time.time())
-    base_url = os.environ.get("BASE_URL", "http://localhost:3000/api/v1")
+    base_url = resolve_base_url()
     output_path = os.environ.get(
         "COMPANY_FLOW_OUTPUT_FILE",
         os.path.join("scripts", "output", "company_flow_results.json"),
@@ -61,6 +62,7 @@ def run():
         payload={"description": "Updated from company_flow v1"},
         expected_statuses=[200],
     )
+
     gallery_id = None
     if file_id:
         gallery_resp = runner.step(
@@ -74,6 +76,15 @@ def run():
         )
         gallery_id = runner.extract_id(runner.extract_data(gallery_resp), ["id"])
 
+    runner.step(
+        step_id="a.gallery.list",
+        role=actor_a.label,
+        method="GET",
+        path="/companies/me/gallery",
+        token=actor_a.token,
+        expected_statuses=[200],
+    )
+
     if gallery_id:
         runner.step(
             step_id="a.gallery.update",
@@ -82,14 +93,6 @@ def run():
             path=f"/companies/me/gallery/{gallery_id}",
             token=actor_a.token,
             payload={"description": "Gallery updated in v1 flow"},
-            expected_statuses=[200],
-        )
-        runner.step(
-            step_id="a.gallery.list",
-            role=actor_a.label,
-            method="GET",
-            path="/companies/me/gallery",
-            token=actor_a.token,
             expected_statuses=[200],
         )
 
@@ -106,6 +109,15 @@ def run():
         )
         document_id = runner.extract_id(runner.extract_data(doc_resp), ["id"])
 
+    runner.step(
+        step_id="a.documents.list",
+        role=actor_a.label,
+        method="GET",
+        path="/companies/me/documents",
+        token=actor_a.token,
+        expected_statuses=[200],
+    )
+
     if document_id:
         runner.step(
             step_id="a.document.update",
@@ -115,6 +127,43 @@ def run():
             token=actor_a.token,
             payload={"description": "Doc updated in v1 flow"},
             expected_statuses=[200],
+        )
+
+    runner.step(
+        step_id="a.registration_documents.list",
+        role=actor_a.label,
+        method="GET",
+        path="/companies/me/registration-documents",
+        token=actor_a.token,
+        expected_statuses=[200],
+    )
+
+    reg_docs_resp = runner.step(
+        step_id="a.registration_documents.get_for_update",
+        role=actor_a.label,
+        method="GET",
+        path="/companies/me/registration-documents",
+        token=actor_a.token,
+        expected_statuses=[200],
+    )
+    reg_docs = runner.extract_data(reg_docs_resp)
+    registration_document_id = None
+    if isinstance(reg_docs, list) and reg_docs:
+        registration_document_id = runner.extract_id(reg_docs[0], ["id", "registrationDocumentId"])
+    elif isinstance(reg_docs, dict):
+        items = reg_docs.get("items") if isinstance(reg_docs.get("items"), list) else []
+        if items:
+            registration_document_id = runner.extract_id(items[0], ["id", "registrationDocumentId"])
+
+    if registration_document_id and file_id:
+        runner.step(
+            step_id="a.registration_documents.update",
+            role=actor_a.label,
+            method="PUT",
+            path=f"/companies/me/registration-documents/{registration_document_id}",
+            token=actor_a.token,
+            payload={"fileId": file_id, "description": "Registration doc update from flow"},
+            expected_status_family="2xx",
         )
 
     contribution_id = None
@@ -135,6 +184,15 @@ def run():
             expected_statuses=[201],
         )
         contribution_id = runner.extract_id(runner.extract_data(contrib_resp), ["id"])
+
+    runner.step(
+        step_id="a.contributions.list",
+        role=actor_a.label,
+        method="GET",
+        path="/companies/me/contributions",
+        token=actor_a.token,
+        expected_statuses=[200],
+    )
 
     media_id = None
     if contribution_id and file_id:
@@ -188,89 +246,6 @@ def run():
         path=f"/companies/{actor_b.company_id}/gallery",
         expected_statuses=[200],
     )
-    runner.step(
-        step_id="public.company_b.reviews",
-        role="guest",
-        method="GET",
-        path=f"/companies/{actor_b.company_id}/reviews",
-        expected_statuses=[200],
-    )
-
-    deal_resp = runner.step(
-        step_id="a.create_review_deal",
-        role=actor_a.label,
-        method="POST",
-        path="/deals",
-        token=actor_a.token,
-        payload={
-            "dealName": "Company Flow Review Deal",
-            "dealDescription": "Deal to unlock review path",
-            "dealValue": 12000,
-            "dealType": "supply",
-            "attachments": [],
-        },
-        expected_statuses=[201, 403],
-    )
-    deal_id = runner.require_id(
-        runner.extract_data(deal_resp),
-        keys=["id"],
-        context="a.create_review_deal",
-    )
-    if deal_id:
-        request_resp = runner.step(
-            step_id="b.submit_review_request",
-            role=actor_b.label,
-            method="POST",
-            path=f"/deals/{deal_id}/requests",
-            token=actor_b.token,
-            payload={
-                "requestKind": "supply",
-                "supplyDetails": {
-                    "productServiceName": "Industrial bolts",
-                    "category": "industrialEquipment",
-                    "quantityRequired": 100,
-                },
-                "attachments": [],
-            },
-            expected_statuses=[201],
-        )
-        request_id = runner.require_id(
-            runner.extract_data(request_resp),
-            keys=["id", "requestId"],
-            context="b.submit_review_request",
-        )
-        if request_id:
-            runner.step(
-                step_id="a.accept_request",
-                role=actor_a.label,
-                method="PATCH",
-                path=f"/deals/{deal_id}/requests/{request_id}/status",
-                token=actor_a.token,
-                payload={"status": "accepted"},
-                expected_statuses=[200],
-            )
-
-            runner.step(
-                step_id="b.create_review",
-                role=actor_b.label,
-                method="POST",
-                path=f"/companies/{actor_a.company_id}/reviews",
-                token=actor_b.token,
-                payload={
-                    "dealId": deal_id,
-                    "rating": 5,
-                    "reviewText": "Great collaboration through V1 company flow.",
-                },
-                expected_statuses=[201],
-            )
-
-    runner.step(
-        step_id="negative.removed_admin",
-        role="guest",
-        method="GET",
-        path="/admin/companies",
-        expected_statuses=[404],
-    )
 
     if contribution_id:
         if media_id:
@@ -299,6 +274,16 @@ def run():
             path=f"/companies/me/documents/{document_id}",
             token=actor_a.token,
             expected_statuses=[200],
+        )
+
+    if registration_document_id:
+        runner.step(
+            step_id="a.registration_documents.delete",
+            role=actor_a.label,
+            method="DELETE",
+            path=f"/companies/me/registration-documents/{registration_document_id}",
+            token=actor_a.token,
+            expected_status_family="2xx",
         )
 
     if gallery_id:

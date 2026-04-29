@@ -155,18 +155,6 @@ Payload:
 
 - Dynamic object from notification producer.
 
-#### `support:room:new`
-
-Emitted when user is subscribed to support room.
-
-Payload:
-
-```json
-{
-  "roomId": 77
-}
-```
-
 ## Source of Truth
 
 - Socket contracts are defined in:

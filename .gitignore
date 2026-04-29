@@ -31,3 +31,6 @@ yarn-error.log*
 
 # OS generated
 Thumbs.db
+
+scripts/__pycache__
+scripts/output/

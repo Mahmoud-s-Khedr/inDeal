@@ -1,0 +1,1185 @@
+{
+  "meta": {
+    "baseUrl": "http://localhost:3000/api/v1/",
+    "startedAt": "2026-04-29T17:35:54.846389Z",
+    "finishedAt": "2026-04-29T17:36:00.884604Z",
+    "summary": {
+      "totalSteps": 16,
+      "passedAssertions": 5,
+      "failedAssertions": 11,
+      "statusFamilyBreakdown": {
+        "2xx": 5,
+        "4xx": 7,
+        "blocked": 4
+      }
+    },
+    "scenario": "v1_deals_flow",
+    "actors": [
+      "v1.deal.owner.1777484154@indeal.test",
+      "v1.deal.applicant.1777484154@indeal.test"
+    ]
+  },
+  "steps": [
+    {
+      "timestamp": "2026-04-29T17:35:55.054972Z",
+      "stepId": "deal_owner.register_upload_url",
+      "role": "deal_owner",
+      "method": "POST",
+      "path": "/auth/register/upload-url",
+      "request": {
+        "params": null,
+        "payload": {
+          "fileName": "deal_owner-registration.pdf",
+          "fileType": "application/pdf",
+          "fileSize": 4096
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 201,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/register/upload-url",
+        "status": 201,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "3b4b1ca3-fc32-49ab-beb2-61d9f0efcf40",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "1122",
+          "ETag": "W/\"462-VZisbTtb/TRVq62QUkztBeARMBk\"",
+          "Date": "Wed, 29 Apr 2026 17:35:55 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"Signed upload URL generated\",\"data\":{\"file\":{\"id\":87,\"fileName\":\"deal_owner-registration.pdf\",\"filePath\":\"uploads/2026-04-29/deal-owner-registration-b4858897-42c8-427d-a328-8a1f4d63741a.pdf\",\"fileMetadata\":{\"size\":4096,\"mimeType\":\"application/pdf\",\"uploaderId\":null,\"originalFileName\":\"deal_owner-registration.pdf\"},\"uploadedAt\":\"2026-04-29T17:35:54.977Z\",\"publicUrl\":\"https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/deal-owner-registration-b4858897-42c8-427d-a328-8a1f4d63741a.pdf\"},\"upload\":{\"url\":\"https://5d5402ee680a5aebd3ce9fa8037fbe92.r2.cloudflarestorage.com/indeal-test/uploads/2026-04-29/deal-owner-registration-b4858897-42c8-427d-a328-8a1f4d63741a.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=b79e736a1622878ddf5b9c0508d5e8b9%2F20260429%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20260429T173555Z&X-Amz-Expires=500&X-Amz-Signature=6940bc3350de2853bc20a9c6cee1fb0830fb0fb13d20e4da9bb4ffbfa53762d5&X-Amz-SignedHeaders=host&x-id=PutObject\",\"method\":\"PUT\",\"headers\":{\"Content-Type\":\"application/pdf\"},\"expiresIn\":500}}}",
+        "json": {
+          "status": "success",
+          "message": "Signed upload URL generated",
+          "data": {
+            "file": {
+              "id": 87,
+              "fileName": "deal_owner-registration.pdf",
+              "filePath": "uploads/2026-04-29/deal-owner-registration-b4858897-42c8-427d-a328-8a1f4d63741a.pdf",
+              "fileMetadata": {
+                "size": 4096,
+                "mimeType": "application/pdf",
+                "uploaderId": null,
+                "originalFileName": "deal_owner-registration.pdf"
+              },
+              "uploadedAt": "2026-04-29T17:35:54.977Z",
+              "publicUrl": "https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/deal-owner-registration-b4858897-42c8-427d-a328-8a1f4d63741a.pdf"
+            },
+            "upload": {
+              "url": "https://5d5402ee680a5aebd3ce9fa8037fbe92.r2.cloudflarestorage.com/indeal-test/uploads/2026-04-29/deal-owner-registration-b4858897-42c8-427d-a328-8a1f4d63741a.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=b79e736a1622878ddf5b9c0508d5e8b9%2F20260429%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20260429T173555Z&X-Amz-Expires=500&X-Amz-Signature=6940bc3350de2853bc20a9c6cee1fb0830fb0fb13d20e4da9bb4ffbfa53762d5&X-Amz-SignedHeaders=host&x-id=PutObject",
+              "method": "PUT",
+              "headers": {
+                "Content-Type": "application/pdf"
+              },
+              "expiresIn": 500
+            }
+          }
+        },
+        "durationMs": 196,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:35:57.056284Z",
+      "stepId": "deal_owner.register",
+      "role": "deal_owner",
+      "method": "POST",
+      "path": "/auth/register",
+      "request": {
+        "params": null,
+        "payload": {
+          "user": {
+            "username": "v1.deal.owner.1777484154",
+            "email": "v1.deal.owner.1777484154@indeal.test",
+            "password": "Password123!1777484154",
+            "firstName": "Deal",
+            "lastName": "Owner"
+          },
+          "company": {
+            "name": "V1 Deal Owner Co 1777484154",
+            "description": "V1 Deal Owner Co 1777484154 created by V1 scenario runner",
+            "documents": [
+              {
+                "fileId": 87,
+                "docType": "commercial-register",
+                "description": "Registration doc from simulator"
+              }
+            ]
+          }
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 201,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/register",
+        "status": 201,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "ddcad72a-d342-4092-bb81-9dd9bd4d0d19",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "1215",
+          "ETag": "W/\"4bf-uQ82OYoMW3SwmNblmOB2KZ8HfrI\"",
+          "Date": "Wed, 29 Apr 2026 17:35:57 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"Registration submitted successfully\",\"data\":{\"message\":\"Registration submitted. Please verify your email before login.\",\"user\":{\"id\":48,\"username\":\"v1.deal.owner.1777484154\",\"email\":\"v1.deal.owner.1777484154@indeal.test\",\"firstName\":\"Deal\",\"lastName\":\"Owner\",\"jobTitle\":null,\"role\":\"agent\",\"status\":\"pending\",\"createdAt\":\"2026-04-29T17:35:55.590Z\",\"updatedAt\":\"2026-04-29T17:35:55.590Z\"},\"company\":{\"id\":47,\"agentId\":48,\"name\":\"V1 Deal Owner Co 1777484154\",\"description\":\"V1 Deal Owner Co 1777484154 created by V1 scenario runner\",\"address\":null,\"phone\":null,\"website\":null,\"companyType\":null,\"companyIndustry\":null,\"manufacturingStrategy\":null,\"status\":\"active\",\"contacts\":null,\"locations\":null,\"createdAt\":\"2026-04-29T17:35:55.590Z\",\"updatedAt\":\"2026-04-29T17:35:55.590Z\",\"documents\":[{\"id\":62,\"companyId\":47,\"fileId\":87,\"fileUrl\":\"https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/deal-owner-registration-b4858897-42c8-427d-a328-8a1f4d63741a.pdf\",\"docType\":\"commercial-register\",\"description\":\"Registration doc from simulator\",\"uploadedAt\":\"2026-04-29T17:35:55.590Z\"}]},\"debugOtp\":{\"purpose\":\"registration\",\"otp\":\"380447\",\"ttlMinutes\":30,\"env\":\"development\"}}}",
+        "json": {
+          "status": "success",
+          "message": "Registration submitted successfully",
+          "data": {
+            "message": "Registration submitted. Please verify your email before login.",
+            "user": {
+              "id": 48,
+              "username": "v1.deal.owner.1777484154",
+              "email": "v1.deal.owner.1777484154@indeal.test",
+              "firstName": "Deal",
+              "lastName": "Owner",
+              "jobTitle": null,
+              "role": "agent",
+              "status": "pending",
+              "createdAt": "2026-04-29T17:35:55.590Z",
+              "updatedAt": "2026-04-29T17:35:55.590Z"
+            },
+            "company": {
+              "id": 47,
+              "agentId": 48,
+              "name": "V1 Deal Owner Co 1777484154",
+              "description": "V1 Deal Owner Co 1777484154 created by V1 scenario runner",
+              "address": null,
+              "phone": null,
+              "website": null,
+              "companyType": null,
+              "companyIndustry": null,
+              "manufacturingStrategy": null,
+              "status": "active",
+              "contacts": null,
+              "locations": null,
+              "createdAt": "2026-04-29T17:35:55.590Z",
+              "updatedAt": "2026-04-29T17:35:55.590Z",
+              "documents": [
+                {
+                  "id": 62,
+                  "companyId": 47,
+                  "fileId": 87,
+                  "fileUrl": "https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/deal-owner-registration-b4858897-42c8-427d-a328-8a1f4d63741a.pdf",
+                  "docType": "commercial-register",
+                  "description": "Registration doc from simulator",
+                  "uploadedAt": "2026-04-29T17:35:55.590Z"
+                }
+              ]
+            },
+            "debugOtp": {
+              "purpose": "registration",
+              "otp": "380447",
+              "ttlMinutes": 30,
+              "env": "development"
+            }
+          }
+        },
+        "durationMs": 2001,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:35:57.567384Z",
+      "stepId": "deal_owner.login",
+      "role": "deal_owner",
+      "method": "POST",
+      "path": "/auth/login",
+      "request": {
+        "params": null,
+        "payload": {
+          "email": "v1.deal.owner.1777484154@indeal.test",
+          "password": "Password123!1777484154"
+        }
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 403,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/login",
+        "status": 403,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "c257df4f-ae0d-463c-a69a-4522f2ac3a35",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "356",
+          "ETag": "W/\"164-rFEQN8guKmdff7UxuIfdqj1OBIw\"",
+          "Date": "Wed, 29 Apr 2026 17:35:57 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":403,\"status\":\"fail\",\"isOperational\":true},\"message\":\"Email verification required before login\",\"stack\":\"Error: Email verification required before login\\n    at Object.login (/usr/src/app/src/modules/auth/service/auth.service.js:494:11)\\n    at async /usr/src/app/src/modules/auth/controller/auth.controller.js:24:18\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 403,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "Email verification required before login",
+          "stack": "Error: Email verification required before login\n    at Object.login (/usr/src/app/src/modules/auth/service/auth.service.js:494:11)\n    at async /usr/src/app/src/modules/auth/controller/auth.controller.js:24:18"
+        },
+        "durationMs": 510,
+        "error": "HTTP Error 403: Forbidden"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:35:58.281495Z",
+      "stepId": "deal_applicant.register_upload_url",
+      "role": "deal_applicant",
+      "method": "POST",
+      "path": "/auth/register/upload-url",
+      "request": {
+        "params": null,
+        "payload": {
+          "fileName": "deal_applicant-registration.pdf",
+          "fileType": "application/pdf",
+          "fileSize": 4096
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 201,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/register/upload-url",
+        "status": 201,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "3d141569-9f59-4062-9fe4-731fce611dc8",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "1142",
+          "ETag": "W/\"476-SXs8/kW/VtFmVWWxqoK4GndmO+g\"",
+          "Date": "Wed, 29 Apr 2026 17:35:58 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"Signed upload URL generated\",\"data\":{\"file\":{\"id\":88,\"fileName\":\"deal_applicant-registration.pdf\",\"filePath\":\"uploads/2026-04-29/deal-applicant-registration-3208d564-038a-418c-9275-f366af1f8338.pdf\",\"fileMetadata\":{\"size\":4096,\"mimeType\":\"application/pdf\",\"uploaderId\":null,\"originalFileName\":\"deal_applicant-registration.pdf\"},\"uploadedAt\":\"2026-04-29T17:35:58.076Z\",\"publicUrl\":\"https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/deal-applicant-registration-3208d564-038a-418c-9275-f366af1f8338.pdf\"},\"upload\":{\"url\":\"https://5d5402ee680a5aebd3ce9fa8037fbe92.r2.cloudflarestorage.com/indeal-test/uploads/2026-04-29/deal-applicant-registration-3208d564-038a-418c-9275-f366af1f8338.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=b79e736a1622878ddf5b9c0508d5e8b9%2F20260429%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20260429T173558Z&X-Amz-Expires=500&X-Amz-Signature=94fb935c194c3de4f2a5fa537e064796f0f50f4f9d0185cf87163b48f289dcaa&X-Amz-SignedHeaders=host&x-id=PutObject\",\"method\":\"PUT\",\"headers\":{\"Content-Type\":\"application/pdf\"},\"expiresIn\":500}}}",
+        "json": {
+          "status": "success",
+          "message": "Signed upload URL generated",
+          "data": {
+            "file": {
+              "id": 88,
+              "fileName": "deal_applicant-registration.pdf",
+              "filePath": "uploads/2026-04-29/deal-applicant-registration-3208d564-038a-418c-9275-f366af1f8338.pdf",
+              "fileMetadata": {
+                "size": 4096,
+                "mimeType": "application/pdf",
+                "uploaderId": null,
+                "originalFileName": "deal_applicant-registration.pdf"
+              },
+              "uploadedAt": "2026-04-29T17:35:58.076Z",
+              "publicUrl": "https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/deal-applicant-registration-3208d564-038a-418c-9275-f366af1f8338.pdf"
+            },
+            "upload": {
+              "url": "https://5d5402ee680a5aebd3ce9fa8037fbe92.r2.cloudflarestorage.com/indeal-test/uploads/2026-04-29/deal-applicant-registration-3208d564-038a-418c-9275-f366af1f8338.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=b79e736a1622878ddf5b9c0508d5e8b9%2F20260429%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20260429T173558Z&X-Amz-Expires=500&X-Amz-Signature=94fb935c194c3de4f2a5fa537e064796f0f50f4f9d0185cf87163b48f289dcaa&X-Amz-SignedHeaders=host&x-id=PutObject",
+              "method": "PUT",
+              "headers": {
+                "Content-Type": "application/pdf"
+              },
+              "expiresIn": 500
+            }
+          }
+        },
+        "durationMs": 713,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:00.321577Z",
+      "stepId": "deal_applicant.register",
+      "role": "deal_applicant",
+      "method": "POST",
+      "path": "/auth/register",
+      "request": {
+        "params": null,
+        "payload": {
+          "user": {
+            "username": "v1.deal.applicant.1777484154",
+            "email": "v1.deal.applicant.1777484154@indeal.test",
+            "password": "Password123!1777484154",
+            "firstName": "Deal",
+            "lastName": "Applicant"
+          },
+          "company": {
+            "name": "V1 Deal Applicant Co 1777484154",
+            "description": "V1 Deal Applicant Co 1777484154 created by V1 scenario runner",
+            "documents": [
+              {
+                "fileId": 88,
+                "docType": "commercial-register",
+                "description": "Registration doc from simulator"
+              }
+            ]
+          }
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 201,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/register",
+        "status": 201,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "61712a75-0cab-48b1-9da9-695e0a71a2ec",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "1239",
+          "ETag": "W/\"4d7-wVS3I7/tOhCAFgtXBLMVr8/RE1g\"",
+          "Date": "Wed, 29 Apr 2026 17:36:00 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"Registration submitted successfully\",\"data\":{\"message\":\"Registration submitted. Please verify your email before login.\",\"user\":{\"id\":50,\"username\":\"v1.deal.applicant.1777484154\",\"email\":\"v1.deal.applicant.1777484154@indeal.test\",\"firstName\":\"Deal\",\"lastName\":\"Applicant\",\"jobTitle\":null,\"role\":\"agent\",\"status\":\"pending\",\"createdAt\":\"2026-04-29T17:35:58.552Z\",\"updatedAt\":\"2026-04-29T17:35:58.552Z\"},\"company\":{\"id\":49,\"agentId\":50,\"name\":\"V1 Deal Applicant Co 1777484154\",\"description\":\"V1 Deal Applicant Co 1777484154 created by V1 scenario runner\",\"address\":null,\"phone\":null,\"website\":null,\"companyType\":null,\"companyIndustry\":null,\"manufacturingStrategy\":null,\"status\":\"active\",\"contacts\":null,\"locations\":null,\"createdAt\":\"2026-04-29T17:35:58.552Z\",\"updatedAt\":\"2026-04-29T17:35:58.552Z\",\"documents\":[{\"id\":64,\"companyId\":49,\"fileId\":88,\"fileUrl\":\"https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/deal-applicant-registration-3208d564-038a-418c-9275-f366af1f8338.pdf\",\"docType\":\"commercial-register\",\"description\":\"Registration doc from simulator\",\"uploadedAt\":\"2026-04-29T17:35:58.552Z\"}]},\"debugOtp\":{\"purpose\":\"registration\",\"otp\":\"874931\",\"ttlMinutes\":30,\"env\":\"development\"}}}",
+        "json": {
+          "status": "success",
+          "message": "Registration submitted successfully",
+          "data": {
+            "message": "Registration submitted. Please verify your email before login.",
+            "user": {
+              "id": 50,
+              "username": "v1.deal.applicant.1777484154",
+              "email": "v1.deal.applicant.1777484154@indeal.test",
+              "firstName": "Deal",
+              "lastName": "Applicant",
+              "jobTitle": null,
+              "role": "agent",
+              "status": "pending",
+              "createdAt": "2026-04-29T17:35:58.552Z",
+              "updatedAt": "2026-04-29T17:35:58.552Z"
+            },
+            "company": {
+              "id": 49,
+              "agentId": 50,
+              "name": "V1 Deal Applicant Co 1777484154",
+              "description": "V1 Deal Applicant Co 1777484154 created by V1 scenario runner",
+              "address": null,
+              "phone": null,
+              "website": null,
+              "companyType": null,
+              "companyIndustry": null,
+              "manufacturingStrategy": null,
+              "status": "active",
+              "contacts": null,
+              "locations": null,
+              "createdAt": "2026-04-29T17:35:58.552Z",
+              "updatedAt": "2026-04-29T17:35:58.552Z",
+              "documents": [
+                {
+                  "id": 64,
+                  "companyId": 49,
+                  "fileId": 88,
+                  "fileUrl": "https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/deal-applicant-registration-3208d564-038a-418c-9275-f366af1f8338.pdf",
+                  "docType": "commercial-register",
+                  "description": "Registration doc from simulator",
+                  "uploadedAt": "2026-04-29T17:35:58.552Z"
+                }
+              ]
+            },
+            "debugOtp": {
+              "purpose": "registration",
+              "otp": "874931",
+              "ttlMinutes": 30,
+              "env": "development"
+            }
+          }
+        },
+        "durationMs": 2039,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:00.850185Z",
+      "stepId": "deal_applicant.login",
+      "role": "deal_applicant",
+      "method": "POST",
+      "path": "/auth/login",
+      "request": {
+        "params": null,
+        "payload": {
+          "email": "v1.deal.applicant.1777484154@indeal.test",
+          "password": "Password123!1777484154"
+        }
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 403,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/login",
+        "status": 403,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "aeb324bb-6163-42bf-b7bf-457c47a0233f",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "356",
+          "ETag": "W/\"164-rFEQN8guKmdff7UxuIfdqj1OBIw\"",
+          "Date": "Wed, 29 Apr 2026 17:36:00 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":403,\"status\":\"fail\",\"isOperational\":true},\"message\":\"Email verification required before login\",\"stack\":\"Error: Email verification required before login\\n    at Object.login (/usr/src/app/src/modules/auth/service/auth.service.js:494:11)\\n    at async /usr/src/app/src/modules/auth/controller/auth.controller.js:24:18\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 403,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "Email verification required before login",
+          "stack": "Error: Email verification required before login\n    at Object.login (/usr/src/app/src/modules/auth/service/auth.service.js:494:11)\n    at async /usr/src/app/src/modules/auth/controller/auth.controller.js:24:18"
+        },
+        "durationMs": 528,
+        "error": "HTTP Error 403: Forbidden"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:00.867056Z",
+      "stepId": "public.list_deals",
+      "role": "guest",
+      "method": "GET",
+      "path": "/deals",
+      "request": {
+        "params": {
+          "sortBy": "date",
+          "sortOrder": "desc",
+          "limit": 20
+        },
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 200,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/deals?sortBy=date&sortOrder=desc&limit=20",
+        "status": 200,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "474dfabb-cb5f-43a6-8a98-65f91b0937ef",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "3308",
+          "ETag": "W/\"cec-PpMogGEeY61AA9/YnPXpkPdNQbU\"",
+          "Date": "Wed, 29 Apr 2026 17:36:00 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"Deals fetched\",\"data\":{\"deals\":[{\"id\":14,\"companyId\":23,\"dealName\":\"Deal by agent_c\",\"dealDescription\":\"Created in simulate_all\",\"dealValue\":90000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":0,\"createdAt\":\"2026-04-23T01:32:53.862Z\",\"updatedAt\":\"2026-04-23T01:32:53.862Z\",\"companyName\":\"V1 Sim C 1776907971\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]},{\"id\":13,\"companyId\":22,\"dealName\":\"Deal by agent_b\",\"dealDescription\":\"Created in simulate_all\",\"dealValue\":90000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":0,\"createdAt\":\"2026-04-23T01:32:53.849Z\",\"updatedAt\":\"2026-04-23T01:32:53.849Z\",\"companyName\":\"V1 Sim B 1776907971\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]},{\"id\":10,\"companyId\":17,\"dealName\":\"V1 Supply Deal - Withdraw\",\"dealDescription\":\"Deal created by deals_flow.py\",\"dealValue\":50000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":1,\"createdAt\":\"2026-04-23T01:32:46.714Z\",\"updatedAt\":\"2026-04-23T01:32:46.714Z\",\"companyName\":\"V1 Deal Owner Co 1776907965\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]},{\"id\":8,\"companyId\":17,\"dealName\":\"V1 Supply Deal - Cancel\",\"dealDescription\":\"Deal created by deals_flow.py\",\"dealValue\":50000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":2,\"createdAt\":\"2026-04-23T01:32:46.692Z\",\"updatedAt\":\"2026-04-23T01:32:46.692Z\",\"companyName\":\"V1 Deal Owner Co 1776907965\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]},{\"id\":7,\"companyId\":11,\"dealName\":\"Deal by agent_c\",\"dealDescription\":\"Created in simulate_all\",\"dealValue\":90000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":0,\"createdAt\":\"2026-04-23T01:31:22.938Z\",\"updatedAt\":\"2026-04-23T01:31:22.938Z\",\"companyName\":\"V1 Sim C 1776907880\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]},{\"id\":6,\"companyId\":10,\"dealName\":\"Deal by agent_b\",\"dealDescription\":\"Created in simulate_all\",\"dealValue\":90000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":0,\"createdAt\":\"2026-04-23T01:31:22.930Z\",\"updatedAt\":\"2026-04-23T01:31:22.930Z\",\"companyName\":\"V1 Sim B 1776907880\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]},{\"id\":3,\"companyId\":5,\"dealName\":\"V1 Supply Deal - Withdraw\",\"dealDescription\":\"Deal created by deals_flow.py\",\"dealValue\":50000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":1,\"createdAt\":\"2026-04-23T01:31:16.721Z\",\"updatedAt\":\"2026-04-23T01:31:16.721Z\",\"companyName\":\"V1 Deal Owner Co 1776907875\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]},{\"id\":1,\"companyId\":5,\"dealName\":\"V1 Supply Deal - Cancel\",\"dealDescription\":\"Deal created by deals_flow.py\",\"dealValue\":50000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":1,\"createdAt\":\"2026-04-23T01:31:16.698Z\",\"updatedAt\":\"2026-04-23T01:31:16.698Z\",\"companyName\":\"V1 Deal Owner Co 1776907875\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]}],\"pagination\":{\"total\":8,\"limit\":\"20\",\"hasMore\":false}}}",
+        "json": {
+          "status": "success",
+          "message": "Deals fetched",
+          "data": {
+            "deals": [
+              {
+                "id": 14,
+                "companyId": 23,
+                "dealName": "Deal by agent_c",
+                "dealDescription": "Created in simulate_all",
+                "dealValue": 90000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 0,
+                "createdAt": "2026-04-23T01:32:53.862Z",
+                "updatedAt": "2026-04-23T01:32:53.862Z",
+                "companyName": "V1 Sim C 1776907971",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              },
+              {
+                "id": 13,
+                "companyId": 22,
+                "dealName": "Deal by agent_b",
+                "dealDescription": "Created in simulate_all",
+                "dealValue": 90000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 0,
+                "createdAt": "2026-04-23T01:32:53.849Z",
+                "updatedAt": "2026-04-23T01:32:53.849Z",
+                "companyName": "V1 Sim B 1776907971",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              },
+              {
+                "id": 10,
+                "companyId": 17,
+                "dealName": "V1 Supply Deal - Withdraw",
+                "dealDescription": "Deal created by deals_flow.py",
+                "dealValue": 50000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 1,
+                "createdAt": "2026-04-23T01:32:46.714Z",
+                "updatedAt": "2026-04-23T01:32:46.714Z",
+                "companyName": "V1 Deal Owner Co 1776907965",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              },
+              {
+                "id": 8,
+                "companyId": 17,
+                "dealName": "V1 Supply Deal - Cancel",
+                "dealDescription": "Deal created by deals_flow.py",
+                "dealValue": 50000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 2,
+                "createdAt": "2026-04-23T01:32:46.692Z",
+                "updatedAt": "2026-04-23T01:32:46.692Z",
+                "companyName": "V1 Deal Owner Co 1776907965",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              },
+              {
+                "id": 7,
+                "companyId": 11,
+                "dealName": "Deal by agent_c",
+                "dealDescription": "Created in simulate_all",
+                "dealValue": 90000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 0,
+                "createdAt": "2026-04-23T01:31:22.938Z",
+                "updatedAt": "2026-04-23T01:31:22.938Z",
+                "companyName": "V1 Sim C 1776907880",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              },
+              {
+                "id": 6,
+                "companyId": 10,
+                "dealName": "Deal by agent_b",
+                "dealDescription": "Created in simulate_all",
+                "dealValue": 90000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 0,
+                "createdAt": "2026-04-23T01:31:22.930Z",
+                "updatedAt": "2026-04-23T01:31:22.930Z",
+                "companyName": "V1 Sim B 1776907880",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              },
+              {
+                "id": 3,
+                "companyId": 5,
+                "dealName": "V1 Supply Deal - Withdraw",
+                "dealDescription": "Deal created by deals_flow.py",
+                "dealValue": 50000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 1,
+                "createdAt": "2026-04-23T01:31:16.721Z",
+                "updatedAt": "2026-04-23T01:31:16.721Z",
+                "companyName": "V1 Deal Owner Co 1776907875",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              },
+              {
+                "id": 1,
+                "companyId": 5,
+                "dealName": "V1 Supply Deal - Cancel",
+                "dealDescription": "Deal created by deals_flow.py",
+                "dealValue": 50000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 1,
+                "createdAt": "2026-04-23T01:31:16.698Z",
+                "updatedAt": "2026-04-23T01:31:16.698Z",
+                "companyName": "V1 Deal Owner Co 1776907875",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              }
+            ],
+            "pagination": {
+              "total": 8,
+              "limit": "20",
+              "hasMore": false
+            }
+          }
+        },
+        "durationMs": 16,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:00.870374Z",
+      "stepId": "owner.create_deal.cancel_track",
+      "role": "deal_owner",
+      "method": "POST",
+      "path": "/deals",
+      "request": {
+        "params": null,
+        "payload": {
+          "dealName": "V1 Supply Deal - Cancel",
+          "dealDescription": "Deal created by deals_flow.py",
+          "dealValue": 50000,
+          "dealType": "supply",
+          "attachments": []
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/deals",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "caa5f06f-570b-47ba-9fa7-bc8b0fdeb697",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:00 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 3,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:00.875213Z",
+      "stepId": "owner.create_deal.accept_track",
+      "role": "deal_owner",
+      "method": "POST",
+      "path": "/deals",
+      "request": {
+        "params": null,
+        "payload": {
+          "dealName": "V1 Supply Deal - Accept",
+          "dealDescription": "Deal created by deals_flow.py",
+          "dealValue": 50000,
+          "dealType": "supply",
+          "attachments": []
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/deals",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "43521393-971d-4d15-8a12-b0b7434f936e",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:00 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 4,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:00.878532Z",
+      "stepId": "owner.create_deal.withdraw_track",
+      "role": "deal_owner",
+      "method": "POST",
+      "path": "/deals",
+      "request": {
+        "params": null,
+        "payload": {
+          "dealName": "V1 Supply Deal - Withdraw",
+          "dealDescription": "Deal created by deals_flow.py",
+          "dealValue": 50000,
+          "dealType": "supply",
+          "attachments": []
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/deals",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "6be02c46-e523-4f41-8850-d302e99fdbd6",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:00 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 3,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:00.881975Z",
+      "stepId": "owner.my_deals",
+      "role": "deal_owner",
+      "method": "GET",
+      "path": "/deals/me/deals",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/deals/me/deals",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "3da657ba-3957-4143-9749-c87cab3b542f",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:00 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 3,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:00.881999Z",
+      "stepId": "applicant.pause_request",
+      "role": "deal_applicant",
+      "method": "PATCH",
+      "path": "/deals/requests/<requestId>/pause",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": null,
+        "actualStatusFamily": "blocked"
+      },
+      "response": {
+        "url": null,
+        "status": null,
+        "headers": {},
+        "body": "",
+        "json": null,
+        "durationMs": 0,
+        "error": "Blocked: missing request id from applicant.submit_request_cancel_path"
+      },
+      "blocked": true,
+      "blockReason": "missing request id from applicant.submit_request_cancel_path"
+    },
+    {
+      "timestamp": "2026-04-29T17:36:00.882009Z",
+      "stepId": "applicant.cancel_request",
+      "role": "deal_applicant",
+      "method": "PATCH",
+      "path": "/deals/requests/<requestId>/cancel",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": null,
+        "actualStatusFamily": "blocked"
+      },
+      "response": {
+        "url": null,
+        "status": null,
+        "headers": {},
+        "body": "",
+        "json": null,
+        "durationMs": 0,
+        "error": "Blocked: missing request id from applicant.submit_request_cancel_path"
+      },
+      "blocked": true,
+      "blockReason": "missing request id from applicant.submit_request_cancel_path"
+    },
+    {
+      "timestamp": "2026-04-29T17:36:00.882016Z",
+      "stepId": "owner.accept_request",
+      "role": "deal_owner",
+      "method": "PATCH",
+      "path": "/deals/<dealId>/requests/<requestId>/status",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": null,
+        "actualStatusFamily": "blocked"
+      },
+      "response": {
+        "url": null,
+        "status": null,
+        "headers": {},
+        "body": "",
+        "json": null,
+        "durationMs": 0,
+        "error": "Blocked: accept track missing deal id or request id"
+      },
+      "blocked": true,
+      "blockReason": "accept track missing deal id or request id"
+    },
+    {
+      "timestamp": "2026-04-29T17:36:00.882022Z",
+      "stepId": "applicant.withdraw_alias",
+      "role": "deal_applicant",
+      "method": "DELETE",
+      "path": "/deals/requests/<requestId>",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": null,
+        "actualStatusFamily": "blocked"
+      },
+      "response": {
+        "url": null,
+        "status": null,
+        "headers": {},
+        "body": "",
+        "json": null,
+        "durationMs": 0,
+        "error": "Blocked: missing request id from applicant.submit_request_withdraw_alias"
+      },
+      "blocked": true,
+      "blockReason": "missing request id from applicant.submit_request_withdraw_alias"
+    },
+    {
+      "timestamp": "2026-04-29T17:36:00.884524Z",
+      "stepId": "applicant.my_requests",
+      "role": "deal_applicant",
+      "method": "GET",
+      "path": "/deals/me/requests",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/deals/me/requests",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "4160ad49-c75c-4790-9fc0-b55b2b16e672",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:00 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    }
+  ]
+}

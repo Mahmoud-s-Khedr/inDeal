@@ -3,7 +3,7 @@ import os
 import sys
 import time
 
-from v1_scenario_lib import ScenarioRunner, load_env_files, register_actor
+from v1_scenario_lib import ScenarioRunner, load_env_files, register_actor, resolve_base_url
 
 
 PUBLIC_GET_ENDPOINTS = [
@@ -12,8 +12,7 @@ PUBLIC_GET_ENDPOINTS = [
     "/system/config",
     "/companies/search",
     "/deals",
-    "/support/info",
-    "/support/email-redirect",
+    "/search",
 ]
 
 AUTH_GET_ENDPOINTS = [
@@ -21,6 +20,7 @@ AUTH_GET_ENDPOINTS = [
     "/companies/me",
     "/companies/me/gallery",
     "/companies/me/documents",
+    "/companies/me/registration-documents",
     "/companies/me/contributions",
     "/deals/me/deals",
     "/deals/me/requests",
@@ -31,18 +31,14 @@ REMOVED_EXPECTED_404 = [
     "/admin/companies",
     "/ads/active",
     "/notifications",
-    "/support/tickets",
-    "/support/chat",
     "/auth/admin/login",
-    "/auth/resend-verification",
-    "/auth/verify-email",
 ]
 
 
 def run():
     load_env_files()
     ts = int(time.time())
-    base_url = os.environ.get("BASE_URL", "http://localhost:3000/api/v1")
+    base_url = resolve_base_url()
     output_path = os.environ.get(
         "GET_API_OUTPUT_FILE",
         os.path.join("scripts", "output", "get_api_responses.json"),
@@ -62,11 +58,13 @@ def run():
     )
 
     for idx, path in enumerate(PUBLIC_GET_ENDPOINTS, start=1):
+        params = {"q": "steel", "limit": 5} if path == "/search" else None
         runner.step(
             step_id=f"public.get.{idx}",
             role="guest",
             method="GET",
             path=path,
+            params=params,
             expected_status_family="2xx",
         )
 
@@ -105,6 +103,7 @@ def run():
         path="/users/me/devices",
         expected_statuses=[401],
     )
+
     runner.step(
         step_id="removed.devices.authenticated_missing_route",
         role=actor.label,
@@ -116,7 +115,11 @@ def run():
 
     runner.save(
         output_path,
-        extra_meta={"scenario": "v1_get_matrix", "actorEmail": actor.email},
+        extra_meta={
+            "scenario": "v1_get_matrix",
+            "actorEmail": actor.email,
+            "actors": [actor.email],
+        },
     )
     print(f"Saved GET API responses to {output_path}")
 

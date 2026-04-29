@@ -8,7 +8,6 @@ const tagBySegment = {
   chats: 'Chats',
   files: 'Files',
   users: 'Users',
-  support: 'Support',
   system: 'System',
 };
 

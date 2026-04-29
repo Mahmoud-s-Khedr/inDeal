@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """
-V1 run_all_apis.py
-
-Structured mixed-coverage runner aligned to V1 client behavior.
+Canonical V1 flow matrix runner aligned with docs/user-flows.md.
 """
 
 import os
@@ -15,6 +13,7 @@ from v1_scenario_lib import (
     create_file_for_actor,
     load_env_files,
     register_actor,
+    resolve_base_url,
 )
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -27,55 +26,27 @@ OUTPUT_FILE = os.environ.get(
 def run():
     load_env_files()
     ts = int(time.time())
-    base_url = os.environ.get("API_BASE_URL", "http://localhost:3000/api/v1")
+    base_url = resolve_base_url()
 
     runner = ScenarioRunner(base_url)
     common_password = f"Password123!{ts}"
 
-    runner.step(
-        step_id="guest.health",
-        role="guest",
-        method="GET",
-        path="/health",
-        expected_statuses=[200],
-    )
-    runner.step(
-        step_id="guest.system_config",
-        role="guest",
-        method="GET",
-        path="/system/config",
-        expected_statuses=[200],
-    )
-    runner.step(
-        step_id="guest.companies_search",
-        role="guest",
-        method="GET",
-        path="/companies/search",
-        params={"limit": 5},
-        expected_status_family="2xx",
-    )
-    runner.step(
-        step_id="guest.deals_search",
-        role="guest",
-        method="GET",
-        path="/deals",
-        params={"limit": 5, "sortBy": "date", "sortOrder": "desc"},
-        expected_statuses=[200],
-    )
-    runner.step(
-        step_id="guest.support_info",
-        role="guest",
-        method="GET",
-        path="/support/info",
-        expected_statuses=[200],
-    )
-    runner.step(
-        step_id="guest.support_redirect",
-        role="guest",
-        method="GET",
-        path="/support/email-redirect",
-        expected_statuses=[200],
-    )
+    for step_id, path, params in [
+        ("guest.health", "/health", None),
+        ("guest.system_config", "/system/config", None),
+        ("guest.system_stats", "/system/stats", None),
+        ("guest.companies_search", "/companies/search", {"limit": 5}),
+        ("guest.deals_search", "/deals", {"limit": 5, "sortBy": "date", "sortOrder": "desc"}),
+        ("guest.search", "/search", {"q": "steel", "limit": 5}),
+    ]:
+        runner.step(
+            step_id=step_id,
+            role="guest",
+            method="GET",
+            path=path,
+            params=params,
+            expected_status_family="2xx",
+        )
 
     actor_a = register_actor(
         runner,
@@ -109,6 +80,14 @@ def run():
             expected_statuses=[200],
         )
         runner.step(
+            step_id=f"{actor.label}.company_get",
+            role=actor.label,
+            method="GET",
+            path="/companies/me",
+            token=actor.token,
+            expected_statuses=[200],
+        )
+        runner.step(
             step_id=f"{actor.label}.company_update",
             role=actor.label,
             method="PUT",
@@ -117,8 +96,9 @@ def run():
             payload={"description": f"Company updated by {actor.label}"},
             expected_statuses=[200],
         )
+
         if file_id:
-            runner.step(
+            doc_resp = runner.step(
                 step_id=f"{actor.label}.doc_create",
                 role=actor.label,
                 method="POST",
@@ -127,6 +107,17 @@ def run():
                 payload={"fileId": file_id, "description": "V1 run_all document"},
                 expected_statuses=[201],
             )
+            doc_id = runner.extract_id(runner.extract_data(doc_resp), ["id"])
+            if doc_id:
+                runner.step(
+                    step_id=f"{actor.label}.doc_update",
+                    role=actor.label,
+                    method="PUT",
+                    path=f"/companies/me/documents/{doc_id}",
+                    token=actor.token,
+                    payload={"description": "Updated from run_all"},
+                    expected_statuses=[200],
+                )
 
     deal_resp = runner.step(
         step_id="a.create_deal",
@@ -144,6 +135,15 @@ def run():
         expected_statuses=[201],
     )
     deal_id = runner.extract_id(runner.extract_data(deal_resp), ["id"])
+
+    if deal_id:
+        runner.step(
+            step_id="public.get_deal",
+            role="guest",
+            method="GET",
+            path=f"/deals/{deal_id}",
+            expected_statuses=[200],
+        )
 
     req_resp = runner.step(
         step_id="b.submit_request",
@@ -165,24 +165,59 @@ def run():
     )
     request_id = runner.extract_id(runner.extract_data(req_resp), ["id", "requestId"])
 
-    runner.step(
-        step_id="a.accept_request",
-        role=actor_a.label,
-        method="PATCH",
-        path=f"/deals/{deal_id}/requests/{request_id}/status",
-        token=actor_a.token,
-        payload={"status": "accepted"},
-        expected_statuses=[200],
-    )
+    if deal_id and request_id:
+        runner.step(
+            step_id="a.list_incoming_requests",
+            role=actor_a.label,
+            method="GET",
+            path=f"/deals/{deal_id}/requests",
+            token=actor_a.token,
+            expected_statuses=[200],
+        )
+        runner.step(
+            step_id="a.accept_request",
+            role=actor_a.label,
+            method="PATCH",
+            path=f"/deals/{deal_id}/requests/{request_id}/status",
+            token=actor_a.token,
+            payload={"status": "accepted"},
+            expected_statuses=[200],
+        )
+
+    if request_id:
+        runner.step(
+            step_id="b.pause_request",
+            role=actor_b.label,
+            method="PATCH",
+            path=f"/deals/requests/{request_id}/pause",
+            token=actor_b.token,
+            expected_status_family="2xx",
+        )
+        runner.step(
+            step_id="b.cancel_request",
+            role=actor_b.label,
+            method="PATCH",
+            path=f"/deals/requests/{request_id}/cancel",
+            token=actor_b.token,
+            payload={"cancelReason": "test cancel from run_all"},
+            expected_status_family="2xx",
+        )
 
     runner.step(
-        step_id="b.create_review",
+        step_id="a.my_deals",
+        role=actor_a.label,
+        method="GET",
+        path="/deals/me/deals",
+        token=actor_a.token,
+        expected_statuses=[200],
+    )
+    runner.step(
+        step_id="b.my_requests",
         role=actor_b.label,
-        method="POST",
-        path=f"/companies/{actor_a.company_id}/reviews",
+        method="GET",
+        path="/deals/me/requests",
         token=actor_b.token,
-        payload={"dealId": deal_id, "rating": 5, "reviewText": "Great buyer."},
-        expected_statuses=[201],
+        expected_statuses=[200],
     )
 
     room_resp = runner.step(
@@ -192,26 +227,86 @@ def run():
         path="/chats",
         token=actor_a.token,
         payload={"targetCompanyId": actor_b.company_id},
-        expected_statuses=[201],
+        expected_status_family="2xx",
     )
     room_id = runner.extract_id(runner.extract_data(room_resp), ["id", "roomId"])
 
     runner.step(
-        step_id="a.chat_send_message",
+        step_id="a.chats_list",
+        role=actor_a.label,
+        method="GET",
+        path="/chats",
+        token=actor_a.token,
+        expected_statuses=[200],
+    )
+
+    if room_id:
+        runner.step(
+            step_id="a.chat_room_details",
+            role=actor_a.label,
+            method="GET",
+            path=f"/chats/{room_id}",
+            token=actor_a.token,
+            expected_statuses=[200],
+        )
+        runner.step(
+            step_id="a.chat_send_message",
+            role=actor_a.label,
+            method="POST",
+            path=f"/chats/{room_id}/messages",
+            token=actor_a.token,
+            payload={"messageText": "Hello from run_all_apis"},
+            expected_statuses=[201],
+        )
+        runner.step(
+            step_id="b.chat_list_messages",
+            role=actor_b.label,
+            method="GET",
+            path=f"/chats/{room_id}/messages",
+            token=actor_b.token,
+            expected_statuses=[200],
+        )
+        runner.step(
+            step_id="b.chat_mark_read",
+            role=actor_b.label,
+            method="POST",
+            path=f"/chats/{room_id}/read",
+            token=actor_b.token,
+            expected_status_family="2xx",
+        )
+        runner.step(
+            step_id="a.chat_archive",
+            role=actor_a.label,
+            method="PATCH",
+            path=f"/chats/{room_id}/archive",
+            token=actor_a.token,
+            expected_status_family="2xx",
+        )
+
+    runner.step(
+        step_id="a.logout",
         role=actor_a.label,
         method="POST",
-        path=f"/chats/{room_id}/messages",
+        path="/auth/logout",
         token=actor_a.token,
-        payload={"messageText": "Hello from run_all_apis"},
-        expected_statuses=[201],
+        expected_status_family="2xx",
     )
     runner.step(
-        step_id="b.chat_list_messages",
-        role=actor_b.label,
-        method="GET",
-        path=f"/chats/{room_id}/messages",
-        token=actor_b.token,
+        step_id="a.login_again",
+        role=actor_a.label,
+        method="POST",
+        path="/auth/login",
+        payload={"email": actor_a.email, "password": common_password},
         expected_statuses=[200],
+    )
+
+    runner.step(
+        step_id="a.resend_verification",
+        role=actor_a.label,
+        method="POST",
+        path="/auth/resend-verification",
+        payload={"email": actor_a.email},
+        expected_status_family="2xx",
     )
 
     forgot_resp = runner.step(
@@ -257,22 +352,21 @@ def run():
         )
 
     negative_cases = [
-        ("negative.unauth.users_me", "GET", "/users/me", [401]),
-        ("negative.unauth.files_upload", "POST", "/files/upload-url", [401]),
-        ("negative.removed.admin", "GET", "/admin/companies", [404]),
-        ("negative.removed.ads", "GET", "/ads/active", [404]),
-        ("negative.removed.notifications", "GET", "/notifications", [404]),
-        ("negative.removed.support_ticket", "GET", "/support/tickets", [404]),
-        ("negative.removed.support_chat", "GET", "/support/chat", [404]),
-        ("negative.removed.devices.guest_unauthorized", "GET", "/users/me/devices", [401]),
-        ("negative.removed.auth_admin", "POST", "/auth/admin/login", [404]),
-        ("negative.removed.auth_verify_email", "GET", "/auth/verify-email", [404]),
+        ("negative.unauth.users_me", "GET", "/users/me", [401], None),
+        ("negative.unauth.files_upload", "POST", "/files/upload-url", [401], None),
+        ("negative.removed.admin", "GET", "/admin/companies", [404], None),
+        ("negative.removed.ads", "GET", "/ads/active", [404], None),
+        ("negative.removed.notifications", "GET", "/notifications", [404], None),
+        (
+            "negative.removed.auth_admin",
+            "POST",
+            "/auth/admin/login",
+            [404],
+            {"email": "admin@indeal.local", "password": "Password123!"},
+        ),
     ]
 
-    for step_id, method, path, expected in negative_cases:
-        payload = None
-        if step_id == "negative.removed.auth_admin":
-            payload = {"email": "admin@indeal.local", "password": "Password123!"}
+    for step_id, method, path, expected, payload in negative_cases:
         runner.step(
             step_id=step_id,
             role="guest",

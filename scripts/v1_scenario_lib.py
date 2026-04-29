@@ -42,6 +42,15 @@ def load_env_files() -> Dict[str, str]:
     return env
 
 
+def resolve_base_url(default: str = "http://localhost:3000/api/v1") -> str:
+    return (
+        os.environ.get("API_BASE_URL")
+        or os.environ.get("BASE_URL")
+        or os.environ.get("API_BASE")
+        or default
+    )
+
+
 def parse_json(text: str) -> Optional[Dict[str, Any]]:
     try:
         return json.loads(text)

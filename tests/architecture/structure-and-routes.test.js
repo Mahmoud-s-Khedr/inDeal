@@ -7,7 +7,7 @@ const { swaggerSpec } = require('../../src/infrastructure/config/swagger');
 
 const root = path.resolve(__dirname, '../../src');
 
-const domains = ['auth', 'company', 'deal', 'chat', 'file', 'support', 'system', 'health'];
+const domains = ['auth', 'company', 'deal', 'chat', 'file', 'system', 'health'];
 
 test('legacy layered folders are removed', () => {
   const legacy = [
@@ -49,7 +49,6 @@ test('route registry still exposes v1 endpoint groups', () => {
     '/api/v1/users',
     '/api/v1/deals',
     '/api/v1/chats',
-    '/api/v1/support',
   ];
 
   for (const prefix of requiredPrefixes) {

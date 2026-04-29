@@ -1,0 +1,2774 @@
+{
+  "meta": {
+    "baseUrl": "http://localhost:3000/api/v1/",
+    "startedAt": "2026-04-29T17:36:04.569278Z",
+    "finishedAt": "2026-04-29T17:36:12.179796Z",
+    "summary": {
+      "totalSteps": 40,
+      "passedAssertions": 19,
+      "failedAssertions": 21,
+      "statusFamilyBreakdown": {
+        "2xx": 13,
+        "5xx": 1,
+        "4xx": 26
+      }
+    },
+    "scenario": "v1_run_all_mixed",
+    "actors": [
+      "v1.runall.a.1777484164@indeal.test",
+      "v1.runall.b.1777484164@indeal.test"
+    ]
+  },
+  "steps": [
+    {
+      "timestamp": "2026-04-29T17:36:04.588403Z",
+      "stepId": "guest.health",
+      "role": "guest",
+      "method": "GET",
+      "path": "/health",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": null,
+      "expectedStatusFamily": "2xx",
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 200,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/health",
+        "status": 200,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "07804608-df3c-41cf-8e72-be06ef1b2c3b",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "138",
+          "ETag": "W/\"8a-gq0nCWKO3tzMH99qGHTZlYH0QN4\"",
+          "Date": "Wed, 29 Apr 2026 17:36:04 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"inDeal API is healthy\",\"data\":{\"status\":\"ok\",\"uptime\":32.646073615,\"timestamp\":\"2026-04-29T17:36:04.586Z\"}}",
+        "json": {
+          "status": "success",
+          "message": "inDeal API is healthy",
+          "data": {
+            "status": "ok",
+            "uptime": 32.646073615,
+            "timestamp": "2026-04-29T17:36:04.586Z"
+          }
+        },
+        "durationMs": 6,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:04.591078Z",
+      "stepId": "guest.system_config",
+      "role": "guest",
+      "method": "GET",
+      "path": "/system/config",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": null,
+      "expectedStatusFamily": "2xx",
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 200,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/system/config",
+        "status": 200,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "960d42f8-5ef7-4f65-9459-a382985a2789",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "194",
+          "ETag": "W/\"c2-IV6vaoWddjlibCSjQBiLgDpK7mw\"",
+          "Date": "Wed, 29 Apr 2026 17:36:04 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"System config fetched\",\"data\":{\"defaultLanguage\":\"en\",\"languages\":[{\"code\":\"en\",\"label\":\"English\",\"default\":true},{\"code\":\"ar\",\"label\":\"Arabic\",\"default\":false}]}}",
+        "json": {
+          "status": "success",
+          "message": "System config fetched",
+          "data": {
+            "defaultLanguage": "en",
+            "languages": [
+              {
+                "code": "en",
+                "label": "English",
+                "default": true
+              },
+              {
+                "code": "ar",
+                "label": "Arabic",
+                "default": false
+              }
+            ]
+          }
+        },
+        "durationMs": 2,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:04.593240Z",
+      "stepId": "guest.system_stats",
+      "role": "guest",
+      "method": "GET",
+      "path": "/system/stats",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": null,
+      "expectedStatusFamily": "2xx",
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 200,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/system/stats",
+        "status": 200,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "4a2ced85-0682-4ba9-a662-e85d184f2797",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "100",
+          "ETag": "W/\"64-eyfG9x7sgK9V9ooT/LOZIdkXYRY\"",
+          "Date": "Wed, 29 Apr 2026 17:36:04 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"System stats fetched\",\"data\":{\"companies\":0,\"deals\":0,\"locations\":0}}",
+        "json": {
+          "status": "success",
+          "message": "System stats fetched",
+          "data": {
+            "companies": 0,
+            "deals": 0,
+            "locations": 0
+          }
+        },
+        "durationMs": 2,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:04.600489Z",
+      "stepId": "guest.companies_search",
+      "role": "guest",
+      "method": "GET",
+      "path": "/companies/search",
+      "request": {
+        "params": {
+          "limit": 5
+        },
+        "payload": null
+      },
+      "expectedStatus": null,
+      "expectedStatusFamily": "2xx",
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 200,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/companies/search?limit=5",
+        "status": 200,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "16e856d7-f375-4fb1-9b16-4619c5e4104e",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "2431",
+          "ETag": "W/\"97f-3+UmsTi9JHgW+Sons1iNHEb5X3w\"",
+          "Date": "Wed, 29 Apr 2026 17:36:04 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"Companies fetched\",\"data\":{\"items\":[{\"id\":50,\"agentId\":51,\"name\":\"V1 Company B 1777484154\",\"description\":\"V1 Company B 1777484154 created by V1 scenario runner\",\"address\":null,\"phone\":null,\"email\":null,\"website\":null,\"logoFileId\":null,\"logoUrl\":null,\"companyType\":null,\"companyIndustry\":null,\"manufacturingStrategy\":null,\"status\":\"active\",\"rejectionReason\":null,\"contacts\":null,\"locations\":null,\"socialMediaLinks\":[],\"createdAt\":\"2026-04-29T17:35:59.056Z\",\"updatedAt\":\"2026-04-29T17:35:59.056Z\"},{\"id\":49,\"agentId\":50,\"name\":\"V1 Deal Applicant Co 1777484154\",\"description\":\"V1 Deal Applicant Co 1777484154 created by V1 scenario runner\",\"address\":null,\"phone\":null,\"email\":null,\"website\":null,\"logoFileId\":null,\"logoUrl\":null,\"companyType\":null,\"companyIndustry\":null,\"manufacturingStrategy\":null,\"status\":\"active\",\"rejectionReason\":null,\"contacts\":null,\"locations\":null,\"socialMediaLinks\":[],\"createdAt\":\"2026-04-29T17:35:58.552Z\",\"updatedAt\":\"2026-04-29T17:35:58.552Z\"},{\"id\":48,\"agentId\":49,\"name\":\"V1 Company A 1777484154\",\"description\":\"V1 Company A 1777484154 created by V1 scenario runner\",\"address\":null,\"phone\":null,\"email\":null,\"website\":null,\"logoFileId\":null,\"logoUrl\":null,\"companyType\":null,\"companyIndustry\":null,\"manufacturingStrategy\":null,\"status\":\"active\",\"rejectionReason\":null,\"contacts\":null,\"locations\":null,\"socialMediaLinks\":[],\"createdAt\":\"2026-04-29T17:35:55.591Z\",\"updatedAt\":\"2026-04-29T17:35:55.591Z\"},{\"id\":47,\"agentId\":48,\"name\":\"V1 Deal Owner Co 1777484154\",\"description\":\"V1 Deal Owner Co 1777484154 created by V1 scenario runner\",\"address\":null,\"phone\":null,\"email\":null,\"website\":null,\"logoFileId\":null,\"logoUrl\":null,\"companyType\":null,\"companyIndustry\":null,\"manufacturingStrategy\":null,\"status\":\"active\",\"rejectionReason\":null,\"contacts\":null,\"locations\":null,\"socialMediaLinks\":[],\"createdAt\":\"2026-04-29T17:35:55.590Z\",\"updatedAt\":\"2026-04-29T17:35:55.590Z\"},{\"id\":46,\"agentId\":47,\"name\":\"V1 GET Actor Co 1777484154\",\"description\":\"V1 GET Actor Co 1777484154 created by V1 scenario runner\",\"address\":null,\"phone\":null,\"email\":null,\"website\":null,\"logoFileId\":null,\"logoUrl\":null,\"companyType\":null,\"companyIndustry\":null,\"manufacturingStrategy\":null,\"status\":\"active\",\"rejectionReason\":null,\"contacts\":null,\"locations\":null,\"socialMediaLinks\":[],\"createdAt\":\"2026-04-29T17:35:55.094Z\",\"updatedAt\":\"2026-04-29T17:35:55.094Z\"}],\"total\":48,\"limit\":5,\"offset\":0}}",
+        "json": {
+          "status": "success",
+          "message": "Companies fetched",
+          "data": {
+            "items": [
+              {
+                "id": 50,
+                "agentId": 51,
+                "name": "V1 Company B 1777484154",
+                "description": "V1 Company B 1777484154 created by V1 scenario runner",
+                "address": null,
+                "phone": null,
+                "email": null,
+                "website": null,
+                "logoFileId": null,
+                "logoUrl": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "manufacturingStrategy": null,
+                "status": "active",
+                "rejectionReason": null,
+                "contacts": null,
+                "locations": null,
+                "socialMediaLinks": [],
+                "createdAt": "2026-04-29T17:35:59.056Z",
+                "updatedAt": "2026-04-29T17:35:59.056Z"
+              },
+              {
+                "id": 49,
+                "agentId": 50,
+                "name": "V1 Deal Applicant Co 1777484154",
+                "description": "V1 Deal Applicant Co 1777484154 created by V1 scenario runner",
+                "address": null,
+                "phone": null,
+                "email": null,
+                "website": null,
+                "logoFileId": null,
+                "logoUrl": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "manufacturingStrategy": null,
+                "status": "active",
+                "rejectionReason": null,
+                "contacts": null,
+                "locations": null,
+                "socialMediaLinks": [],
+                "createdAt": "2026-04-29T17:35:58.552Z",
+                "updatedAt": "2026-04-29T17:35:58.552Z"
+              },
+              {
+                "id": 48,
+                "agentId": 49,
+                "name": "V1 Company A 1777484154",
+                "description": "V1 Company A 1777484154 created by V1 scenario runner",
+                "address": null,
+                "phone": null,
+                "email": null,
+                "website": null,
+                "logoFileId": null,
+                "logoUrl": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "manufacturingStrategy": null,
+                "status": "active",
+                "rejectionReason": null,
+                "contacts": null,
+                "locations": null,
+                "socialMediaLinks": [],
+                "createdAt": "2026-04-29T17:35:55.591Z",
+                "updatedAt": "2026-04-29T17:35:55.591Z"
+              },
+              {
+                "id": 47,
+                "agentId": 48,
+                "name": "V1 Deal Owner Co 1777484154",
+                "description": "V1 Deal Owner Co 1777484154 created by V1 scenario runner",
+                "address": null,
+                "phone": null,
+                "email": null,
+                "website": null,
+                "logoFileId": null,
+                "logoUrl": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "manufacturingStrategy": null,
+                "status": "active",
+                "rejectionReason": null,
+                "contacts": null,
+                "locations": null,
+                "socialMediaLinks": [],
+                "createdAt": "2026-04-29T17:35:55.590Z",
+                "updatedAt": "2026-04-29T17:35:55.590Z"
+              },
+              {
+                "id": 46,
+                "agentId": 47,
+                "name": "V1 GET Actor Co 1777484154",
+                "description": "V1 GET Actor Co 1777484154 created by V1 scenario runner",
+                "address": null,
+                "phone": null,
+                "email": null,
+                "website": null,
+                "logoFileId": null,
+                "logoUrl": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "manufacturingStrategy": null,
+                "status": "active",
+                "rejectionReason": null,
+                "contacts": null,
+                "locations": null,
+                "socialMediaLinks": [],
+                "createdAt": "2026-04-29T17:35:55.094Z",
+                "updatedAt": "2026-04-29T17:35:55.094Z"
+              }
+            ],
+            "total": 48,
+            "limit": 5,
+            "offset": 0
+          }
+        },
+        "durationMs": 7,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:04.610236Z",
+      "stepId": "guest.deals_search",
+      "role": "guest",
+      "method": "GET",
+      "path": "/deals",
+      "request": {
+        "params": {
+          "limit": 5,
+          "sortBy": "date",
+          "sortOrder": "desc"
+        },
+        "payload": null
+      },
+      "expectedStatus": null,
+      "expectedStatusFamily": "2xx",
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 200,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/deals?limit=5&sortBy=date&sortOrder=desc",
+        "status": 200,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "89aef704-4a1e-484f-9d39-4a60de9071ad",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "2102",
+          "ETag": "W/\"836-r4LXU5TAj+gmfH0+/Ex5k5u9A0M\"",
+          "Date": "Wed, 29 Apr 2026 17:36:04 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"Deals fetched\",\"data\":{\"deals\":[{\"id\":14,\"companyId\":23,\"dealName\":\"Deal by agent_c\",\"dealDescription\":\"Created in simulate_all\",\"dealValue\":90000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":0,\"createdAt\":\"2026-04-23T01:32:53.862Z\",\"updatedAt\":\"2026-04-23T01:32:53.862Z\",\"companyName\":\"V1 Sim C 1776907971\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]},{\"id\":13,\"companyId\":22,\"dealName\":\"Deal by agent_b\",\"dealDescription\":\"Created in simulate_all\",\"dealValue\":90000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":0,\"createdAt\":\"2026-04-23T01:32:53.849Z\",\"updatedAt\":\"2026-04-23T01:32:53.849Z\",\"companyName\":\"V1 Sim B 1776907971\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]},{\"id\":10,\"companyId\":17,\"dealName\":\"V1 Supply Deal - Withdraw\",\"dealDescription\":\"Deal created by deals_flow.py\",\"dealValue\":50000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":1,\"createdAt\":\"2026-04-23T01:32:46.714Z\",\"updatedAt\":\"2026-04-23T01:32:46.714Z\",\"companyName\":\"V1 Deal Owner Co 1776907965\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]},{\"id\":8,\"companyId\":17,\"dealName\":\"V1 Supply Deal - Cancel\",\"dealDescription\":\"Deal created by deals_flow.py\",\"dealValue\":50000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":2,\"createdAt\":\"2026-04-23T01:32:46.692Z\",\"updatedAt\":\"2026-04-23T01:32:46.692Z\",\"companyName\":\"V1 Deal Owner Co 1776907965\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]},{\"id\":7,\"companyId\":11,\"dealName\":\"Deal by agent_c\",\"dealDescription\":\"Created in simulate_all\",\"dealValue\":90000,\"dealType\":\"supply\",\"status\":\"open\",\"applicationsCount\":0,\"createdAt\":\"2026-04-23T01:31:22.938Z\",\"updatedAt\":\"2026-04-23T01:31:22.938Z\",\"companyName\":\"V1 Sim C 1776907880\",\"companyLogo\":null,\"companyType\":null,\"companyIndustry\":null,\"companyAddress\":null,\"attachments\":[]}],\"pagination\":{\"total\":8,\"limit\":\"5\",\"hasMore\":false}}}",
+        "json": {
+          "status": "success",
+          "message": "Deals fetched",
+          "data": {
+            "deals": [
+              {
+                "id": 14,
+                "companyId": 23,
+                "dealName": "Deal by agent_c",
+                "dealDescription": "Created in simulate_all",
+                "dealValue": 90000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 0,
+                "createdAt": "2026-04-23T01:32:53.862Z",
+                "updatedAt": "2026-04-23T01:32:53.862Z",
+                "companyName": "V1 Sim C 1776907971",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              },
+              {
+                "id": 13,
+                "companyId": 22,
+                "dealName": "Deal by agent_b",
+                "dealDescription": "Created in simulate_all",
+                "dealValue": 90000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 0,
+                "createdAt": "2026-04-23T01:32:53.849Z",
+                "updatedAt": "2026-04-23T01:32:53.849Z",
+                "companyName": "V1 Sim B 1776907971",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              },
+              {
+                "id": 10,
+                "companyId": 17,
+                "dealName": "V1 Supply Deal - Withdraw",
+                "dealDescription": "Deal created by deals_flow.py",
+                "dealValue": 50000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 1,
+                "createdAt": "2026-04-23T01:32:46.714Z",
+                "updatedAt": "2026-04-23T01:32:46.714Z",
+                "companyName": "V1 Deal Owner Co 1776907965",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              },
+              {
+                "id": 8,
+                "companyId": 17,
+                "dealName": "V1 Supply Deal - Cancel",
+                "dealDescription": "Deal created by deals_flow.py",
+                "dealValue": 50000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 2,
+                "createdAt": "2026-04-23T01:32:46.692Z",
+                "updatedAt": "2026-04-23T01:32:46.692Z",
+                "companyName": "V1 Deal Owner Co 1776907965",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              },
+              {
+                "id": 7,
+                "companyId": 11,
+                "dealName": "Deal by agent_c",
+                "dealDescription": "Created in simulate_all",
+                "dealValue": 90000,
+                "dealType": "supply",
+                "status": "open",
+                "applicationsCount": 0,
+                "createdAt": "2026-04-23T01:31:22.938Z",
+                "updatedAt": "2026-04-23T01:31:22.938Z",
+                "companyName": "V1 Sim C 1776907880",
+                "companyLogo": null,
+                "companyType": null,
+                "companyIndustry": null,
+                "companyAddress": null,
+                "attachments": []
+              }
+            ],
+            "pagination": {
+              "total": 8,
+              "limit": "5",
+              "hasMore": false
+            }
+          }
+        },
+        "durationMs": 9,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:04.620398Z",
+      "stepId": "guest.search",
+      "role": "guest",
+      "method": "GET",
+      "path": "/search",
+      "request": {
+        "params": {
+          "q": "steel",
+          "limit": 5
+        },
+        "payload": null
+      },
+      "expectedStatus": null,
+      "expectedStatusFamily": "2xx",
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 500,
+        "actualStatusFamily": "5xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/search?q=steel&limit=5",
+        "status": 500,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "0192dae3-7965-4dfa-8f8f-3cd02adddbd9",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "791",
+          "ETag": "W/\"317-zMQR+7n+fMc696Mf2otPBsvSDSM\"",
+          "Date": "Wed, 29 Apr 2026 17:36:04 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"error\",\"error\":{\"length\":137,\"name\":\"error\",\"severity\":\"ERROR\",\"code\":\"08P01\",\"file\":\"postgres.c\",\"line\":\"1733\",\"routine\":\"exec_bind_message\",\"statusCode\":500,\"status\":\"error\"},\"message\":\"bind message supplies 4 parameters, but prepared statement \\\"\\\" requires 3\",\"stack\":\"error: bind message supplies 4 parameters, but prepared statement \\\"\\\" requires 3\\n    at /usr/src/app/node_modules/pg-pool/index.js:45:11\\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\\n    at async Object.searchUnified (/usr/src/app/src/modules/search/repository/search.repository.js:268:18)\\n    at async Object.search (/usr/src/app/src/modules/search/service/search.service.js:6:16)\\n    at async /usr/src/app/src/modules/search/controller/search.controller.js:6:18\"}",
+        "json": {
+          "status": "error",
+          "error": {
+            "length": 137,
+            "name": "error",
+            "severity": "ERROR",
+            "code": "08P01",
+            "file": "postgres.c",
+            "line": "1733",
+            "routine": "exec_bind_message",
+            "statusCode": 500,
+            "status": "error"
+          },
+          "message": "bind message supplies 4 parameters, but prepared statement \"\" requires 3",
+          "stack": "error: bind message supplies 4 parameters, but prepared statement \"\" requires 3\n    at /usr/src/app/node_modules/pg-pool/index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async Object.searchUnified (/usr/src/app/src/modules/search/repository/search.repository.js:268:18)\n    at async Object.search (/usr/src/app/src/modules/search/service/search.service.js:6:16)\n    at async /usr/src/app/src/modules/search/controller/search.controller.js:6:18"
+        },
+        "durationMs": 9,
+        "error": "HTTP Error 500: Internal Server Error"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:04.637079Z",
+      "stepId": "client_admin_a.register_upload_url",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/auth/register/upload-url",
+      "request": {
+        "params": null,
+        "payload": {
+          "fileName": "client_admin_a-registration.pdf",
+          "fileType": "application/pdf",
+          "fileSize": 4096
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 201,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/register/upload-url",
+        "status": 201,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "80da42ab-2214-4e8c-bb9f-2ab0304fa723",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "1142",
+          "ETag": "W/\"476-ms17yRF2Id2tbflaPfYvPWjvkPk\"",
+          "Date": "Wed, 29 Apr 2026 17:36:04 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"Signed upload URL generated\",\"data\":{\"file\":{\"id\":90,\"fileName\":\"client_admin_a-registration.pdf\",\"filePath\":\"uploads/2026-04-29/client-admin-a-registration-8605b2af-0626-4977-acac-ddcfb7b76806.pdf\",\"fileMetadata\":{\"size\":4096,\"mimeType\":\"application/pdf\",\"uploaderId\":null,\"originalFileName\":\"client_admin_a-registration.pdf\"},\"uploadedAt\":\"2026-04-29T17:36:04.624Z\",\"publicUrl\":\"https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/client-admin-a-registration-8605b2af-0626-4977-acac-ddcfb7b76806.pdf\"},\"upload\":{\"url\":\"https://5d5402ee680a5aebd3ce9fa8037fbe92.r2.cloudflarestorage.com/indeal-test/uploads/2026-04-29/client-admin-a-registration-8605b2af-0626-4977-acac-ddcfb7b76806.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=b79e736a1622878ddf5b9c0508d5e8b9%2F20260429%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20260429T173604Z&X-Amz-Expires=500&X-Amz-Signature=929eca0024ef14faf02288ca4e88afa089b49a40dd9e5de1ffdd4a91925a7132&X-Amz-SignedHeaders=host&x-id=PutObject\",\"method\":\"PUT\",\"headers\":{\"Content-Type\":\"application/pdf\"},\"expiresIn\":500}}}",
+        "json": {
+          "status": "success",
+          "message": "Signed upload URL generated",
+          "data": {
+            "file": {
+              "id": 90,
+              "fileName": "client_admin_a-registration.pdf",
+              "filePath": "uploads/2026-04-29/client-admin-a-registration-8605b2af-0626-4977-acac-ddcfb7b76806.pdf",
+              "fileMetadata": {
+                "size": 4096,
+                "mimeType": "application/pdf",
+                "uploaderId": null,
+                "originalFileName": "client_admin_a-registration.pdf"
+              },
+              "uploadedAt": "2026-04-29T17:36:04.624Z",
+              "publicUrl": "https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/client-admin-a-registration-8605b2af-0626-4977-acac-ddcfb7b76806.pdf"
+            },
+            "upload": {
+              "url": "https://5d5402ee680a5aebd3ce9fa8037fbe92.r2.cloudflarestorage.com/indeal-test/uploads/2026-04-29/client-admin-a-registration-8605b2af-0626-4977-acac-ddcfb7b76806.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=b79e736a1622878ddf5b9c0508d5e8b9%2F20260429%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20260429T173604Z&X-Amz-Expires=500&X-Amz-Signature=929eca0024ef14faf02288ca4e88afa089b49a40dd9e5de1ffdd4a91925a7132&X-Amz-SignedHeaders=host&x-id=PutObject",
+              "method": "PUT",
+              "headers": {
+                "Content-Type": "application/pdf"
+              },
+              "expiresIn": 500
+            }
+          }
+        },
+        "durationMs": 16,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:06.329181Z",
+      "stepId": "client_admin_a.register",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/auth/register",
+      "request": {
+        "params": null,
+        "payload": {
+          "user": {
+            "username": "v1.runall.a.1777484164",
+            "email": "v1.runall.a.1777484164@indeal.test",
+            "password": "Password123!1777484164",
+            "firstName": "RunAll",
+            "lastName": "A"
+          },
+          "company": {
+            "name": "V1 RunAll A 1777484164",
+            "description": "V1 RunAll A 1777484164 created by V1 scenario runner",
+            "documents": [
+              {
+                "fileId": 90,
+                "docType": "commercial-register",
+                "description": "Registration doc from simulator"
+              }
+            ]
+          }
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 201,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/register",
+        "status": 201,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "044edeb2-e6dc-494a-aa99-a573500c2445",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "1203",
+          "ETag": "W/\"4b3-/SSb9JbOMRMwG7V/eAfH+BaALUA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:06 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"Registration submitted successfully\",\"data\":{\"message\":\"Registration submitted. Please verify your email before login.\",\"user\":{\"id\":52,\"username\":\"v1.runall.a.1777484164\",\"email\":\"v1.runall.a.1777484164@indeal.test\",\"firstName\":\"RunAll\",\"lastName\":\"A\",\"jobTitle\":null,\"role\":\"agent\",\"status\":\"pending\",\"createdAt\":\"2026-04-29T17:36:04.648Z\",\"updatedAt\":\"2026-04-29T17:36:04.648Z\"},\"company\":{\"id\":51,\"agentId\":52,\"name\":\"V1 RunAll A 1777484164\",\"description\":\"V1 RunAll A 1777484164 created by V1 scenario runner\",\"address\":null,\"phone\":null,\"website\":null,\"companyType\":null,\"companyIndustry\":null,\"manufacturingStrategy\":null,\"status\":\"active\",\"contacts\":null,\"locations\":null,\"createdAt\":\"2026-04-29T17:36:04.648Z\",\"updatedAt\":\"2026-04-29T17:36:04.648Z\",\"documents\":[{\"id\":66,\"companyId\":51,\"fileId\":90,\"fileUrl\":\"https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/client-admin-a-registration-8605b2af-0626-4977-acac-ddcfb7b76806.pdf\",\"docType\":\"commercial-register\",\"description\":\"Registration doc from simulator\",\"uploadedAt\":\"2026-04-29T17:36:04.648Z\"}]},\"debugOtp\":{\"purpose\":\"registration\",\"otp\":\"986579\",\"ttlMinutes\":30,\"env\":\"development\"}}}",
+        "json": {
+          "status": "success",
+          "message": "Registration submitted successfully",
+          "data": {
+            "message": "Registration submitted. Please verify your email before login.",
+            "user": {
+              "id": 52,
+              "username": "v1.runall.a.1777484164",
+              "email": "v1.runall.a.1777484164@indeal.test",
+              "firstName": "RunAll",
+              "lastName": "A",
+              "jobTitle": null,
+              "role": "agent",
+              "status": "pending",
+              "createdAt": "2026-04-29T17:36:04.648Z",
+              "updatedAt": "2026-04-29T17:36:04.648Z"
+            },
+            "company": {
+              "id": 51,
+              "agentId": 52,
+              "name": "V1 RunAll A 1777484164",
+              "description": "V1 RunAll A 1777484164 created by V1 scenario runner",
+              "address": null,
+              "phone": null,
+              "website": null,
+              "companyType": null,
+              "companyIndustry": null,
+              "manufacturingStrategy": null,
+              "status": "active",
+              "contacts": null,
+              "locations": null,
+              "createdAt": "2026-04-29T17:36:04.648Z",
+              "updatedAt": "2026-04-29T17:36:04.648Z",
+              "documents": [
+                {
+                  "id": 66,
+                  "companyId": 51,
+                  "fileId": 90,
+                  "fileUrl": "https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/client-admin-a-registration-8605b2af-0626-4977-acac-ddcfb7b76806.pdf",
+                  "docType": "commercial-register",
+                  "description": "Registration doc from simulator",
+                  "uploadedAt": "2026-04-29T17:36:04.648Z"
+                }
+              ]
+            },
+            "debugOtp": {
+              "purpose": "registration",
+              "otp": "986579",
+              "ttlMinutes": 30,
+              "env": "development"
+            }
+          }
+        },
+        "durationMs": 1691,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:07.023743Z",
+      "stepId": "client_admin_a.login",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/auth/login",
+      "request": {
+        "params": null,
+        "payload": {
+          "email": "v1.runall.a.1777484164@indeal.test",
+          "password": "Password123!1777484164"
+        }
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 403,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/login",
+        "status": 403,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "404d2bc5-f4b1-410e-ba82-fd1be0b0f358",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "480",
+          "ETag": "W/\"1e0-wjFMk7KIVP3smxFuXjJ5Ob1cQf0\"",
+          "Date": "Wed, 29 Apr 2026 17:36:07 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":403,\"status\":\"fail\",\"isOperational\":true},\"message\":\"Email verification required before login\",\"stack\":\"Error: Email verification required before login\\n    at Object.login (/usr/src/app/src/modules/auth/service/auth.service.js:494:11)\\n    at runNextTicks (node:internal/process/task_queues:60:5)\\n    at process.processImmediate (node:internal/timers:454:9)\\n    at async /usr/src/app/src/modules/auth/controller/auth.controller.js:24:18\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 403,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "Email verification required before login",
+          "stack": "Error: Email verification required before login\n    at Object.login (/usr/src/app/src/modules/auth/service/auth.service.js:494:11)\n    at runNextTicks (node:internal/process/task_queues:60:5)\n    at process.processImmediate (node:internal/timers:454:9)\n    at async /usr/src/app/src/modules/auth/controller/auth.controller.js:24:18"
+        },
+        "durationMs": 694,
+        "error": "HTTP Error 403: Forbidden"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:07.331436Z",
+      "stepId": "client_admin_b.register_upload_url",
+      "role": "client_admin_b",
+      "method": "POST",
+      "path": "/auth/register/upload-url",
+      "request": {
+        "params": null,
+        "payload": {
+          "fileName": "client_admin_b-registration.pdf",
+          "fileType": "application/pdf",
+          "fileSize": 4096
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 201,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/register/upload-url",
+        "status": 201,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "bed7aeb5-3d33-4301-b6f9-1d78e61b8819",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "1142",
+          "ETag": "W/\"476-ALlWwxr1XFuIJOsMwvjREu1iBYk\"",
+          "Date": "Wed, 29 Apr 2026 17:36:07 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"Signed upload URL generated\",\"data\":{\"file\":{\"id\":92,\"fileName\":\"client_admin_b-registration.pdf\",\"filePath\":\"uploads/2026-04-29/client-admin-b-registration-d721a873-d770-48c5-9a83-ce654a7f31d4.pdf\",\"fileMetadata\":{\"size\":4096,\"mimeType\":\"application/pdf\",\"uploaderId\":null,\"originalFileName\":\"client_admin_b-registration.pdf\"},\"uploadedAt\":\"2026-04-29T17:36:07.227Z\",\"publicUrl\":\"https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/client-admin-b-registration-d721a873-d770-48c5-9a83-ce654a7f31d4.pdf\"},\"upload\":{\"url\":\"https://5d5402ee680a5aebd3ce9fa8037fbe92.r2.cloudflarestorage.com/indeal-test/uploads/2026-04-29/client-admin-b-registration-d721a873-d770-48c5-9a83-ce654a7f31d4.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=b79e736a1622878ddf5b9c0508d5e8b9%2F20260429%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20260429T173607Z&X-Amz-Expires=500&X-Amz-Signature=c8c00c865a7fb9d8480552c4a9669470934b9bfc57f2cad6746900891c98d02c&X-Amz-SignedHeaders=host&x-id=PutObject\",\"method\":\"PUT\",\"headers\":{\"Content-Type\":\"application/pdf\"},\"expiresIn\":500}}}",
+        "json": {
+          "status": "success",
+          "message": "Signed upload URL generated",
+          "data": {
+            "file": {
+              "id": 92,
+              "fileName": "client_admin_b-registration.pdf",
+              "filePath": "uploads/2026-04-29/client-admin-b-registration-d721a873-d770-48c5-9a83-ce654a7f31d4.pdf",
+              "fileMetadata": {
+                "size": 4096,
+                "mimeType": "application/pdf",
+                "uploaderId": null,
+                "originalFileName": "client_admin_b-registration.pdf"
+              },
+              "uploadedAt": "2026-04-29T17:36:07.227Z",
+              "publicUrl": "https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/client-admin-b-registration-d721a873-d770-48c5-9a83-ce654a7f31d4.pdf"
+            },
+            "upload": {
+              "url": "https://5d5402ee680a5aebd3ce9fa8037fbe92.r2.cloudflarestorage.com/indeal-test/uploads/2026-04-29/client-admin-b-registration-d721a873-d770-48c5-9a83-ce654a7f31d4.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=b79e736a1622878ddf5b9c0508d5e8b9%2F20260429%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20260429T173607Z&X-Amz-Expires=500&X-Amz-Signature=c8c00c865a7fb9d8480552c4a9669470934b9bfc57f2cad6746900891c98d02c&X-Amz-SignedHeaders=host&x-id=PutObject",
+              "method": "PUT",
+              "headers": {
+                "Content-Type": "application/pdf"
+              },
+              "expiresIn": 500
+            }
+          }
+        },
+        "durationMs": 307,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.359844Z",
+      "stepId": "client_admin_b.register",
+      "role": "client_admin_b",
+      "method": "POST",
+      "path": "/auth/register",
+      "request": {
+        "params": null,
+        "payload": {
+          "user": {
+            "username": "v1.runall.b.1777484164",
+            "email": "v1.runall.b.1777484164@indeal.test",
+            "password": "Password123!1777484164",
+            "firstName": "RunAll",
+            "lastName": "B"
+          },
+          "company": {
+            "name": "V1 RunAll B 1777484164",
+            "description": "V1 RunAll B 1777484164 created by V1 scenario runner",
+            "documents": [
+              {
+                "fileId": 92,
+                "docType": "commercial-register",
+                "description": "Registration doc from simulator"
+              }
+            ]
+          }
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 201,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/register",
+        "status": 201,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "5799f14c-a293-4839-a7c0-3de76fcd49bd",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "1203",
+          "ETag": "W/\"4b3-Owh1bXakbE7JZAPzq6zgKUnkxQc\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"Registration submitted successfully\",\"data\":{\"message\":\"Registration submitted. Please verify your email before login.\",\"user\":{\"id\":54,\"username\":\"v1.runall.b.1777484164\",\"email\":\"v1.runall.b.1777484164@indeal.test\",\"firstName\":\"RunAll\",\"lastName\":\"B\",\"jobTitle\":null,\"role\":\"agent\",\"status\":\"pending\",\"createdAt\":\"2026-04-29T17:36:07.340Z\",\"updatedAt\":\"2026-04-29T17:36:07.340Z\"},\"company\":{\"id\":53,\"agentId\":54,\"name\":\"V1 RunAll B 1777484164\",\"description\":\"V1 RunAll B 1777484164 created by V1 scenario runner\",\"address\":null,\"phone\":null,\"website\":null,\"companyType\":null,\"companyIndustry\":null,\"manufacturingStrategy\":null,\"status\":\"active\",\"contacts\":null,\"locations\":null,\"createdAt\":\"2026-04-29T17:36:07.340Z\",\"updatedAt\":\"2026-04-29T17:36:07.340Z\",\"documents\":[{\"id\":68,\"companyId\":53,\"fileId\":92,\"fileUrl\":\"https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/client-admin-b-registration-d721a873-d770-48c5-9a83-ce654a7f31d4.pdf\",\"docType\":\"commercial-register\",\"description\":\"Registration doc from simulator\",\"uploadedAt\":\"2026-04-29T17:36:07.340Z\"}]},\"debugOtp\":{\"purpose\":\"registration\",\"otp\":\"817054\",\"ttlMinutes\":30,\"env\":\"development\"}}}",
+        "json": {
+          "status": "success",
+          "message": "Registration submitted successfully",
+          "data": {
+            "message": "Registration submitted. Please verify your email before login.",
+            "user": {
+              "id": 54,
+              "username": "v1.runall.b.1777484164",
+              "email": "v1.runall.b.1777484164@indeal.test",
+              "firstName": "RunAll",
+              "lastName": "B",
+              "jobTitle": null,
+              "role": "agent",
+              "status": "pending",
+              "createdAt": "2026-04-29T17:36:07.340Z",
+              "updatedAt": "2026-04-29T17:36:07.340Z"
+            },
+            "company": {
+              "id": 53,
+              "agentId": 54,
+              "name": "V1 RunAll B 1777484164",
+              "description": "V1 RunAll B 1777484164 created by V1 scenario runner",
+              "address": null,
+              "phone": null,
+              "website": null,
+              "companyType": null,
+              "companyIndustry": null,
+              "manufacturingStrategy": null,
+              "status": "active",
+              "contacts": null,
+              "locations": null,
+              "createdAt": "2026-04-29T17:36:07.340Z",
+              "updatedAt": "2026-04-29T17:36:07.340Z",
+              "documents": [
+                {
+                  "id": 68,
+                  "companyId": 53,
+                  "fileId": 92,
+                  "fileUrl": "https://pub-735c8bd070f440538b1edb6c0d1631ea.r2.dev/uploads/2026-04-29/client-admin-b-registration-d721a873-d770-48c5-9a83-ce654a7f31d4.pdf",
+                  "docType": "commercial-register",
+                  "description": "Registration doc from simulator",
+                  "uploadedAt": "2026-04-29T17:36:07.340Z"
+                }
+              ]
+            },
+            "debugOtp": {
+              "purpose": "registration",
+              "otp": "817054",
+              "ttlMinutes": 30,
+              "env": "development"
+            }
+          }
+        },
+        "durationMs": 1028,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.843369Z",
+      "stepId": "client_admin_b.login",
+      "role": "client_admin_b",
+      "method": "POST",
+      "path": "/auth/login",
+      "request": {
+        "params": null,
+        "payload": {
+          "email": "v1.runall.b.1777484164@indeal.test",
+          "password": "Password123!1777484164"
+        }
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 403,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/login",
+        "status": 403,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "b3df8d8f-04f7-44fb-a6f2-0be82a7778f0",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "356",
+          "ETag": "W/\"164-rFEQN8guKmdff7UxuIfdqj1OBIw\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":403,\"status\":\"fail\",\"isOperational\":true},\"message\":\"Email verification required before login\",\"stack\":\"Error: Email verification required before login\\n    at Object.login (/usr/src/app/src/modules/auth/service/auth.service.js:494:11)\\n    at async /usr/src/app/src/modules/auth/controller/auth.controller.js:24:18\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 403,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "Email verification required before login",
+          "stack": "Error: Email verification required before login\n    at Object.login (/usr/src/app/src/modules/auth/service/auth.service.js:494:11)\n    at async /usr/src/app/src/modules/auth/controller/auth.controller.js:24:18"
+        },
+        "durationMs": 483,
+        "error": "HTTP Error 403: Forbidden"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.846745Z",
+      "stepId": "client_admin_a.run-all.upload_url",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/files/upload-url",
+      "request": {
+        "params": null,
+        "payload": {
+          "fileName": "run-all-client_admin_a.png",
+          "fileType": "image/png",
+          "fileSize": 2048
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/files/upload-url",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "72676c2b-0f60-495d-aa02-4faf2307b37e",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 3,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.849581Z",
+      "stepId": "client_admin_b.run-all.upload_url",
+      "role": "client_admin_b",
+      "method": "POST",
+      "path": "/files/upload-url",
+      "request": {
+        "params": null,
+        "payload": {
+          "fileName": "run-all-client_admin_b.png",
+          "fileType": "image/png",
+          "fileSize": 2048
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/files/upload-url",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "bd7f546c-2e05-4c49-8375-af5eb816199f",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.852676Z",
+      "stepId": "client_admin_a.users_me",
+      "role": "client_admin_a",
+      "method": "GET",
+      "path": "/users/me",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/users/me",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "f8d63710-8deb-4a46-94fa-9a7b3d675aa6",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "900",
+          "ETag": "W/\"384-lMwlEtIaSVUVVfBqgjemVDrYc+M\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\\n    at /usr/src/app/node_modules/router/index.js:297:9\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\\n    at next (/usr/src/app/node_modules/router/index.js:291:5)\\n    at Function.handle (/usr/src/app/node_modules/router/index.js:186:3)\\n    at router (/usr/src/app/node_modules/router/index.js:60:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\n    at /usr/src/app/node_modules/router/index.js:297:9\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\n    at next (/usr/src/app/node_modules/router/index.js:291:5)\n    at Function.handle (/usr/src/app/node_modules/router/index.js:186:3)\n    at router (/usr/src/app/node_modules/router/index.js:60:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.858954Z",
+      "stepId": "client_admin_a.company_get",
+      "role": "client_admin_a",
+      "method": "GET",
+      "path": "/companies/me",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/companies/me",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "95f21ac2-c5ad-4a3b-846d-7c292d5ad78f",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 6,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.862036Z",
+      "stepId": "client_admin_a.company_update",
+      "role": "client_admin_a",
+      "method": "PUT",
+      "path": "/companies/me",
+      "request": {
+        "params": null,
+        "payload": {
+          "description": "Company updated by client_admin_a"
+        }
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/companies/me",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "118c2111-9bdb-4ef0-9f90-2b3fd64c7077",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.864732Z",
+      "stepId": "client_admin_b.users_me",
+      "role": "client_admin_b",
+      "method": "GET",
+      "path": "/users/me",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/users/me",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "a31eff84-d734-4440-afca-de42e9cbfaff",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "900",
+          "ETag": "W/\"384-lMwlEtIaSVUVVfBqgjemVDrYc+M\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\\n    at /usr/src/app/node_modules/router/index.js:297:9\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\\n    at next (/usr/src/app/node_modules/router/index.js:291:5)\\n    at Function.handle (/usr/src/app/node_modules/router/index.js:186:3)\\n    at router (/usr/src/app/node_modules/router/index.js:60:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\n    at /usr/src/app/node_modules/router/index.js:297:9\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\n    at next (/usr/src/app/node_modules/router/index.js:291:5)\n    at Function.handle (/usr/src/app/node_modules/router/index.js:186:3)\n    at router (/usr/src/app/node_modules/router/index.js:60:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.867672Z",
+      "stepId": "client_admin_b.company_get",
+      "role": "client_admin_b",
+      "method": "GET",
+      "path": "/companies/me",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/companies/me",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "ca6cf403-9c1d-4882-931f-5c540590c843",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.870391Z",
+      "stepId": "client_admin_b.company_update",
+      "role": "client_admin_b",
+      "method": "PUT",
+      "path": "/companies/me",
+      "request": {
+        "params": null,
+        "payload": {
+          "description": "Company updated by client_admin_b"
+        }
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/companies/me",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "5c43cabd-c19f-45c3-b82b-3a40c0ad87f5",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.873385Z",
+      "stepId": "a.create_deal",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/deals",
+      "request": {
+        "params": null,
+        "payload": {
+          "dealName": "RunAll Demand Deal",
+          "dealDescription": "Deal for run_all_apis.py",
+          "dealValue": 77000,
+          "dealType": "demand",
+          "attachments": []
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/deals",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "6a57a39c-4985-41cd-8439-e061d5b481e8",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.876578Z",
+      "stepId": "b.submit_request",
+      "role": "client_admin_b",
+      "method": "POST",
+      "path": "/deals/None/requests",
+      "request": {
+        "params": null,
+        "payload": {
+          "requestKind": "demand",
+          "demandDetails": {
+            "productServiceName": "Industrial resin",
+            "availableQuantity": 300,
+            "unitPrice": 80,
+            "currency": "USD"
+          },
+          "attachments": []
+        }
+      },
+      "expectedStatus": [
+        201
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/deals/None/requests",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "9bc9ba4d-2b86-4f4c-b371-ec2194adc259",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "915",
+          "ETag": "W/\"393-8TlMeK7iHC8vjfUErF1iK7HUKko\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at param (/usr/src/app/node_modules/router/index.js:600:14)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at param (/usr/src/app/node_modules/router/index.js:600:14)"
+        },
+        "durationMs": 3,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.878999Z",
+      "stepId": "a.my_deals",
+      "role": "client_admin_a",
+      "method": "GET",
+      "path": "/deals/me/deals",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/deals/me/deals",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "e214f982-4887-4593-993e-b06b62887908",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.882156Z",
+      "stepId": "b.my_requests",
+      "role": "client_admin_b",
+      "method": "GET",
+      "path": "/deals/me/requests",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/deals/me/requests",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "6e22c45c-e520-4c26-aeba-9cdb5eca7c63",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 3,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.887135Z",
+      "stepId": "a.create_chat_room",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/chats",
+      "request": {
+        "params": null,
+        "payload": {
+          "targetCompanyId": 53
+        }
+      },
+      "expectedStatus": null,
+      "expectedStatusFamily": "2xx",
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/chats",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "533872b3-984c-4f63-ac9c-219a697e99be",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "900",
+          "ETag": "W/\"384-lMwlEtIaSVUVVfBqgjemVDrYc+M\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\\n    at /usr/src/app/node_modules/router/index.js:297:9\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\\n    at next (/usr/src/app/node_modules/router/index.js:291:5)\\n    at Function.handle (/usr/src/app/node_modules/router/index.js:186:3)\\n    at router (/usr/src/app/node_modules/router/index.js:60:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\n    at /usr/src/app/node_modules/router/index.js:297:9\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\n    at next (/usr/src/app/node_modules/router/index.js:291:5)\n    at Function.handle (/usr/src/app/node_modules/router/index.js:186:3)\n    at router (/usr/src/app/node_modules/router/index.js:60:12)"
+        },
+        "durationMs": 4,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.889974Z",
+      "stepId": "a.chats_list",
+      "role": "client_admin_a",
+      "method": "GET",
+      "path": "/chats",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/chats",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "5506135e-0cef-47c4-86dc-7dac5e8d9533",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "900",
+          "ETag": "W/\"384-lMwlEtIaSVUVVfBqgjemVDrYc+M\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\\n    at /usr/src/app/node_modules/router/index.js:297:9\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\\n    at next (/usr/src/app/node_modules/router/index.js:291:5)\\n    at Function.handle (/usr/src/app/node_modules/router/index.js:186:3)\\n    at router (/usr/src/app/node_modules/router/index.js:60:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\n    at /usr/src/app/node_modules/router/index.js:297:9\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\n    at next (/usr/src/app/node_modules/router/index.js:291:5)\n    at Function.handle (/usr/src/app/node_modules/router/index.js:186:3)\n    at router (/usr/src/app/node_modules/router/index.js:60:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:08.892702Z",
+      "stepId": "a.logout",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/auth/logout",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": null,
+      "expectedStatusFamily": "2xx",
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/logout",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "cb1ec59f-af9c-4a45-af51-2ee9941186d1",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:08 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:09.439005Z",
+      "stepId": "a.login_again",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/auth/login",
+      "request": {
+        "params": null,
+        "payload": {
+          "email": "v1.runall.a.1777484164@indeal.test",
+          "password": "Password123!1777484164"
+        }
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 403,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/login",
+        "status": 403,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "dec1b2b6-eff3-4e62-97f0-15b20c708f69",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "480",
+          "ETag": "W/\"1e0-wjFMk7KIVP3smxFuXjJ5Ob1cQf0\"",
+          "Date": "Wed, 29 Apr 2026 17:36:09 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":403,\"status\":\"fail\",\"isOperational\":true},\"message\":\"Email verification required before login\",\"stack\":\"Error: Email verification required before login\\n    at Object.login (/usr/src/app/src/modules/auth/service/auth.service.js:494:11)\\n    at runNextTicks (node:internal/process/task_queues:60:5)\\n    at process.processImmediate (node:internal/timers:454:9)\\n    at async /usr/src/app/src/modules/auth/controller/auth.controller.js:24:18\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 403,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "Email verification required before login",
+          "stack": "Error: Email verification required before login\n    at Object.login (/usr/src/app/src/modules/auth/service/auth.service.js:494:11)\n    at runNextTicks (node:internal/process/task_queues:60:5)\n    at process.processImmediate (node:internal/timers:454:9)\n    at async /usr/src/app/src/modules/auth/controller/auth.controller.js:24:18"
+        },
+        "durationMs": 546,
+        "error": "HTTP Error 403: Forbidden"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:09.767622Z",
+      "stepId": "a.resend_verification",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/auth/resend-verification",
+      "request": {
+        "params": null,
+        "payload": {
+          "email": "v1.runall.a.1777484164@indeal.test"
+        }
+      },
+      "expectedStatus": null,
+      "expectedStatusFamily": "2xx",
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 200,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/resend-verification",
+        "status": 200,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "ab44fcb4-75dd-4d02-b40b-b22d56b3e2d3",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "258",
+          "ETag": "W/\"102-TsA2PQ+8a0xC43i+nEL4OUXZerA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:09 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"If the email exists, verification instructions were sent.\",\"data\":{\"message\":\"If the email exists, verification instructions were sent.\",\"debugOtp\":{\"purpose\":\"registration\",\"otp\":\"603698\",\"ttlMinutes\":30,\"env\":\"development\"}}}",
+        "json": {
+          "status": "success",
+          "message": "If the email exists, verification instructions were sent.",
+          "data": {
+            "message": "If the email exists, verification instructions were sent.",
+            "debugOtp": {
+              "purpose": "registration",
+              "otp": "603698",
+              "ttlMinutes": 30,
+              "env": "development"
+            }
+          }
+        },
+        "durationMs": 328,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:10.205724Z",
+      "stepId": "a.forgot_password",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/auth/forgot-password",
+      "request": {
+        "params": null,
+        "payload": {
+          "email": "v1.runall.a.1777484164@indeal.test"
+        }
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 200,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/forgot-password",
+        "status": 200,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "59b41913-eeea-45a1-8fb4-f8f8a6319610",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "235",
+          "ETag": "W/\"eb-AuvzKdC96q5EsWf9eFZ998FAbis\"",
+          "Date": "Wed, 29 Apr 2026 17:36:10 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"If the email exists, instructions were sent.\",\"data\":{\"message\":\"If the email exists, instructions were sent.\",\"debugOtp\":{\"purpose\":\"forgot-password\",\"otp\":\"093970\",\"ttlMinutes\":30,\"env\":\"development\"}}}",
+        "json": {
+          "status": "success",
+          "message": "If the email exists, instructions were sent.",
+          "data": {
+            "message": "If the email exists, instructions were sent.",
+            "debugOtp": {
+              "purpose": "forgot-password",
+              "otp": "093970",
+              "ttlMinutes": 30,
+              "env": "development"
+            }
+          }
+        },
+        "durationMs": 437,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:10.212146Z",
+      "stepId": "a.verify_otp",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/auth/verify-otp",
+      "request": {
+        "params": null,
+        "payload": {
+          "email": "v1.runall.a.1777484164@indeal.test",
+          "otp": "093970"
+        }
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 200,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/verify-otp",
+        "status": 200,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "3b375774-5235-4818-9fe5-ff0a22187aa1",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "105",
+          "ETag": "W/\"69-qQxUg5O48fQJ3p627q9nrt1VyYA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:10 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"OTP verified successfully\",\"data\":{\"message\":\"OTP verified successfully\"}}",
+        "json": {
+          "status": "success",
+          "message": "OTP verified successfully",
+          "data": {
+            "message": "OTP verified successfully"
+          }
+        },
+        "durationMs": 6,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:11.688354Z",
+      "stepId": "a.reset_password",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/auth/reset-password",
+      "request": {
+        "params": null,
+        "payload": {
+          "email": "v1.runall.a.1777484164@indeal.test",
+          "otp": "093970",
+          "password": "ResetPass!1777484164",
+          "confirmPassword": "ResetPass!1777484164"
+        }
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 200,
+        "actualStatusFamily": "2xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/reset-password",
+        "status": 200,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "6c12cee5-b37b-495c-95a4-2fad9093f3a3",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "115",
+          "ETag": "W/\"73-Z6+cRx+z2EF6MCWzTTXDqfjhRiI\"",
+          "Date": "Wed, 29 Apr 2026 17:36:11 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"success\",\"message\":\"Password updated successfully.\",\"data\":{\"message\":\"Password updated successfully.\"}}",
+        "json": {
+          "status": "success",
+          "message": "Password updated successfully.",
+          "data": {
+            "message": "Password updated successfully."
+          }
+        },
+        "durationMs": 1476,
+        "error": null
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:12.162843Z",
+      "stepId": "a.login_after_reset",
+      "role": "client_admin_a",
+      "method": "POST",
+      "path": "/auth/login",
+      "request": {
+        "params": null,
+        "payload": {
+          "email": "v1.runall.a.1777484164@indeal.test",
+          "password": "ResetPass!1777484164"
+        }
+      },
+      "expectedStatus": [
+        200
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 403,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/login",
+        "status": 403,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "ae1230a0-0eae-49fe-b759-8881e28ec4a2",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "356",
+          "ETag": "W/\"164-rFEQN8guKmdff7UxuIfdqj1OBIw\"",
+          "Date": "Wed, 29 Apr 2026 17:36:12 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":403,\"status\":\"fail\",\"isOperational\":true},\"message\":\"Email verification required before login\",\"stack\":\"Error: Email verification required before login\\n    at Object.login (/usr/src/app/src/modules/auth/service/auth.service.js:494:11)\\n    at async /usr/src/app/src/modules/auth/controller/auth.controller.js:24:18\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 403,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "Email verification required before login",
+          "stack": "Error: Email verification required before login\n    at Object.login (/usr/src/app/src/modules/auth/service/auth.service.js:494:11)\n    at async /usr/src/app/src/modules/auth/controller/auth.controller.js:24:18"
+        },
+        "durationMs": 474,
+        "error": "HTTP Error 403: Forbidden"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:12.165852Z",
+      "stepId": "negative.unauth.users_me",
+      "role": "guest",
+      "method": "GET",
+      "path": "/users/me",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        401
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/users/me",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "1392ec20-d78d-4b82-a608-df6b734f6177",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "900",
+          "ETag": "W/\"384-lMwlEtIaSVUVVfBqgjemVDrYc+M\"",
+          "Date": "Wed, 29 Apr 2026 17:36:12 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\\n    at /usr/src/app/node_modules/router/index.js:297:9\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\\n    at next (/usr/src/app/node_modules/router/index.js:291:5)\\n    at Function.handle (/usr/src/app/node_modules/router/index.js:186:3)\\n    at router (/usr/src/app/node_modules/router/index.js:60:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\n    at /usr/src/app/node_modules/router/index.js:297:9\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\n    at next (/usr/src/app/node_modules/router/index.js:291:5)\n    at Function.handle (/usr/src/app/node_modules/router/index.js:186:3)\n    at router (/usr/src/app/node_modules/router/index.js:60:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:12.167946Z",
+      "stepId": "negative.unauth.files_upload",
+      "role": "guest",
+      "method": "POST",
+      "path": "/files/upload-url",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        401
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/files/upload-url",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "840c13d5-e37c-4ce8-b716-3418da851c46",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "923",
+          "ETag": "W/\"39b-bfkYWHkmXLgPgN/YdEoHXcIB4HA\"",
+          "Date": "Wed, 29 Apr 2026 17:36:12 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at /usr/src/app/node_modules/router/index.js:295:15\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at next (/usr/src/app/node_modules/router/lib/route.js:157:13)\n    at Route.dispatch (/usr/src/app/node_modules/router/lib/route.js:117:3)\n    at handle (/usr/src/app/node_modules/router/index.js:435:11)\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at /usr/src/app/node_modules/router/index.js:295:15\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)"
+        },
+        "durationMs": 1,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:12.169991Z",
+      "stepId": "negative.removed.admin",
+      "role": "guest",
+      "method": "GET",
+      "path": "/admin/companies",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        404
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 404,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/admin/companies",
+        "status": 404,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "289bd633-a62c-42fe-b217-cf706dbe26c6",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "755",
+          "ETag": "W/\"2f3-ouSS5suLMg/qe4P4vXoQhACVQHo\"",
+          "Date": "Wed, 29 Apr 2026 17:36:12 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":404,\"status\":\"fail\",\"isOperational\":true},\"message\":\"Cannot find /api/v1/admin/companies on this server\",\"stack\":\"Error: Cannot find /api/v1/admin/companies on this server\\n    at /usr/src/app/src/app/index.js:50:8\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\\n    at /usr/src/app/node_modules/router/index.js:297:9\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\\n    at Immediate.next (/usr/src/app/node_modules/router/index.js:291:5)\\n    at Immediate._onImmediate (/usr/src/app/node_modules/router/index.js:688:15)\\n    at process.processImmediate (node:internal/timers:485:21)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 404,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "Cannot find /api/v1/admin/companies on this server",
+          "stack": "Error: Cannot find /api/v1/admin/companies on this server\n    at /usr/src/app/src/app/index.js:50:8\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\n    at /usr/src/app/node_modules/router/index.js:297:9\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\n    at Immediate.next (/usr/src/app/node_modules/router/index.js:291:5)\n    at Immediate._onImmediate (/usr/src/app/node_modules/router/index.js:688:15)\n    at process.processImmediate (node:internal/timers:485:21)"
+        },
+        "durationMs": 1,
+        "error": "HTTP Error 404: Not Found"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:12.172201Z",
+      "stepId": "negative.removed.ads",
+      "role": "guest",
+      "method": "GET",
+      "path": "/ads/active",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        404
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 404,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/ads/active",
+        "status": 404,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "bcf22137-0626-4a30-9b97-9230de39ca59",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "745",
+          "ETag": "W/\"2e9-gcN0KNnnaAz8FMAeqiEV/ufWQCg\"",
+          "Date": "Wed, 29 Apr 2026 17:36:12 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":404,\"status\":\"fail\",\"isOperational\":true},\"message\":\"Cannot find /api/v1/ads/active on this server\",\"stack\":\"Error: Cannot find /api/v1/ads/active on this server\\n    at /usr/src/app/src/app/index.js:50:8\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\\n    at /usr/src/app/node_modules/router/index.js:297:9\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\\n    at Immediate.next (/usr/src/app/node_modules/router/index.js:291:5)\\n    at Immediate._onImmediate (/usr/src/app/node_modules/router/index.js:688:15)\\n    at process.processImmediate (node:internal/timers:485:21)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 404,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "Cannot find /api/v1/ads/active on this server",
+          "stack": "Error: Cannot find /api/v1/ads/active on this server\n    at /usr/src/app/src/app/index.js:50:8\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\n    at /usr/src/app/node_modules/router/index.js:297:9\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\n    at Immediate.next (/usr/src/app/node_modules/router/index.js:291:5)\n    at Immediate._onImmediate (/usr/src/app/node_modules/router/index.js:688:15)\n    at process.processImmediate (node:internal/timers:485:21)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 404: Not Found"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:12.174330Z",
+      "stepId": "negative.removed.notifications",
+      "role": "guest",
+      "method": "GET",
+      "path": "/notifications",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        404
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 404,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/notifications",
+        "status": 404,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "2d23e1f3-3e0f-4654-9805-46e04f564992",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "751",
+          "ETag": "W/\"2ef-tCdwRTair8r3a524jtGfmDjp4Y8\"",
+          "Date": "Wed, 29 Apr 2026 17:36:12 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":404,\"status\":\"fail\",\"isOperational\":true},\"message\":\"Cannot find /api/v1/notifications on this server\",\"stack\":\"Error: Cannot find /api/v1/notifications on this server\\n    at /usr/src/app/src/app/index.js:50:8\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\\n    at /usr/src/app/node_modules/router/index.js:297:9\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\\n    at Immediate.next (/usr/src/app/node_modules/router/index.js:291:5)\\n    at Immediate._onImmediate (/usr/src/app/node_modules/router/index.js:688:15)\\n    at process.processImmediate (node:internal/timers:485:21)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 404,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "Cannot find /api/v1/notifications on this server",
+          "stack": "Error: Cannot find /api/v1/notifications on this server\n    at /usr/src/app/src/app/index.js:50:8\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\n    at /usr/src/app/node_modules/router/index.js:297:9\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\n    at Immediate.next (/usr/src/app/node_modules/router/index.js:291:5)\n    at Immediate._onImmediate (/usr/src/app/node_modules/router/index.js:688:15)\n    at process.processImmediate (node:internal/timers:485:21)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 404: Not Found"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:12.176887Z",
+      "stepId": "negative.removed.auth_admin",
+      "role": "guest",
+      "method": "POST",
+      "path": "/auth/admin/login",
+      "request": {
+        "params": null,
+        "payload": {
+          "email": "admin@indeal.local",
+          "password": "Password123!"
+        }
+      },
+      "expectedStatus": [
+        404
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": true,
+        "actualStatus": 404,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/auth/admin/login",
+        "status": 404,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "0ea61c9a-5073-41b4-903a-0c02112e1e04",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "757",
+          "ETag": "W/\"2f5-J06hirUjVW+a8+AV10BZRIkAF88\"",
+          "Date": "Wed, 29 Apr 2026 17:36:12 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":404,\"status\":\"fail\",\"isOperational\":true},\"message\":\"Cannot find /api/v1/auth/admin/login on this server\",\"stack\":\"Error: Cannot find /api/v1/auth/admin/login on this server\\n    at /usr/src/app/src/app/index.js:50:8\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\\n    at /usr/src/app/node_modules/router/index.js:297:9\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\\n    at Immediate.next (/usr/src/app/node_modules/router/index.js:291:5)\\n    at Immediate._onImmediate (/usr/src/app/node_modules/router/index.js:688:15)\\n    at process.processImmediate (node:internal/timers:485:21)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 404,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "Cannot find /api/v1/auth/admin/login on this server",
+          "stack": "Error: Cannot find /api/v1/auth/admin/login on this server\n    at /usr/src/app/src/app/index.js:50:8\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\n    at /usr/src/app/node_modules/router/index.js:297:9\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\n    at Immediate.next (/usr/src/app/node_modules/router/index.js:291:5)\n    at Immediate._onImmediate (/usr/src/app/node_modules/router/index.js:688:15)\n    at process.processImmediate (node:internal/timers:485:21)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 404: Not Found"
+      }
+    },
+    {
+      "timestamp": "2026-04-29T17:36:12.179695Z",
+      "stepId": "negative.removed.devices.authenticated_missing_route",
+      "role": "client_admin_b",
+      "method": "GET",
+      "path": "/users/me/devices",
+      "request": {
+        "params": null,
+        "payload": null
+      },
+      "expectedStatus": [
+        404
+      ],
+      "expectedStatusFamily": null,
+      "assertionResult": {
+        "passed": false,
+        "actualStatus": 401,
+        "actualStatusFamily": "4xx"
+      },
+      "response": {
+        "url": "http://localhost:3000/api/v1/users/me/devices",
+        "status": 401,
+        "headers": {
+          "Content-Security-Policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+          "Cross-Origin-Opener-Policy": "same-origin",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Origin-Agent-Cluster": "?1",
+          "Referrer-Policy": "no-referrer",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          "X-Content-Type-Options": "nosniff",
+          "X-DNS-Prefetch-Control": "off",
+          "X-Download-Options": "noopen",
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Permitted-Cross-Domain-Policies": "none",
+          "X-XSS-Protection": "0",
+          "Access-Control-Allow-Origin": "*",
+          "X-Request-ID": "ade9862a-5d29-434c-9f9b-de2b6420a64a",
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Length": "900",
+          "ETag": "W/\"384-lMwlEtIaSVUVVfBqgjemVDrYc+M\"",
+          "Date": "Wed, 29 Apr 2026 17:36:12 GMT",
+          "Connection": "close"
+        },
+        "body": "{\"status\":\"fail\",\"error\":{\"statusCode\":401,\"status\":\"fail\",\"isOperational\":true},\"message\":\"You are not logged in! Please log in to get access.\",\"stack\":\"Error: You are not logged in! Please log in to get access.\\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\\n    at /usr/src/app/node_modules/router/index.js:297:9\\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\\n    at next (/usr/src/app/node_modules/router/index.js:291:5)\\n    at Function.handle (/usr/src/app/node_modules/router/index.js:186:3)\\n    at router (/usr/src/app/node_modules/router/index.js:60:12)\"}",
+        "json": {
+          "status": "fail",
+          "error": {
+            "statusCode": 401,
+            "status": "fail",
+            "isOperational": true
+          },
+          "message": "You are not logged in! Please log in to get access.",
+          "stack": "Error: You are not logged in! Please log in to get access.\n    at unauthorizedError (/usr/src/app/src/core/middleware/authMiddleware.js:15:3)\n    at /usr/src/app/src/core/middleware/authMiddleware.js:40:17\n    at /usr/src/app/src/core/http/catchAsync.js:3:5\n    at Layer.handleRequest (/usr/src/app/node_modules/router/lib/layer.js:152:17)\n    at trimPrefix (/usr/src/app/node_modules/router/index.js:342:13)\n    at /usr/src/app/node_modules/router/index.js:297:9\n    at processParams (/usr/src/app/node_modules/router/index.js:582:12)\n    at next (/usr/src/app/node_modules/router/index.js:291:5)\n    at Function.handle (/usr/src/app/node_modules/router/index.js:186:3)\n    at router (/usr/src/app/node_modules/router/index.js:60:12)"
+        },
+        "durationMs": 2,
+        "error": "HTTP Error 401: Unauthorized"
+      }
+    }
+  ]
+}

@@ -140,8 +140,6 @@ def run():
     for step_id, path in [
         ("guest.health", "/health"),
         ("guest.system", "/system/config"),
-        ("guest.support_info", "/support/info"),
-        ("guest.support_redirect", "/support/email-redirect"),
         ("guest.company_search", "/companies/search"),
         ("guest.deals", "/deals"),
     ]:
@@ -365,6 +363,8 @@ def run():
         ("removed.admin", "GET", "/admin/companies"),
         ("removed.ads", "GET", "/ads/active"),
         ("removed.notifications", "GET", "/notifications"),
+        ("removed.support_info", "GET", "/support/info"),
+        ("removed.support_redirect", "GET", "/support/email-redirect"),
         ("removed.support_tickets", "GET", "/support/tickets"),
         ("removed.support_chat", "GET", "/support/chat"),
         ("removed.devices.guest_unauthorized", "GET", "/users/me/devices"),

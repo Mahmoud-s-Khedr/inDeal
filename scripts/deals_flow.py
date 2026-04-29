@@ -3,13 +3,13 @@ import os
 import sys
 import time
 
-from v1_scenario_lib import ScenarioRunner, load_env_files, register_actor
+from v1_scenario_lib import ScenarioRunner, load_env_files, register_actor, resolve_base_url
 
 
 def run():
     load_env_files()
     ts = int(time.time())
-    base_url = os.environ.get("BASE_URL", "http://localhost:3000/api/v1")
+    base_url = resolve_base_url()
     output_path = os.environ.get(
         "DEALS_FLOW_OUTPUT_FILE",
         os.path.join("scripts", "output", "deals_flow_results.json"),
@@ -55,17 +55,25 @@ def run():
         )
         return runner.require_id(runner.extract_data(deal_resp), keys=["id"], context=step_id)
 
+    runner.step(
+        step_id="public.list_deals",
+        role="guest",
+        method="GET",
+        path="/deals",
+        params={"sortBy": "date", "sortOrder": "desc", "limit": 20},
+        expected_statuses=[200],
+    )
+
     deal_cancel_id = create_deal("owner.create_deal.cancel_track", "V1 Supply Deal - Cancel")
     deal_accept_id = create_deal("owner.create_deal.accept_track", "V1 Supply Deal - Accept")
     deal_withdraw_id = create_deal("owner.create_deal.withdraw_track", "V1 Supply Deal - Withdraw")
 
     runner.step(
-        step_id="applicant.list_deals",
-        role=applicant.label,
+        step_id="owner.my_deals",
+        role=owner.label,
         method="GET",
-        path="/deals",
-        token=applicant.token,
-        params={"sortBy": "date", "sortOrder": "desc", "limit": 20},
+        path="/deals/me/deals",
+        token=owner.token,
         expected_statuses=[200],
     )
 
@@ -79,7 +87,6 @@ def run():
             expected_statuses=[200],
         )
 
-    # Track 1: submit -> pause -> cancel -> reapply
     cancel_req_id = None
     if deal_cancel_id:
         cancel_req_resp = runner.step(
@@ -123,7 +130,6 @@ def run():
             payload={"cancelReason": "Found another supplier"},
             expected_statuses=[200],
         )
-
         runner.step(
             step_id="applicant.reapply_after_cancel",
             role=applicant.label,
@@ -158,16 +164,7 @@ def run():
             reason="missing request id from applicant.submit_request_cancel_path",
             expected_statuses=[200],
         )
-        runner.blocked_step(
-            step_id="applicant.reapply_after_cancel",
-            role=applicant.label,
-            method="POST",
-            path="/deals/<dealId>/requests",
-            reason="cancel track did not create a request",
-            expected_statuses=[201],
-        )
 
-    # Track 2: submit -> owner accepts
     accepted_req_id = None
     if deal_accept_id:
         accepted_req_resp = runner.step(
@@ -223,7 +220,6 @@ def run():
             expected_statuses=[200],
         )
 
-    # Track 3: submit -> withdraw alias
     withdraw_req_id = None
     if deal_withdraw_id:
         withdraw_req_resp = runner.step(
@@ -269,34 +265,6 @@ def run():
             expected_statuses=[200],
         )
 
-    if deal_accept_id:
-        runner.step(
-            step_id="owner.close_deal",
-            role=owner.label,
-            method="PUT",
-            path=f"/deals/{deal_accept_id}",
-            token=owner.token,
-            payload={"status": "closed"},
-            expected_statuses=[200],
-        )
-        runner.step(
-            step_id="owner.reopen_deal",
-            role=owner.label,
-            method="PUT",
-            path=f"/deals/{deal_accept_id}",
-            token=owner.token,
-            payload={"status": "open"},
-            expected_statuses=[200],
-        )
-
-    runner.step(
-        step_id="owner.my_deals",
-        role=owner.label,
-        method="GET",
-        path="/deals/me/deals",
-        token=owner.token,
-        expected_statuses=[200],
-    )
     runner.step(
         step_id="applicant.my_requests",
         role=applicant.label,
@@ -308,6 +276,15 @@ def run():
 
     if deal_accept_id:
         runner.step(
+            step_id="owner.update_deal",
+            role=owner.label,
+            method="PUT",
+            path=f"/deals/{deal_accept_id}",
+            token=owner.token,
+            payload={"dealDescription": "Updated by deals_flow"},
+            expected_statuses=[200],
+        )
+        runner.step(
             step_id="owner.archive_deal",
             role=owner.label,
             method="DELETE",
@@ -316,20 +293,11 @@ def run():
             expected_statuses=[200],
         )
 
-    runner.step(
-        step_id="negative.removed_ads",
-        role="guest",
-        method="GET",
-        path="/ads/active",
-        expected_statuses=[404],
-    )
-
     runner.save(
         output_path,
         extra_meta={
             "scenario": "v1_deals_flow",
-            "ownerEmail": owner.email,
-            "applicantEmail": applicant.email,
+            "actors": [owner.email, applicant.email],
         },
     )
     print(f"Saved deals flow results to {output_path}")

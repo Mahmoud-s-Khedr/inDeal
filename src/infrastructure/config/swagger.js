@@ -22,7 +22,6 @@ const swaggerDefinition = {
     { name: 'Chats' },
     { name: 'Files' },
     { name: 'Users' },
-    { name: 'Support' },
     { name: 'System' },
     { name: 'Search' },
   ],
