@@ -27,7 +27,6 @@ Base URL prefix: `/api/v1`
 - `GET /companies/search`
 - `GET /companies/me`
 - `PUT /companies/me`
-- `POST /companies/me/resend-for-review`
 - `GET/POST/PUT/DELETE /companies/me/gallery[/:galleryItemId]`
 - `GET/POST/PUT/DELETE /companies/me/documents[/:documentId]`
 - `GET/PUT/DELETE /companies/me/registration-documents[/:registrationDocumentId]`

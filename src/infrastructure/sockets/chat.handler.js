@@ -3,6 +3,7 @@ const { verifyToken } = require('../../shared/utils/jwt');
 const companyModule = require('../../modules/company');
 const chatModule = require('../../modules/chat');
 const redis = require('../config/redis');
+const { validateSocketPayload } = require('../../core/contracts/socket/registry');
 const { companyRepository } = companyModule.repository;
 const chatService = chatModule.service;
 
@@ -93,6 +94,23 @@ const authenticateSocket = async (socket, next) => {
  */
 const registerChatHandlers = (io, socket) => {
   const { userId, companyId, company } = socket;
+  const emitValidated = (event, payload) => {
+    const validation = validateSocketPayload({ direction: 'send', event, payload });
+    if (!validation.success) {
+      logger.error({ event, reason: validation.reason }, 'Socket DTO validation failed (outgoing)');
+      return;
+    }
+    socket.emit(event, validation.data);
+  };
+
+  const ioEmitValidated = (room, event, payload) => {
+    const validation = validateSocketPayload({ direction: 'send', event, payload });
+    if (!validation.success) {
+      logger.error({ event, reason: validation.reason }, 'Socket DTO validation failed (outgoing)');
+      return;
+    }
+    io.to(room).emit(event, validation.data);
+  };
 
   // Track online user
   trackOnlineSocket(socket.id, userId, companyId).catch((error) =>
@@ -123,7 +141,7 @@ const registerChatHandlers = (io, socket) => {
         result.b2bRoomIds = b2bRoomIds;
       }
 
-      socket.emit('chat:ready', result);
+      emitValidated('chat:ready', result);
       logger.debug(
         {
           socketId: socket.id,
@@ -136,7 +154,7 @@ const registerChatHandlers = (io, socket) => {
     } catch (error) {
       logger.error({ err: error, socketId: socket.id }, 'Failed to auto-join channels');
       result.error = 'Failed to load channels';
-      socket.emit('chat:ready', result);
+      emitValidated('chat:ready', result);
     }
   };
 
@@ -151,7 +169,16 @@ const registerChatHandlers = (io, socket) => {
    */
   socket.on('chat:message', async (data) => {
     try {
-      const { roomId, text, messageText, attachmentFileId } = data || {};
+      const parsedIncoming = validateSocketPayload({
+        direction: 'receive',
+        event: 'chat:message',
+        payload: data || {},
+      });
+      if (!parsedIncoming.success) {
+        emitValidated('chat:error', { message: 'Invalid chat:message payload', code: 400 });
+        return;
+      }
+      const { roomId, text, messageText, attachmentFileId } = parsedIncoming.data;
 
       const messagePayload = await chatService.sendMessage(roomId, userId, companyId, {
         messageText: messageText ?? text,
@@ -164,11 +191,11 @@ const registerChatHandlers = (io, socket) => {
       const otherCompanyId = room.otherCompany?.id;
 
       const msgForSender = await chatService.getMessageById(messagePayload.id, senderCompanyId);
-      io.to(`company:${senderCompanyId}`).emit('chat:message', msgForSender);
+      ioEmitValidated(`company:${senderCompanyId}`, 'chat:message', msgForSender);
 
       if (otherCompanyId) {
         const msgForOther = await chatService.getMessageById(messagePayload.id, otherCompanyId);
-        io.to(`company:${otherCompanyId}`).emit('chat:message', msgForOther);
+        ioEmitValidated(`company:${otherCompanyId}`, 'chat:message', msgForOther);
       }
 
       logger.debug(
@@ -182,7 +209,7 @@ const registerChatHandlers = (io, socket) => {
       );
     } catch (error) {
       logger.error({ err: error, event: 'chat:message' }, 'Error sending message');
-      socket.emit('chat:error', {
+      emitValidated('chat:error', {
         message: error.message || 'Failed to send message',
         code: error.statusCode || 500,
       });
@@ -198,11 +225,20 @@ const registerChatHandlers = (io, socket) => {
    */
   socket.on('chat:read', async (data) => {
     try {
-      const { roomId, messageId } = data || {};
+      const parsedIncoming = validateSocketPayload({
+        direction: 'receive',
+        event: 'chat:read',
+        payload: data || {},
+      });
+      if (!parsedIncoming.success) {
+        emitValidated('chat:error', { message: 'Invalid chat:read payload', code: 400 });
+        return;
+      }
+      const { roomId, messageId } = parsedIncoming.data;
       const readResult = await chatService.markRoomRead(roomId, companyId, { messageId });
 
       const roomName = `room:${roomId}`;
-      io.to(roomName).emit('chat:read', {
+      ioEmitValidated(roomName, 'chat:read', {
         roomId: readResult.roomId,
         companyId,
         company,
@@ -211,7 +247,7 @@ const registerChatHandlers = (io, socket) => {
       });
     } catch (error) {
       logger.error({ err: error, event: 'chat:read' }, 'Error marking messages read');
-      socket.emit('chat:error', {
+      emitValidated('chat:error', {
         message: error.message || 'Failed to mark messages read',
         code: error.statusCode || 500,
       });
@@ -226,11 +262,20 @@ const registerChatHandlers = (io, socket) => {
    * Server behavior: broadcasts to other participants in the room.
    */
   socket.on('chat:typing', (data) => {
-    const { roomId, isTyping } = data;
+    const parsedIncoming = validateSocketPayload({
+      direction: 'receive',
+      event: 'chat:typing',
+      payload: data || {},
+    });
+    if (!parsedIncoming.success) {
+      emitValidated('chat:error', { message: 'Invalid chat:typing payload', code: 400 });
+      return;
+    }
+    const { roomId, isTyping } = parsedIncoming.data;
     const roomName = `room:${roomId}`;
 
     // Broadcast to other users in the room
-    socket.to(roomName).emit('chat:typing', {
+    ioEmitValidated(roomName, 'chat:typing', {
       roomId,
       userId,
       companyId,

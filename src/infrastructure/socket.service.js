@@ -1,5 +1,15 @@
 let io = null;
 const logger = require('../shared/utils/logger');
+const { validateSocketPayload } = require('../core/contracts/socket/registry');
+
+const emitValidated = (target, event, payload) => {
+  const validation = validateSocketPayload({ direction: 'send', event, payload });
+  if (!validation.success) {
+    logger.error({ event, reason: validation.reason }, 'Socket DTO validation failed (outgoing)');
+    return;
+  }
+  target.emit(event, validation.data);
+};
 
 const init = (ioInstance) => {
   io = ioInstance;
@@ -21,7 +31,7 @@ const notifyUser = (userId, notification) => {
   }
 
   // notification object matches the DB structure or UI expectation
-  io.to(`user:${userId}`).emit('notification:new', notification);
+  emitValidated(io.to(`user:${userId}`), 'notification:new', notification);
   logger.debug({ userId, type: notification.type }, 'Notification emitted to user');
 };
 
@@ -60,7 +70,7 @@ const subscribeUserToRoom = async (userId, roomIdOrRoom, maybeRoom) => {
   for (const socket of sockets) {
     socket.join(chatRoom);
     // `chat:room:new` payload is the room object (same schema as GET /chats/:roomId)
-    socket.emit('chat:room:new', roomPayload);
+    emitValidated(socket, 'chat:room:new', roomPayload);
     logger.debug({ socketId: socket.id, userId, roomId }, 'User subscribed to new room');
   }
 
@@ -128,8 +138,8 @@ const notifyRoomCreated = async (data) => {
 
   // Emit notification to both company rooms.
   // `chat:room:new` payload is the room object (same schema as GET /chats/:roomId).
-  io.to(`company:${companyAId}`).emit('chat:room:new', roomForCompanyA);
-  io.to(`company:${companyBId}`).emit('chat:room:new', roomForCompanyB);
+  emitValidated(io.to(`company:${companyAId}`), 'chat:room:new', roomForCompanyA);
+  emitValidated(io.to(`company:${companyBId}`), 'chat:room:new', roomForCompanyB);
 
   logger.info(
     {
@@ -158,7 +168,7 @@ const subscribeUserToSupportRoom = async (userId, roomId) => {
 
   for (const socket of sockets) {
     socket.join(supportRoom);
-    socket.emit('support:room:new', { roomId });
+    emitValidated(socket, 'support:room:new', { roomId });
     logger.debug({ socketId: socket.id, userId, roomId }, 'User subscribed to support room');
   }
 

@@ -7,9 +7,6 @@ const contributionRepository = require('../repository/companyContribution.reposi
 const contributionMediaRepository = require('../repository/companyContributionMedia.repository');
 const dealModule = require('../../deal');
 const fileModule = require('../../file');
-const config = require('../../../infrastructure/config/env');
-const logger = require('../../../shared/utils/logger');
-const { sendMail } = require('../../../infrastructure/config/mailer');
 const { dealRequestRepository } = dealModule.repository;
 const fileService = fileModule.service;
 
@@ -1032,100 +1029,6 @@ const reorderContributionMedia = async (agentId, contributionId, orderedIds) => 
     })
   );
 };
-const resendForReview = async (agentId) => {
-  const company = await getCompanyOrThrowByAgent(agentId);
-
-  const updated = await companyRepository.updateCompanyStatus(company.id, 'underReview');
-
-  const agentEmail = company.email || company?.agent?.email;
-  if (agentEmail) {
-    const subject = 'Your company profile was submitted for review';
-    const text = [
-      'Your company profile has been submitted for review.',
-      `Company ID: ${company.id}`,
-      `Company Name: ${company.name}`,
-    ].join('\n');
-
-    const html = `
-            <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                <h2 style="color: #333;">Submitted for review</h2>
-                <p>Your company profile has been submitted for review. We'll notify you once the status changes.</p>
-                <ul>
-                    <li><strong>Company ID:</strong> ${company.id}</li>
-                    <li><strong>Company Name:</strong> ${company.name}</li>
-                </ul>
-            </div>
-        `;
-
-    try {
-      await sendMail({
-        to: agentEmail,
-        subject,
-        text,
-        html,
-      });
-    } catch (error) {
-      logger.error('Failed to send resend-for-review confirmation email to agent', {
-        error,
-        companyId: company.id,
-        agentEmail,
-      });
-    }
-  }
-
-  const notificationEmail = config.companyReview?.notificationEmail;
-  if (!notificationEmail) {
-    logger.warn(
-      'COMPANY_REVIEW_NOTIFICATION_EMAIL is missing; skipping review notification email',
-      {
-        companyId: company.id,
-      }
-    );
-    return { company: sanitizeCompany(updated) };
-  }
-
-  const subject = 'Company resubmitted for review';
-  const text = [
-    'A company has been submitted/resubmitted for review.',
-    `Company ID: ${company.id}`,
-    `Company Name: ${company.name}`,
-    `Agent ID: ${company.agent_id}`,
-    company.email ? `Agent Email: ${company.email}` : null,
-  ]
-    .filter(Boolean)
-    .join('\n');
-
-  const html = `
-        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #333;">Company resubmitted for review</h2>
-            <p>A company has been submitted/resubmitted for review.</p>
-            <ul>
-                <li><strong>Company ID:</strong> ${company.id}</li>
-                <li><strong>Company Name:</strong> ${company.name}</li>
-                <li><strong>Agent ID:</strong> ${company.agent_id}</li>
-                ${company.email ? `<li><strong>Agent Email:</strong> ${company.email}</li>` : ''}
-            </ul>
-        </div>
-    `;
-
-  try {
-    await sendMail({
-      to: notificationEmail,
-      subject,
-      text,
-      html,
-    });
-  } catch (error) {
-    logger.error('Failed to send company review notification email', {
-      error,
-      companyId: company.id,
-    });
-  }
-
-  const logoUrl = await getFileUrl(updated.logo);
-  return { company: sanitizeCompany(updated, logoUrl) };
-};
-
 module.exports = {
   getMyProfile,
   updateMyProfile,
@@ -1135,7 +1038,6 @@ module.exports = {
   listReviews,
   searchCompanies,
   createReview,
-  resendForReview,
   listMyGallery,
   updateMyGalleryItem,
   deleteMyGalleryItem,

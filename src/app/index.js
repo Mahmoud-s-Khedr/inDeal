@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const swaggerUi = require('swagger-ui-express');
 const routes = require('./routing');
 const { swaggerSpec, swaggerUiOptions } = require('../infrastructure/config/swagger');
+const { buildAsyncApiSpec } = require('../core/contracts/socket/registry');
 const AppError = require('../core/errors/AppError');
 const errorMiddleware = require('../core/middleware/errorMiddleware');
 const requestLogger = require('../core/middleware/requestLogger.middleware');
@@ -30,6 +31,10 @@ if (isSwaggerEnabled) {
   });
 
   app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+
+  app.get('/api/v1/socket-docs.json', (req, res) => {
+    res.json(buildAsyncApiSpec());
+  });
 }
 
 // Root Route

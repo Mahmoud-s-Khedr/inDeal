@@ -34,7 +34,6 @@ router.get('/search', validate(searchCompaniesSchema), companyController.searchC
 
 router.get('/me', protect, companyController.getMyProfile);
 router.put('/me', protect, validate(updateCompanySchema), companyController.updateMyProfile);
-router.post('/me/resend-for-review', protect, companyController.resendForReview);
 
 router.get('/me/gallery', protect, companyController.listMyGallery);
 router.post(

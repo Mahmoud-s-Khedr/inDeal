@@ -61,15 +61,6 @@ def run():
         payload={"description": "Updated from company_flow v1"},
         expected_statuses=[200],
     )
-    runner.step(
-        step_id="a.resend_for_review",
-        role=actor_a.label,
-        method="POST",
-        path="/companies/me/resend-for-review",
-        token=actor_a.token,
-        expected_status_family="2xx",
-    )
-
     gallery_id = None
     if file_id:
         gallery_resp = runner.step(

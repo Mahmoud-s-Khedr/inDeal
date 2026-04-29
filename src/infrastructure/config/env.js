@@ -72,11 +72,6 @@ const envSchema = z.object({
   RESEND_FROM_EMAIL: z.string().default('no-reply@indeal.local'),
   RESEND_FROM_NAME: z.string().default('inDeal Support'),
 
-  COMPANY_REVIEW_NOTIFICATION_EMAIL: z.preprocess(
-    emptyStringToUndefined,
-    z.string().email().optional()
-  ),
-
   FRONTEND_BASE_URL: z.string().url().default('https://app.indeal.local'),
   FORGOT_PASSWORD_ENABLED: z
     .preprocess((val) => val === 'true' || val === true, z.boolean())
@@ -171,9 +166,6 @@ module.exports = {
     apiKey: env.RESEND_API_KEY,
     fromEmail: env.RESEND_FROM_EMAIL,
     fromName: env.RESEND_FROM_NAME,
-  },
-  companyReview: {
-    notificationEmail: env.COMPANY_REVIEW_NOTIFICATION_EMAIL,
   },
   log: {
     level: env.LOG_LEVEL,

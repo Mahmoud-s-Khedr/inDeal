@@ -42,11 +42,6 @@ const createReview = catchAsync(async (req, res) => {
   sendResponse(res, 201, review, 'Review submitted');
 });
 
-const resendForReview = catchAsync(async (req, res) => {
-  const result = await companyService.resendForReview(req.user.id);
-  sendResponse(res, 200, result, 'Company submitted for review');
-});
-
 const listMyGallery = catchAsync(async (req, res) => {
   const gallery = await companyService.listMyGallery(req.user.id);
   sendResponse(res, 200, gallery, 'Gallery items fetched');
@@ -192,7 +187,6 @@ module.exports = {
   listReviews,
   searchCompanies,
   createReview,
-  resendForReview,
   listMyGallery,
   updateMyGalleryItem,
   deleteMyGalleryItem,
