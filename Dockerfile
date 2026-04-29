@@ -61,6 +61,8 @@ COPY --from=prod-deps /usr/src/app/node_modules ./node_modules
 # Copy only necessary application files
 COPY --chown=nodejs:nodejs package*.json ./
 COPY --chown=nodejs:nodejs src ./src
+COPY --chown=nodejs:nodejs scripts ./scripts
+COPY --chown=nodejs:nodejs prisma ./prisma
 
 USER nodejs
 
@@ -68,4 +70,4 @@ ENV NODE_ENV=production
 
 EXPOSE 3000
 
-CMD ["dumb-init", "node", "src/app/server.js"]
+CMD ["dumb-init", "sh", "scripts/prod-entrypoint.sh"]

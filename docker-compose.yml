@@ -56,6 +56,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       ENABLE_SOCKETIO: 'true'
+      AUTO_MIGRATE: 'true'
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: ${DB_USER:-postgres}
@@ -63,6 +64,7 @@ services:
       DB_NAME: ${DB_NAME:-indeal}
       REDIS_HOST: valkey
       REDIS_PORT: 6379
+    command: sh scripts/prod-entrypoint.sh
     depends_on:
       db:
         condition: service_healthy
