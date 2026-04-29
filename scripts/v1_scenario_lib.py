@@ -8,6 +8,8 @@ from typing import Any, Dict, List, Optional
 from urllib import error, request
 from urllib.parse import urlencode, urljoin
 
+_UNSET = object()
+
 
 class NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, hdrs, newurl):
@@ -148,16 +150,31 @@ class ScenarioRunner:
         role: str,
         method: str,
         path: str,
-        token: Optional[str] = None,
+        token: Any = _UNSET,
         params: Optional[Dict[str, Any]] = None,
         payload: Optional[Dict[str, Any]] = None,
         expected_statuses: Optional[List[int]] = None,
         expected_status_family: Optional[str] = None,
     ) -> Dict[str, Any]:
+        if token is _UNSET:
+            token_value = None
+        elif not token:
+            return self.blocked_step(
+                step_id=step_id,
+                role=role,
+                method=method,
+                path=path,
+                reason="missing access token from prior auth step",
+                expected_statuses=expected_statuses,
+                expected_status_family=expected_status_family,
+            )
+        else:
+            token_value = token
+
         response = self.request(
             method,
             path,
-            token=token,
+            token=token_value,
             params=params,
             payload=payload,
         )
@@ -294,6 +311,13 @@ def build_password_reset_debug_otp(response: Dict[str, Any]) -> Optional[str]:
     return otp if isinstance(otp, str) and len(otp) == 6 else None
 
 
+def build_email_verification_debug_otp(response: Dict[str, Any]) -> Optional[str]:
+    data = (response.get("json") or {}).get("data") or {}
+    debug = data.get("debugOtp") or {}
+    otp = debug.get("otp")
+    return otp if isinstance(otp, str) and len(otp) == 6 else None
+
+
 def pick_register_file_id(runner: ScenarioRunner, role: str) -> Optional[int]:
     resp = runner.step(
         step_id=f"{role}.register_upload_url",
@@ -370,6 +394,17 @@ def register_actor(
         user_id=user_id,
         company_id=company_id,
     )
+
+    email_otp = build_email_verification_debug_otp(resp)
+    if email_otp:
+        runner.step(
+            step_id=f"{role}.verify_email",
+            role=role,
+            method="POST",
+            path="/auth/verify-email",
+            payload={"email": email, "otp": email_otp},
+            expected_statuses=[200],
+        )
 
     login_resp = runner.step(
         step_id=f"{role}.login",
