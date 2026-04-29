@@ -39,4 +39,23 @@ if [ "$needs_install" -eq 1 ]; then
   echo "$current_hash" > "$HASH_FILE"
 fi
 
+if [ "${AUTO_MIGRATE:-false}" = "true" ]; then
+  if [ -d "prisma/migrations" ] && [ -n "$(ls -A prisma/migrations 2>/dev/null)" ]; then
+    echo "🗃️ Running Prisma migrations..."
+    npm run prisma:migrate:deploy
+  else
+    echo "🗃️ No Prisma migrations found; syncing schema with db push..."
+    npm run prisma:db:push
+  fi
+fi
+
+if [ "${AUTO_SEED:-false}" = "true" ]; then
+  echo "🌱 Running database seeder..."
+  if [ -n "${SEED_MODE:-}" ]; then
+    SEED_MODE="${SEED_MODE}" npm run db:seed
+  else
+    npm run db:seed
+  fi
+fi
+
 exec npm run dev
