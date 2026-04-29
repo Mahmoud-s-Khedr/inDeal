@@ -39,13 +39,6 @@ const trackRoomJoin = async (socketId, roomId) => {
   await pipeline.exec();
 };
 
-const trackRoomLeave = async (socketId, roomId) => {
-  const pipeline = redis.pipeline();
-  pipeline.zrem(ROOM_SOCKETS_KEY(roomId), socketId);
-  pipeline.srem(SOCKET_ROOMS_KEY(socketId), String(roomId));
-  await pipeline.exec();
-};
-
 const cleanupSocketPresence = async (socketId) => {
   try {
     const roomIds = await redis.smembers(SOCKET_ROOMS_KEY(socketId));

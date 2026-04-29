@@ -67,7 +67,8 @@ const sanitizeDocument = (doc, fileUrl = null) => {
   };
 };
 
-const OTP_KEY_PREFIX = 'fp:otp:';
+const FORGOT_OTP_KEY_PREFIX = 'fp:otp:';
+const REGISTRATION_OTP_KEY_PREFIX = 'reg:otp:';
 const RATE_LIMIT_PREFIX = 'fp:rate:';
 const otpSettings = config.forgotPassword;
 const passwordHistorySettings = config.passwordHistory;
@@ -80,7 +81,8 @@ const requireForgotPasswordEnabled = () => {
 
 const normalizeEmail = (email) => email.trim().toLowerCase();
 
-const buildOtpKey = (email) => `${OTP_KEY_PREFIX}${email}`;
+const buildForgotOtpKey = (email) => `${FORGOT_OTP_KEY_PREFIX}${email}`;
+const buildRegistrationOtpKey = (email) => `${REGISTRATION_OTP_KEY_PREFIX}${email}`;
 const buildRateKey = (type, scope, value) => `${RATE_LIMIT_PREFIX}${type}:${scope}:${value}`;
 
 const redisFailure = (error) => {
@@ -160,18 +162,18 @@ const buildDebugOtpPayload = (purpose, otp) => {
   };
 };
 
-const storeOtpPayload = async (email, payload) => {
+const storeOtpPayload = async (key, payload) => {
   const ttlSeconds = otpSettings.otpTtlMinutes * 60;
   try {
-    await redis.set(buildOtpKey(email), JSON.stringify(payload), 'EX', ttlSeconds);
+    await redis.set(key, JSON.stringify(payload), 'EX', ttlSeconds);
   } catch (error) {
     redisFailure(error);
   }
 };
 
-const getOtpPayload = async (email) => {
+const getOtpPayload = async (key) => {
   try {
-    const raw = await redis.get(buildOtpKey(email));
+    const raw = await redis.get(key);
     if (!raw) return null;
     return JSON.parse(raw);
   } catch (error) {
@@ -179,22 +181,22 @@ const getOtpPayload = async (email) => {
   }
 };
 
-const deleteOtpPayload = async (email) => {
+const deleteOtpPayload = async (key) => {
   try {
-    await redis.del(buildOtpKey(email));
+    await redis.del(key);
   } catch (error) {
     redisFailure(error);
   }
 };
 
-const updateOtpAttempts = async (email, payload, attempts) => {
+const updateOtpAttempts = async (key, payload, attempts) => {
   try {
-    const ttl = await redis.ttl(buildOtpKey(email));
+    const ttl = await redis.ttl(key);
     const nextPayload = { ...payload, attempts };
     if (ttl > 0) {
-      await redis.set(buildOtpKey(email), JSON.stringify(nextPayload), 'EX', ttl);
+      await redis.set(key, JSON.stringify(nextPayload), 'EX', ttl);
     } else {
-      await redis.set(buildOtpKey(email), JSON.stringify(nextPayload));
+      await redis.set(key, JSON.stringify(nextPayload));
     }
   } catch (error) {
     redisFailure(error);
@@ -222,6 +224,29 @@ const sendOtpEmail = async ({ to, otp, ttlMinutes, userAgent, ipAddress }) => {
       return;
     }
     throw new AppError('Unable to send password reset email. Please try again later.', 503);
+  }
+};
+
+const sendRegistrationVerificationEmail = async ({ to, otp, ttlMinutes }) => {
+  const verificationLink = `${config.forgotPassword.frontendUrl.replace(/\/$/, '')}/verify-email?email=${encodeURIComponent(to)}&otp=${encodeURIComponent(otp)}`;
+  try {
+    await sendEmailSync({
+      to,
+      subject: 'Verify your inDeal email',
+      template: 'verifyEmail',
+      variables: {
+        verificationLink,
+        expiresMinutes: ttlMinutes,
+      },
+    });
+    logger.info(`Registration verification email sent to ${to}`);
+  } catch (error) {
+    logger.error('Failed to dispatch registration verification email', error);
+    if (config.app.env !== 'production') {
+      logger.warn('Skipping registration verification email failure in non-production environment');
+      return;
+    }
+    throw new AppError('Unable to send verification email. Please try again later.', 503);
   }
 };
 
@@ -262,7 +287,7 @@ const createRegistrationUploadUrl = async ({ fileName, fileType, fileSize }) => 
   });
 };
 
-const register = async (payload, { ipAddress, userAgent } = {}) => {
+const register = async (payload, { ipAddress: _ipAddress, userAgent: _userAgent } = {}) => {
   const email = payload.user.email.toLowerCase();
   const username = payload.user.username.trim();
   const documentsPayload = payload.company.documents || [];
@@ -299,8 +324,8 @@ const register = async (payload, { ipAddress, userAgent } = {}) => {
       lastName: payload.user.lastName,
       jobTitle: payload.user.jobTitle,
     });
-    await userRepository.updateStatus(newUser.id, 'verified', client);
-    newUser.status = 'verified';
+    await userRepository.updateStatus(newUser.id, 'pending', client);
+    newUser.status = 'pending';
 
     const newCompany = await companyRepository.createCompany(client, {
       agentId: newUser.id,
@@ -335,10 +360,18 @@ const register = async (payload, { ipAddress, userAgent } = {}) => {
 
     await client.query('COMMIT');
 
-    const token = await issueAccessToken({
+    const registrationOtp = generateOtp();
+    await storeOtpPayload(buildRegistrationOtpKey(email), {
       userId: newUser.id,
-      ipAddress,
-      userAgent,
+      otp: registrationOtp,
+      attempts: 0,
+      issuedAt: new Date().toISOString(),
+    });
+
+    await sendRegistrationVerificationEmail({
+      to: email,
+      otp: registrationOtp,
+      ttlMinutes: otpSettings.otpTtlMinutes,
     });
     const companyPayload = sanitizeCompany(newCompany);
     if (createdDocuments.length) {
@@ -353,11 +386,12 @@ const register = async (payload, { ipAddress, userAgent } = {}) => {
     const registrationDebugOtp = buildDebugOtpPayload('registration', generateOtp());
 
     const result = {
-      token,
+      message: 'Registration submitted. Please verify your email before login.',
       user: sanitizeUser(newUser),
       company: companyPayload,
     };
-    if (registrationDebugOtp) {
+    if (registrationDebugOtp && shouldExposeDebugOtp()) {
+      registrationDebugOtp.otp = registrationOtp;
       result.debugOtp = registrationDebugOtp;
     }
 
@@ -454,7 +488,7 @@ const login = async (payload, { ipAddress, userAgent } = {}) => {
   }
 
   if (user.status !== 'verified') {
-    throw new AppError('Please verify your email before logging in', 403);
+    throw new AppError('Email verification required before login', 403);
   }
 
   const company = await companyRepository.findByAgentId(user.id);
@@ -483,7 +517,7 @@ const forgotPassword = async ({ email, ipAddress, userAgent }) => {
   }
 
   const otp = generateOtp();
-  await storeOtpPayload(normalizedEmail, {
+  await storeOtpPayload(buildForgotOtpKey(normalizedEmail), {
     userId: user.id,
     otp,
     attempts: 0,
@@ -517,14 +551,15 @@ const resetPassword = async ({ email, otp, password, ipAddress }) => {
 
   await applyRateLimits('reset', normalizedEmail, ipAddress);
 
-  const storedPayload = await getOtpPayload(normalizedEmail);
+  const otpKey = buildForgotOtpKey(normalizedEmail);
+  const storedPayload = await getOtpPayload(otpKey);
   if (!storedPayload) {
     throw new AppError('Invalid or expired code', 400);
   }
 
   if (storedPayload.otp !== otp) {
     const nextAttempts = (storedPayload.attempts || 0) + 1;
-    await updateOtpAttempts(normalizedEmail, storedPayload, nextAttempts);
+    await updateOtpAttempts(otpKey, storedPayload, nextAttempts);
     throw new AppError('Invalid or expired code', 400);
   }
 
@@ -553,7 +588,7 @@ const resetPassword = async ({ email, otp, password, ipAddress }) => {
     client.release();
   }
 
-  await deleteOtpPayload(normalizedEmail);
+  await deleteOtpPayload(otpKey);
 };
 
 const verifyOtp = async ({ email, otp, ipAddress }) => {
@@ -562,18 +597,77 @@ const verifyOtp = async ({ email, otp, ipAddress }) => {
 
   await applyRateLimits('reset', normalizedEmail, ipAddress);
 
-  const storedPayload = await getOtpPayload(normalizedEmail);
+  const otpKey = buildForgotOtpKey(normalizedEmail);
+  const storedPayload = await getOtpPayload(otpKey);
   if (!storedPayload) {
     throw new AppError('Invalid or expired code', 400);
   }
 
   if (storedPayload.otp !== otp) {
     const nextAttempts = (storedPayload.attempts || 0) + 1;
-    await updateOtpAttempts(normalizedEmail, storedPayload, nextAttempts);
+    await updateOtpAttempts(otpKey, storedPayload, nextAttempts);
     throw new AppError('Invalid or expired code', 400);
   }
 
   return { message: 'OTP verified successfully' };
+};
+
+const resendVerification = async ({ email }) => {
+  const normalizedEmail = normalizeEmail(email);
+  const user = await userRepository.findByEmail(normalizedEmail);
+  if (!user) {
+    return { message: 'If the email exists, verification instructions were sent.' };
+  }
+  if (user.status === 'verified') {
+    return { message: 'Email is already verified.' };
+  }
+
+  const otp = generateOtp();
+  await storeOtpPayload(buildRegistrationOtpKey(normalizedEmail), {
+    userId: user.id,
+    otp,
+    attempts: 0,
+    issuedAt: new Date().toISOString(),
+  });
+
+  await sendRegistrationVerificationEmail({
+    to: normalizedEmail,
+    otp,
+    ttlMinutes: otpSettings.otpTtlMinutes,
+  });
+
+  const result = { message: 'If the email exists, verification instructions were sent.' };
+  const debugOtp = buildDebugOtpPayload('registration', otp);
+  if (debugOtp) {
+    result.debugOtp = debugOtp;
+  }
+  return result;
+};
+
+const verifyEmail = async ({ email, otp }) => {
+  const normalizedEmail = normalizeEmail(email);
+  const otpKey = buildRegistrationOtpKey(normalizedEmail);
+  const storedPayload = await getOtpPayload(otpKey);
+  if (!storedPayload) {
+    throw new AppError('Invalid or expired verification code', 400);
+  }
+
+  if (storedPayload.otp !== otp) {
+    const nextAttempts = (storedPayload.attempts || 0) + 1;
+    await updateOtpAttempts(otpKey, storedPayload, nextAttempts);
+    throw new AppError('Invalid or expired verification code', 400);
+  }
+
+  const user = await userRepository.findByEmail(normalizedEmail);
+  if (!user || user.id !== storedPayload.userId) {
+    throw new AppError('Invalid or expired verification code', 400);
+  }
+
+  if (user.status !== 'verified') {
+    await userRepository.updateStatus(user.id, 'verified');
+  }
+  await deleteOtpPayload(otpKey);
+  return { message: 'Email verified successfully' };
 };
 
 const logoutCurrentSession = async ({ userId, sessionType }) => {
@@ -594,6 +688,8 @@ module.exports = {
   forgotPassword,
   resendForgotPasswordOtp,
   verifyOtp,
+  resendVerification,
+  verifyEmail,
   resetPassword,
   logoutCurrentSession,
   logoutAllSessions,

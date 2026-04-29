@@ -73,6 +73,24 @@ const verifyOtp = catchAsync(async (req, res) => {
   sendResponse(res, 200, result, result.message);
 });
 
+const resendVerification = catchAsync(async (req, res) => {
+  const result = await authService.resendVerification({
+    email: req.body.email,
+    ipAddress: req.ip,
+    userAgent: req.get('user-agent'),
+  });
+  sendResponse(res, 200, result, result.message);
+});
+
+const verifyEmail = catchAsync(async (req, res) => {
+  const result = await authService.verifyEmail({
+    email: req.body.email,
+    otp: req.body.otp,
+    ipAddress: req.ip,
+  });
+  sendResponse(res, 200, result, result.message);
+});
+
 module.exports = {
   createRegistrationUploadUrl,
   register,
@@ -81,6 +99,8 @@ module.exports = {
   forgotPassword,
   resendForgotPasswordOtp,
   verifyOtp,
+  resendVerification,
+  verifyEmail,
   resetPassword,
   logout,
 };

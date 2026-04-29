@@ -27,7 +27,7 @@ inDeal is a B2B backend focused on v1 scope: auth, company portfolio, deals, com
 
 ## V1 Endpoint Areas
 
-- `auth`: register, login, logout, forgot/reset password, OTP verification
+- `auth`: register, login, logout, forgot/reset password, email verification
 - `companies`: profile/settings, gallery, documents, contributions, reviews, search
 - `deals`: CRUD + deal requests lifecycle
 - `search`: unified auth-aware search feed (`GET /api/v1/search`)
@@ -47,8 +47,6 @@ These endpoints were removed and now return `404`:
 - `/api/v1/support/tickets*`
 - `/api/v1/support/chat*`
 - `/api/v1/auth/admin/login`
-- `/api/v1/auth/resend-verification`
-- `/api/v1/auth/verify-email`
 
 ## Local Development
 

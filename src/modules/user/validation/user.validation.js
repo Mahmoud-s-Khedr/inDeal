@@ -20,8 +20,8 @@ const updateMeSchema = z.object({
 
 const updatePasswordSchema = z.object({
   body: z.object({
-    currentPassword: z.string().min(6),
-    newPassword: z.string().min(6),
+    currentPassword: z.string().min(8),
+    newPassword: z.string().min(8),
   }),
 });
 
