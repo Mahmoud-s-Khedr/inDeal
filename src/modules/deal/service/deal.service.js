@@ -56,6 +56,7 @@ const sanitizeRequest = (request) => {
     dealId: request.deal_id,
     applicantCompanyId: request.applicant_company_id,
     requestKind: request.request_kind,
+    requestType: request.request_type,
     requestDetails: request.request_details,
     requestOffer: request.request_offer ? parseFloat(request.request_offer) : null,
     status: request.status,
@@ -76,6 +77,11 @@ const sanitizeRequest = (request) => {
     dealValue: request.deal_value ? parseFloat(request.deal_value) : null,
     dealStatus: request.deal_status,
     ownerCompanyName: request.owner_company_name,
+    targetCompanyId: request.target_company_id,
+    targetCompanyName: request.target_company_name,
+    targetCompanyLogo: request.target_company_logo,
+    targetCompanyType: request.target_company_type,
+    targetCompanyIndustry: request.target_company_industry,
     supplyDetails: null,
     demandDetails: null,
     attachments: [],
@@ -119,7 +125,7 @@ const sanitizeSupplyDetails = (item) => {
     dimensionsSize: item.dimensions_size,
     certificationsRequired: item.certifications_required || [],
     qualityLevel: item.quality_level,
-    colorFinish: item.color_finish,
+    qualityLevelOtherText: item.quality_level_other_text,
     countryOfOrigin: item.country_of_origin,
     maxLeadTimeAccepted: item.max_lead_time_accepted,
     deliveryMethodPreference: item.delivery_method_preference,
@@ -142,7 +148,6 @@ const sanitizeDemandDetails = (item) => {
     availabilityType: item.availability_type,
     quantityInStock: item.quantity_in_stock ? parseFloat(item.quantity_in_stock) : null,
     maxProduceQuantity: item.max_produce_quantity ? parseFloat(item.max_produce_quantity) : null,
-    stockDeliveryTime: item.stock_delivery_time,
     productionLeadTime: item.production_lead_time,
     specsMatchRfq: item.specs_match_rfq,
     differencesFromRfq: item.differences_from_rfq,
@@ -473,6 +478,7 @@ const createDealRequest = async (dealId, applicantCompanyId, payload) => {
       dealId,
       applicantCompanyId,
       requestKind: payload.requestKind,
+      requestType: 'inSupply',
       requestDetails: inferRequestDetailsSummary(payload),
       requestOffer: inferRequestOffer(payload),
       status: 'pending',
@@ -505,6 +511,83 @@ const createDealRequest = async (dealId, applicantCompanyId, payload) => {
 
     notifyDealOwnerOfNewRequest(deal, applicant, request).catch((err) => {
       logger.error('Failed to send new request notification', { error: err.message });
+    });
+
+    const [enriched] = await enrichRequests([sanitizeRequest(request)]);
+    return enriched;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+const createDirectRequest = async (applicantCompanyId, payload) => {
+  const targetCompany = await companyRepository.findById(payload.targetCompanyId);
+  if (!targetCompany) {
+    throw new AppError('Target company not found', 404);
+  }
+  if (targetCompany.status !== 'active') {
+    throw new AppError('Target company must be active to receive direct requests', 400);
+  }
+  if (targetCompany.id === applicantCompanyId) {
+    throw new AppError('Cannot send direct request to your own company', 400);
+  }
+
+  const applicant = await companyRepository.findById(applicantCompanyId);
+  if (!applicant || applicant.status !== 'active') {
+    throw new AppError('Your company must be active to submit requests', 403);
+  }
+
+  const existing = await dealRequestRepository.findExistingDirectRequest(
+    applicantCompanyId,
+    payload.targetCompanyId
+  );
+  if (existing) {
+    throw new AppError('You already have an active direct request for this company', 400);
+  }
+
+  const attachments = payload.attachments || [];
+  await ensureFilesExist(attachments.map((item) => item.fileId));
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const request = await dealRequestRepository.createRequest(client, {
+      dealId: null,
+      applicantCompanyId,
+      targetCompanyId: payload.targetCompanyId,
+      requestKind: payload.requestKind,
+      requestType: 'direct',
+      requestDetails: inferRequestDetailsSummary(payload),
+      requestOffer: inferRequestOffer(payload),
+      status: 'pending',
+    });
+
+    if (payload.requestKind === 'demand') {
+      await dealRequestDetailsRepository.upsertDemandDetails(
+        client,
+        request.id,
+        payload.demandDetails
+      );
+    } else {
+      await dealRequestDetailsRepository.upsertSupplyDetails(
+        client,
+        request.id,
+        payload.supplyDetails
+      );
+    }
+
+    await dealRequestDetailsRepository.replaceRequestAttachments(client, request.id, attachments);
+    await client.query('COMMIT');
+
+    logger.info('Direct request created', {
+      requestId: request.id,
+      applicantCompanyId,
+      targetCompanyId: payload.targetCompanyId,
+      requestKind: payload.requestKind,
     });
 
     const [enriched] = await enrichRequests([sanitizeRequest(request)]);
@@ -551,7 +634,28 @@ const getDealRequests = async (dealId, companyId, filters = {}) => {
 };
 
 const getMyRequests = async (companyId, filters = {}) => {
-  const requests = await dealRequestRepository.findByApplicantCompanyId(companyId, filters);
+  const requestType = filters.requestType;
+  const includeDirect = !requestType || requestType === 'direct';
+  const includeInSupply = !requestType || requestType === 'inSupply';
+  const requestKinds = includeInSupply ? ['supply', 'rfq'] : undefined;
+
+  const requests = await dealRequestRepository.findByApplicantCompanyId(companyId, {
+    ...filters,
+    requestKinds,
+    includeDirect,
+  });
+  const sanitized = requests.map(sanitizeRequest);
+  await enrichRequests(sanitized);
+  return sanitized;
+};
+
+const getMyApplications = async (companyId, filters = {}) => {
+  const requests = await dealRequestRepository.findByApplicantCompanyId(companyId, {
+    ...filters,
+    requestType: 'inSupply',
+    requestKinds: ['demand'],
+    includeDirect: false,
+  });
   const sanitized = requests.map(sanitizeRequest);
   await enrichRequests(sanitized);
   return sanitized;
@@ -691,9 +795,11 @@ module.exports = {
   getMyDeals,
   updateDeal,
   archiveDeal,
+  createDirectRequest,
   createDealRequest,
   getDealRequests,
   getMyRequests,
+  getMyApplications,
   updateRequestStatus,
   pauseRequest,
   cancelRequest,

@@ -25,7 +25,7 @@ const upsertSupplyDetails = async (client, requestId, details) => {
         dimensions_size,
         certifications_required,
         quality_level,
-        color_finish,
+        quality_level_other_text,
         country_of_origin,
         max_lead_time_accepted,
         delivery_method_preference,
@@ -55,7 +55,7 @@ const upsertSupplyDetails = async (client, requestId, details) => {
         dimensions_size = EXCLUDED.dimensions_size,
         certifications_required = EXCLUDED.certifications_required,
         quality_level = EXCLUDED.quality_level,
-        color_finish = EXCLUDED.color_finish,
+        quality_level_other_text = EXCLUDED.quality_level_other_text,
         country_of_origin = EXCLUDED.country_of_origin,
         max_lead_time_accepted = EXCLUDED.max_lead_time_accepted,
         delivery_method_preference = EXCLUDED.delivery_method_preference,
@@ -83,7 +83,7 @@ const upsertSupplyDetails = async (client, requestId, details) => {
       details.dimensionsSize ?? null,
       JSON.stringify(details.certificationsRequired || []),
       details.qualityLevel ?? null,
-      details.colorFinish ?? null,
+      details.qualityLevelOtherText ?? null,
       details.countryOfOrigin ?? null,
       details.maxLeadTimeAccepted ?? null,
       details.deliveryMethodPreference ?? null,
@@ -111,7 +111,6 @@ const upsertDemandDetails = async (client, requestId, details) => {
         availability_type,
         quantity_in_stock,
         max_produce_quantity,
-        stock_delivery_time,
         production_lead_time,
         specs_match_rfq,
         differences_from_rfq,
@@ -126,7 +125,7 @@ const upsertDemandDetails = async (client, requestId, details) => {
       )
       VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12,
-        $13, $14, $15, $16, $17, $18, $19::jsonb, $20, $21, $22, $23, $24
+        $13, $14, $15, $16, $17, $18, $19::jsonb, $20, $21, $22, $23
       )
       ON CONFLICT (request_id)
       DO UPDATE SET
@@ -141,7 +140,6 @@ const upsertDemandDetails = async (client, requestId, details) => {
         availability_type = EXCLUDED.availability_type,
         quantity_in_stock = EXCLUDED.quantity_in_stock,
         max_produce_quantity = EXCLUDED.max_produce_quantity,
-        stock_delivery_time = EXCLUDED.stock_delivery_time,
         production_lead_time = EXCLUDED.production_lead_time,
         specs_match_rfq = EXCLUDED.specs_match_rfq,
         differences_from_rfq = EXCLUDED.differences_from_rfq,
@@ -169,7 +167,6 @@ const upsertDemandDetails = async (client, requestId, details) => {
       details.availabilityType ?? null,
       details.quantityInStock ?? null,
       details.maxProduceQuantity ?? null,
-      details.stockDeliveryTime ?? null,
       details.productionLeadTime ?? null,
       details.specsMatchRfq ?? null,
       details.differencesFromRfq ?? null,

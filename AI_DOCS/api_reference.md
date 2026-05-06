@@ -52,6 +52,8 @@ Base URL prefix: `/api/v1`
 - `PUT /deals/:id`
 - `DELETE /deals/:id`
 - `GET /deals/me/requests`
+- `GET /deals/me/applications`
+- `POST /deals/direct-requests`
 - `POST /deals/:id/requests`
 - `GET /deals/:id/requests`
 - `PATCH /deals/:dealId/requests/:requestId/status`

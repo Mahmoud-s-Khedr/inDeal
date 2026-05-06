@@ -198,6 +198,7 @@ const searchUnified = async ({ q, types, companyId, limit = 20, offset = 0 }) =>
           'dealId', r.deal_id,
           'status', r.status,
           'requestKind', r.request_kind,
+          'requestType', r.request_type,
           'ownerCompanyName', oc.name
         ) AS meta,
         r.created_at AS sort_ts

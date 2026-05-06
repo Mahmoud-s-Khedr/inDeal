@@ -107,6 +107,7 @@ model Company {
   contributions            CompanyContribution[]
   owned_deals              Deal[]                @relation("DealCompany")
   deal_requests            DealRequest[]         @relation("DealRequestApplicantCompany")
+  deal_requests_targeted   DealRequest[]         @relation("DealRequestTargetCompany")
   deal_requests_canceled   DealRequest[]         @relation("DealRequestCanceledByCompany")
   deal_requests_paused     DealRequest[]         @relation("DealRequestPausedByCompany")
   chat_rooms_as_a          ChatRoom[]            @relation("ChatRoomCompanyA")
@@ -247,9 +248,11 @@ model DealAttachment {
 
 model DealRequest {
   id                     Int       @id @default(autoincrement())
-  deal_id                Int
+  deal_id                Int?
   applicant_company_id   Int
+  target_company_id      Int?
   request_kind           String    @db.VarChar(16)
+  request_type           String    @default("inSupply") @db.VarChar(16)
   request_details        String?
   request_offer          Decimal?  @db.Decimal(14, 2)
   status                 String    @default("pending") @db.VarChar(16)
@@ -261,8 +264,9 @@ model DealRequest {
   created_at             DateTime  @default(now()) @db.Timestamp(6)
   updated_at             DateTime  @default(now()) @db.Timestamp(6)
 
-  deal                Deal                      @relation(fields: [deal_id], references: [id])
+  deal                Deal?                     @relation(fields: [deal_id], references: [id])
   applicant_company   Company                   @relation("DealRequestApplicantCompany", fields: [applicant_company_id], references: [id])
+  target_company      Company?                  @relation("DealRequestTargetCompany", fields: [target_company_id], references: [id])
   canceled_by_company Company?                  @relation("DealRequestCanceledByCompany", fields: [canceled_by_company_id], references: [id])
   paused_by_company   Company?                  @relation("DealRequestPausedByCompany", fields: [paused_by_company_id], references: [id])
   supply_details      DealRequestSupplyDetails?
@@ -271,6 +275,8 @@ model DealRequest {
 
   @@index([deal_id], map: "idx_deal_requests_deal_id")
   @@index([applicant_company_id], map: "idx_deal_requests_applicant")
+  @@index([applicant_company_id, request_type, created_at], map: "idx_deal_requests_applicant_type_created")
+  @@index([target_company_id, request_type, status], map: "idx_deal_requests_target_type_status")
   @@map("deal_requests")
 }
 
@@ -294,7 +300,7 @@ model DealRequestSupplyDetails {
   dimensions_size            String?   @db.VarChar(200)
   certifications_required    Json?     @db.JsonB
   quality_level              String?   @db.VarChar(64)
-  color_finish               String?   @db.VarChar(100)
+  quality_level_other_text   String?   @db.VarChar(255)
   country_of_origin          String?   @db.VarChar(100)
   max_lead_time_accepted     String?   @db.VarChar(100)
   delivery_method_preference String?   @db.VarChar(64)
@@ -322,7 +328,6 @@ model DealRequestDemandDetails {
   availability_type           String?  @db.VarChar(32)
   quantity_in_stock           Decimal? @db.Decimal(14, 2)
   max_produce_quantity        Decimal? @db.Decimal(14, 2)
-  stock_delivery_time         String?  @db.VarChar(100)
   production_lead_time        String?  @db.VarChar(100)
   specs_match_rfq             String?  @db.VarChar(32)
   differences_from_rfq        String?

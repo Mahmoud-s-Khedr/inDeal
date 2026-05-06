@@ -56,6 +56,11 @@ const createDealRequest = catchAsync(async (req, res) => {
   sendResponse(res, 201, request, 'Request submitted successfully');
 });
 
+const createDirectRequest = catchAsync(async (req, res) => {
+  const request = await dealService.createDirectRequest(getCompanyId(req), req.body);
+  sendResponse(res, 201, request, 'Direct request submitted successfully');
+});
+
 const getDealRequests = catchAsync(async (req, res) => {
   const result = await dealService.getDealRequests(req.params.id, getCompanyId(req), req.query);
   sendResponse(res, 200, result, 'Deal requests fetched');
@@ -64,6 +69,11 @@ const getDealRequests = catchAsync(async (req, res) => {
 const getMyRequests = catchAsync(async (req, res) => {
   const requests = await dealService.getMyRequests(getCompanyId(req), req.query);
   sendResponse(res, 200, requests, 'My requests fetched');
+});
+
+const getMyApplications = catchAsync(async (req, res) => {
+  const applications = await dealService.getMyApplications(getCompanyId(req), req.query);
+  sendResponse(res, 200, applications, 'My applications fetched');
 });
 
 const updateRequestStatus = catchAsync(async (req, res) => {
@@ -109,9 +119,11 @@ module.exports = {
   updateDeal,
   archiveDeal,
   // Request endpoints
+  createDirectRequest,
   createDealRequest,
   getDealRequests,
   getMyRequests,
+  getMyApplications,
   updateRequestStatus,
   pauseRequest,
   cancelRequest,

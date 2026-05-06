@@ -5,6 +5,7 @@ const dealTypeEnumValues = ['supply', 'demand'];
 const dealStatusEnumValues = ['open', 'closed', 'negotiating', 'archived'];
 const dealRequestStatusEnumValues = ['pending', 'paused', 'accepted', 'rejected', 'canceled'];
 const dealRequestKindEnumValues = ['supply', 'demand', 'rfq'];
+const dealRequestTypeEnumValues = ['direct', 'inSupply'];
 const requestAttachmentKindValues = ['image', 'file'];
 
 const industryEnumValues = [
@@ -46,59 +47,88 @@ const requestAttachmentInputSchema = z.object({
   sortOrder: z.coerce.number().int().min(0).default(0),
 });
 
-const supplyDetailsSchema = z.object({
-  productServiceName: z.string().min(1).max(200),
-  category: z.enum(supplyCategoryValues),
-  quantityRequired: z.coerce.number().positive().optional(),
-  deliveryLocation: z.string().max(255).optional(),
-  deliveryDate: z.coerce.date().optional(),
-  targetPriceMin: z.coerce.number().positive().optional(),
-  targetPriceMax: z.coerce.number().positive().optional(),
-  currency: z.string().min(1).max(10).optional(),
-  paymentTermsPreference: z.string().max(500).optional(),
-  incoterm: z.enum(incotermValues).optional(),
-  bulkDiscountExpectation: z.string().max(500).optional(),
-  supplyType: z.enum(['inStock', 'makeToOrder', 'either']).optional(),
-  keySpecifications: z.string().max(2000).optional(),
-  material: z.string().max(200).optional(),
-  dimensionsSize: z.string().max(200).optional(),
-  certificationsRequired: z.array(z.string().min(1).max(150)).optional(),
-  qualityLevel: z
-    .enum(['standard', 'industrialGuide', 'foodGrade', 'pharmaceuticalGrade', 'exportQuality'])
-    .optional(),
-  colorFinish: z.string().max(100).optional(),
-  countryOfOrigin: z.string().max(100).optional(),
-  maxLeadTimeAccepted: z.string().max(100).optional(),
-  deliveryMethodPreference: z.enum(['supplierDelivers', 'buyerCollects', 'thirdParty']).optional(),
-  packagingRequirements: z.string().max(1000).optional(),
-  specialConditionsNotes: z.string().max(2000).optional(),
-});
+const supplyDetailsSchema = z
+  .object({
+    productServiceName: z.string().min(1).max(200),
+    category: z.enum(supplyCategoryValues),
+    quantityRequired: z.coerce.number().positive().optional(),
+    deliveryLocation: z.string().max(255).optional(),
+    deliveryDate: z.coerce.date().optional(),
+    targetPriceMin: z.coerce.number().positive().optional(),
+    targetPriceMax: z.coerce.number().positive().optional(),
+    currency: z.string().min(1).max(10).optional(),
+    paymentTermsPreference: z.string().max(500).optional(),
+    incoterm: z.enum(incotermValues).optional(),
+    bulkDiscountExpectation: z.string().max(500).optional(),
+    supplyType: z.enum(['inStock', 'assembleToOrder', 'makeToOrder', 'engineerToOrder']).optional(),
+    keySpecifications: z.string().max(2000).optional(),
+    material: z.string().max(200).optional(),
+    dimensionsSize: z.string().max(200).optional(),
+    certificationsRequired: z.array(z.string().min(1).max(150)).optional(),
+    qualityLevel: z
+      .enum([
+        'standard',
+        'industrialGuide',
+        'foodGrade',
+        'pharmaceuticalGrade',
+        'exportQuality',
+        'other',
+      ])
+      .optional(),
+    qualityLevelOtherText: z.string().min(1).max(255).optional(),
+    countryOfOrigin: z.string().max(100).optional(),
+    maxLeadTimeAccepted: z.string().max(100).optional(),
+    deliveryMethodPreference: z
+      .enum(['supplierDelivers', 'buyerCollects', 'thirdParty'])
+      .optional(),
+    packagingRequirements: z.string().max(1000).optional(),
+    specialConditionsNotes: z.string().max(2000).optional(),
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.qualityLevel === 'other' && !data.qualityLevelOtherText?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['qualityLevelOtherText'],
+        message: 'qualityLevelOtherText is required when qualityLevel is other',
+      });
+    }
 
-const demandDetailsSchema = z.object({
-  productServiceName: z.string().min(1).max(200),
-  availableQuantity: z.coerce.number().positive().optional(),
-  offerValidityDays: z.coerce.number().int().positive().optional(),
-  unitPrice: z.coerce.number().positive().optional(),
-  currency: z.string().min(1).max(10).optional(),
-  totalPrice: z.coerce.number().positive().optional(),
-  volumeDiscountTiers: z.array(z.string().min(1).max(100)).optional(),
-  moq: z.coerce.number().positive().optional(),
-  availabilityType: z.enum(['inStock', 'makeToOrder', 'mixed']).optional(),
-  quantityInStock: z.coerce.number().nonnegative().optional(),
-  maxProduceQuantity: z.coerce.number().nonnegative().optional(),
-  stockDeliveryTime: z.string().max(100).optional(),
-  productionLeadTime: z.string().max(100).optional(),
-  specsMatchRfq: z.enum(['yes', 'no', 'partial']).optional(),
-  differencesFromRfq: z.string().max(2000).optional(),
-  materialOffered: z.string().max(200).optional(),
-  dimensions: z.string().max(200).optional(),
-  certificationsHeld: z.array(z.string().min(1).max(150)).optional(),
-  paymentTerms: z.string().max(500).optional(),
-  deliveryTerms: z.enum(incotermValues).optional(),
-  warrantyReturnPolicy: z.string().max(1000).optional(),
-  exclusivityConfidentiality: z.string().max(1000).optional(),
-  additionalNotes: z.string().max(2000).optional(),
-});
+    if (data.qualityLevel !== 'other' && data.qualityLevelOtherText) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['qualityLevelOtherText'],
+        message: 'qualityLevelOtherText is only allowed when qualityLevel is other',
+      });
+    }
+  });
+
+const demandDetailsSchema = z
+  .object({
+    productServiceName: z.string().min(1).max(200),
+    availableQuantity: z.coerce.number().positive().optional(),
+    offerValidityDays: z.coerce.number().int().positive().optional(),
+    unitPrice: z.coerce.number().positive().optional(),
+    currency: z.string().min(1).max(10).optional(),
+    totalPrice: z.coerce.number().positive().optional(),
+    volumeDiscountTiers: z.array(z.string().min(1).max(100)).optional(),
+    moq: z.coerce.number().positive().optional(),
+    availabilityType: z.enum(['inStock', 'makeToOrder', 'mixed']).optional(),
+    quantityInStock: z.coerce.number().nonnegative().optional(),
+    maxProduceQuantity: z.coerce.number().nonnegative().optional(),
+    productionLeadTime: z.string().max(100).optional(),
+    specsMatchRfq: z.enum(['yes', 'no', 'partial']).optional(),
+    differencesFromRfq: z.string().max(2000).optional(),
+    materialOffered: z.string().max(200).optional(),
+    dimensions: z.string().max(200).optional(),
+    certificationsHeld: z.array(z.string().min(1).max(150)).optional(),
+    paymentTerms: z.string().max(500).optional(),
+    deliveryTerms: z.enum(incotermValues).optional(),
+    warrantyReturnPolicy: z.string().max(1000).optional(),
+    exclusivityConfidentiality: z.string().max(1000).optional(),
+    additionalNotes: z.string().max(2000).optional(),
+  })
+  .strict();
 
 const createDealSchema = z.object({
   body: z.object({
@@ -167,6 +197,54 @@ const createDealRequestSchema = z
     }),
     body: z.object({
       requestKind: z.enum(dealRequestKindEnumValues),
+      requestType: z.enum(dealRequestTypeEnumValues).optional().default('inSupply'),
+      supplyDetails: supplyDetailsSchema.optional(),
+      demandDetails: demandDetailsSchema.optional(),
+      attachments: z.array(requestAttachmentInputSchema).max(20).optional().default([]),
+    }),
+  })
+  .superRefine((data, ctx) => {
+    const { requestKind, supplyDetails, demandDetails } = data.body;
+
+    if ((requestKind === 'supply' || requestKind === 'rfq') && !supplyDetails) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['body', 'supplyDetails'],
+        message: 'supplyDetails is required for supply and rfq requests',
+      });
+    }
+
+    if (requestKind === 'demand' && !demandDetails) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['body', 'demandDetails'],
+        message: 'demandDetails is required for demand requests',
+      });
+    }
+
+    if (requestKind === 'demand' && supplyDetails) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['body', 'supplyDetails'],
+        message: 'supplyDetails is not allowed for demand requests',
+      });
+    }
+
+    if ((requestKind === 'supply' || requestKind === 'rfq') && demandDetails) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['body', 'demandDetails'],
+        message: 'demandDetails is not allowed for supply/rfq requests',
+      });
+    }
+  });
+
+const createDirectRequestSchema = z
+  .object({
+    body: z.object({
+      targetCompanyId: z.coerce.number().int().positive(),
+      requestKind: z.enum(dealRequestKindEnumValues),
+      requestType: z.literal('direct').optional().default('direct'),
       supplyDetails: supplyDetailsSchema.optional(),
       demandDetails: demandDetailsSchema.optional(),
       attachments: z.array(requestAttachmentInputSchema).max(20).optional().default([]),
@@ -266,6 +344,16 @@ const listMyRequestsSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
     status: z.enum(dealRequestStatusEnumValues).optional(),
+    requestType: z.enum(dealRequestTypeEnumValues).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+  }),
+});
+
+const listMyApplicationsSchema = z.object({
+  query: z.object({
+    keyword: z.string().max(200).optional(),
+    status: z.enum(dealRequestStatusEnumValues).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
   }),
@@ -309,11 +397,13 @@ module.exports = {
   getDealSchema,
   listMyDealsSchema,
   createDealRequestSchema,
+  createDirectRequestSchema,
   updateDealRequestSchema,
   dealRequestStatusSchema,
   pauseDealRequestSchema,
   cancelDealRequestSchema,
   listDealRequestsSchema,
   listMyRequestsSchema,
+  listMyApplicationsSchema,
   withdrawRequestSchema,
 };

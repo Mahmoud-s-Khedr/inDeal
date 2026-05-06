@@ -3,7 +3,7 @@ const { pool } = require('../../../infrastructure/config/db');
 const run = (client) => client || pool;
 
 /**
- * Create a deal request (bid/application)
+ * Create a deal request or direct request
  */
 const createRequest = async (client, request) => {
   const executor = run(client);
@@ -12,18 +12,22 @@ const createRequest = async (client, request) => {
       INSERT INTO deal_requests (
         deal_id,
         applicant_company_id,
+        target_company_id,
         request_kind,
+        request_type,
         request_details,
         request_offer,
         status
       )
-      VALUES ($1, $2, $3, $4, $5, $6)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `,
     [
-      request.dealId,
+      request.dealId ?? null,
       request.applicantCompanyId,
+      request.targetCompanyId ?? null,
       request.requestKind,
+      request.requestType || 'inSupply',
       request.requestDetails || null,
       request.requestOffer || null,
       request.status || 'pending',
@@ -42,10 +46,15 @@ const findById = async (requestId) => {
              d.deal_name,
              d.company_id AS deal_owner_company_id,
              c.name AS applicant_company_name,
-             c.logo AS applicant_company_logo
+             c.logo AS applicant_company_logo,
+             tc.name AS target_company_name,
+             tc.logo AS target_company_logo,
+             tc.company_type AS target_company_type,
+             tc.company_industry AS target_company_industry
       FROM deal_requests r
-      JOIN deals d ON r.deal_id = d.id
+      LEFT JOIN deals d ON r.deal_id = d.id
       JOIN companies c ON r.applicant_company_id = c.id
+      LEFT JOIN companies tc ON r.target_company_id = tc.id
       WHERE r.id = $1
       LIMIT 1
     `,
@@ -138,11 +147,11 @@ const findByDealId = async (dealId, { status, keyword, limit = 50, offset = 0 } 
 };
 
 /**
- * Find requests by applicant company (my submitted bids)
+ * Find requests by applicant company (my submitted requests)
  */
 const findByApplicantCompanyId = async (
   companyId,
-  { status, keyword, limit = 50, offset = 0 } = {}
+  { status, keyword, requestKinds, requestType, includeDirect = false, limit = 50, offset = 0 } = {}
 ) => {
   let query = `
       SELECT r.*,
@@ -151,10 +160,15 @@ const findByApplicantCompanyId = async (
              d.deal_value,
              d.status AS deal_status,
              oc.name AS owner_company_name,
+             tc.name AS target_company_name,
+             tc.logo AS target_company_logo,
+             tc.company_type AS target_company_type,
+             tc.company_industry AS target_company_industry,
              0::float8 AS search_score
       FROM deal_requests r
-      JOIN deals d ON r.deal_id = d.id
-      JOIN companies oc ON d.company_id = oc.id
+      LEFT JOIN deals d ON r.deal_id = d.id
+      LEFT JOIN companies oc ON d.company_id = oc.id
+      LEFT JOIN companies tc ON r.target_company_id = tc.id
       WHERE r.applicant_company_id = $1
   `;
   const params = [companyId];
@@ -166,9 +180,27 @@ const findByApplicantCompanyId = async (
     paramIndex += 1;
   }
 
+  if (requestType) {
+    query += ` AND r.request_type = $${paramIndex}`;
+    params.push(requestType);
+    paramIndex += 1;
+  }
+
+  if (Array.isArray(requestKinds) && requestKinds.length && includeDirect) {
+    query += ` AND (r.request_kind = ANY($${paramIndex}::text[]) OR r.request_type = 'direct')`;
+    params.push(requestKinds);
+    paramIndex += 1;
+  } else if (Array.isArray(requestKinds) && requestKinds.length) {
+    query += ` AND r.request_kind = ANY($${paramIndex}::text[])`;
+    params.push(requestKinds);
+    paramIndex += 1;
+  } else if (includeDirect) {
+    query += ` AND r.request_type = 'direct'`;
+  }
+
   if (keyword) {
     const normalizedDoc =
-      "public.normalize_search_text(concat_ws(' ', r.request_details, r.cancel_reason, d.deal_name, oc.name))";
+      "public.normalize_search_text(concat_ws(' ', r.request_details, r.cancel_reason, d.deal_name, oc.name, tc.name))";
     const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
     const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
     const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
@@ -229,6 +261,27 @@ const findExistingRequest = async (
       LIMIT 1
     `,
     [dealId, applicantCompanyId, statuses]
+  );
+  return result.rows[0];
+};
+
+const findExistingDirectRequest = async (
+  applicantCompanyId,
+  targetCompanyId,
+  statuses = ['pending', 'paused', 'accepted']
+) => {
+  const result = await pool.query(
+    `
+      SELECT *
+      FROM deal_requests
+      WHERE deal_id IS NULL
+        AND request_type = 'direct'
+        AND applicant_company_id = $1
+        AND target_company_id = $2
+        AND status = ANY($3::text[])
+      LIMIT 1
+    `,
+    [applicantCompanyId, targetCompanyId, statuses]
   );
   return result.rows[0];
 };
@@ -304,6 +357,7 @@ const updateRequest = async (requestId, updates) => {
 
   const fieldMapping = {
     requestKind: 'request_kind',
+    requestType: 'request_type',
     requestDetails: 'request_details',
     requestOffer: 'request_offer',
     status: 'status',
@@ -396,6 +450,7 @@ module.exports = {
   findByDealId,
   findByApplicantCompanyId,
   findExistingRequest,
+  findExistingDirectRequest,
   countByDealId,
   updateStatus,
   pauseRequest,

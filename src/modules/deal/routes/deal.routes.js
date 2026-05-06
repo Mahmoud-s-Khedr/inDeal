@@ -9,11 +9,13 @@ const {
   getDealSchema,
   listMyDealsSchema,
   createDealRequestSchema,
+  createDirectRequestSchema,
   dealRequestStatusSchema,
   pauseDealRequestSchema,
   cancelDealRequestSchema,
   listDealRequestsSchema,
   listMyRequestsSchema,
+  listMyApplicationsSchema,
   withdrawRequestSchema,
 } = require('../validation/deal.validation');
 
@@ -52,7 +54,22 @@ router.delete('/:id', protect, validate(getDealSchema), dealController.archiveDe
 // List my submitted requests (as applicant)
 router.get('/me/requests', protect, validate(listMyRequestsSchema), dealController.getMyRequests);
 
+// List my submitted offers/applications (as applicant)
+router.get(
+  '/me/applications',
+  protect,
+  validate(listMyApplicationsSchema),
+  dealController.getMyApplications
+);
+
 // Submit request/bid on a deal
+router.post(
+  '/direct-requests',
+  protect,
+  validate(createDirectRequestSchema),
+  dealController.createDirectRequest
+);
+
 router.post(
   '/:id/requests',
   protect,

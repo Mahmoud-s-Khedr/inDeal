@@ -13,13 +13,13 @@ Base URL: `/api/v1`
 
 ### 1.1 Coverage and Consistency Checks
 
-- Swagger coverage: `node scripts/verify-swagger-coverage.js` -> passed (`73/73` discovered operations documented).
-- HTTP contract coverage: `node scripts/verify-http-contract-coverage.js` -> passed (`73` operations with required metadata).
+- Swagger coverage: `node scripts/verify-swagger-coverage.js` -> passed (`71/71` discovered operations documented).
+- HTTP contract coverage: `node scripts/verify-http-contract-coverage.js` -> passed (`71` operations with required metadata).
 - Socket contract coverage: `node scripts/verify-socket-contract-coverage.js` -> **failed** with missing receive contract for `disconnect`.
 
 ### 1.2 Inventory Summary
 
-- HTTP operations: `73`
+- HTTP operations: `71`
 - Socket events in contract registry: `11`
 - Module groups reviewed: `auth`, `users`, `companies`, `files`, `deals`, `chats`, `search`, `system`, `health`
 
@@ -31,7 +31,7 @@ Base URL: `/api/v1`
 | users     | `/users`     | protected (`/me` profile area)                    |          5 |
 | companies | `/companies` | mixed public + protected (`/me` area protected)   |         31 |
 | files     | `/files`     | mixed (`upload-url` protected, `GET /:id` public) |          2 |
-| deals     | `/deals`     | mixed (public search/read, protected mutations)   |         12 |
+| deals     | `/deals`     | mixed (public search/read, protected mutations)   |         13 |
 | chats     | `/chats`     | all protected                                     |          7 |
 | search    | `/search`    | optional auth (`optionalAuth`)                    |          1 |
 | system    | `/system`    | public                                            |          2 |
@@ -249,7 +249,8 @@ Goal: publish and manage deals.
 
 Preconditions:
 
-- Create/update/archive requires authenticated user and active company.
+- Create/update/archive requires authenticated user with company context.
+- Create additionally requires active company status.
 
 HTTP sequence:
 
@@ -265,7 +266,7 @@ HTTP sequence:
        "dealDescription": "Monthly supply",
        "dealType": "supply",
        "dealValue": 20000,
-       "attachments": [{ "fileId": 123, "kind": "spec", "sortOrder": 1 }]
+       "attachments": [{ "fileId": 123, "kind": "file", "sortOrder": 1 }]
      }
      ```
    - `PUT /deals/:id`
@@ -280,9 +281,9 @@ Failure/client handling:
 - Open deal limit reached (`400`): show limit message and route user to close existing deals.
 - Company inactive (`403`): block creation and prompt profile/status action.
 
-## Flow F: Deal Request Lifecycle (Applicant + Owner)
+## Flow F: Applications/Requests Lifecycle (Applicant + Owner)
 
-Goal: submit request to a deal and drive request status lifecycle.
+Goal: submit offers/requests to deals and manage both "My Applications" and "My Requests" buckets.
 
 Preconditions:
 
@@ -292,21 +293,54 @@ Preconditions:
 HTTP sequence:
 
 1. Applicant submits request:
+   - Direct RFQ: `POST /deals/direct-requests`
+   - In-supply deal application: `POST /deals/:id/requests`
+   - Direct request example:
+   ```json
+   {
+     "targetCompanyId": 45,
+     "requestKind": "rfq",
+     "requestType": "direct",
+     "supplyDetails": {
+       "productServiceName": "Steel coils",
+       "category": "rawMaterial",
+       "supplyType": "assembleToOrder"
+     }
+   }
+   ```
+
+   - In-supply request example:
    - `POST /deals/:id/requests`
    ```json
    {
-     "requestKind": "demand",
-     "demandDetails": { "productServiceName": "Steel coils", "unitPrice": 1800 },
+     "requestKind": "rfq",
+     "requestType": "inSupply",
+     "supplyDetails": {
+       "productServiceName": "Steel coils",
+       "category": "rawMaterial",
+       "supplyType": "assembleToOrder",
+       "qualityLevel": "other",
+       "qualityLevelOtherText": "Aerospace grade"
+     },
      "attachments": [{ "fileId": 321, "sortOrder": 1 }]
    }
    ```
-2. Applicant tracks own requests:
+
+   - `requestType` accepts `direct` or `inSupply`.
+   - Direct endpoint enforces `requestType=direct`.
+   - Deal-scoped endpoint normalizes to `requestType=inSupply`.
+2. Applicant tracks submitted offers (My Applications):
+   - `GET /deals/me/applications`
+   - Returns submitted offers only (`requestKind = demand`).
+3. Applicant tracks requests (My Requests):
    - `GET /deals/me/requests`
-3. Deal owner reviews incoming requests:
+   - Returns request records (`requestKind in [supply, rfq]`) plus direct requests (`requestType=direct`).
+   - Optional filter: `requestType` (`direct` or `inSupply`).
+4. Deal owner reviews incoming requests:
    - `GET /deals/:id/requests`
-4. Deal owner updates status:
+5. Deal owner updates status:
    - `PATCH /deals/:dealId/requests/:requestId/status`
-5. Applicant lifecycle controls:
+6. Applicant lifecycle controls:
    - `PATCH /deals/requests/:requestId/pause`
    - `PATCH /deals/requests/:requestId/cancel`
    - `DELETE /deals/requests/:requestId` (legacy withdraw alias)
@@ -319,6 +353,11 @@ Failure/client handling:
 
 - Authorization errors for wrong role/company (`403`): hide forbidden actions by role in UI.
 - Invalid request status transition (`400`): refresh request state and re-render available actions.
+- Validation failures (`400`) to surface explicitly:
+  - `stockDeliveryTime` is no longer accepted in request payloads.
+  - `colorFinish` is no longer accepted in request payloads.
+  - `supplyType` must be one of `inStock`, `assembleToOrder`, `makeToOrder`, `engineerToOrder`.
+  - `qualityLevelOtherText` is required when `qualityLevel = other` and forbidden otherwise.
 
 ## Flow G: Chat Enablement + Realtime Messaging
 
