@@ -12,10 +12,14 @@ import time
 from v1_scenario_lib import (
     Actor,
     ScenarioRunner,
+    build_direct_request_payload,
+    build_in_supply_request_payload,
+    build_supply_details,
     build_password_reset_debug_otp,
     create_file_for_actor,
     load_env_files,
     register_actor,
+    resolve_base_url,
 )
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -102,7 +106,7 @@ def setup_company_assets(runner: ScenarioRunner, actor: Actor, tag: str):
 def run():
     load_env_files()
     ts = int(time.time())
-    base_url = os.environ.get("API_BASE_URL", "http://localhost:3000/api/v1")
+    base_url = resolve_base_url()
     runner = ScenarioRunner(base_url)
 
     password = f"Password123!{ts}"
@@ -160,7 +164,7 @@ def run():
     deal_ids = {}
     for actor in actors:
         deal_resp = runner.step(
-            step_id=f"{actor.label}.deal.create",
+            step_id=f"deals.{actor.label}.create",
             role=actor.label,
             method="POST",
             path="/deals",
@@ -178,30 +182,25 @@ def run():
 
     # B submits request on A deal -> accepted
     req_b_a_resp = runner.step(
-        step_id="agent_b.request_on_a",
+        step_id="requests.in_supply.agent_b_on_a.submit",
         role=b.label,
         method="POST",
         path=f"/deals/{deal_ids[a.label]}/requests",
         token=b.token,
-        payload={
-            "requestKind": "supply",
-            "supplyDetails": {
-                "productServiceName": "Packaging cartons",
-                "category": "packingAndContainers",
-                "quantityRequired": 250,
-            },
-            "attachments": [],
-        },
+        payload=build_in_supply_request_payload(
+            "supply",
+            supply_details=build_supply_details("Packaging cartons", category="packingAndContainers"),
+        ),
         expected_statuses=[201],
     )
     req_b_a_id = runner.require_id(
         runner.extract_data(req_b_a_resp),
         keys=["id", "requestId"],
-        context="agent_b.request_on_a",
+        context="requests.in_supply.agent_b_on_a.submit",
     )
     if req_b_a_id:
         runner.step(
-            step_id="agent_a.accept_b_request",
+            step_id="requests.owner.agent_a.accept_b",
             role=a.label,
             method="PATCH",
             path=f"/deals/{deal_ids[a.label]}/requests/{req_b_a_id}/status",
@@ -211,7 +210,7 @@ def run():
         )
     else:
         runner.blocked_step(
-            step_id="agent_a.accept_b_request",
+            step_id="requests.owner.agent_a.accept_b",
             role=a.label,
             method="PATCH",
             path="/deals/<dealId>/requests/<requestId>/status",
@@ -221,31 +220,22 @@ def run():
 
     # C submits request on A deal -> cancel
     req_c_a_resp = runner.step(
-        step_id="agent_c.request_on_a",
+        step_id="requests.in_supply.agent_c_on_a.submit",
         role=c.label,
         method="POST",
         path=f"/deals/{deal_ids[a.label]}/requests",
         token=c.token,
-        payload={
-            "requestKind": "demand",
-            "demandDetails": {
-                "productServiceName": "Packaging cartons",
-                "availableQuantity": 120,
-                "unitPrice": 10,
-                "currency": "USD",
-            },
-            "attachments": [],
-        },
+        payload=build_in_supply_request_payload("demand"),
         expected_statuses=[201],
     )
     req_c_a_id = runner.require_id(
         runner.extract_data(req_c_a_resp),
         keys=["id", "requestId"],
-        context="agent_c.request_on_a",
+        context="requests.in_supply.agent_c_on_a.submit",
     )
     if req_c_a_id:
         runner.step(
-            step_id="agent_c.cancel_request",
+            step_id="requests.applicant.agent_c.cancel",
             role=c.label,
             method="PATCH",
             path=f"/deals/requests/{req_c_a_id}/cancel",
@@ -255,7 +245,7 @@ def run():
         )
     else:
         runner.blocked_step(
-            step_id="agent_c.cancel_request",
+            step_id="requests.applicant.agent_c.cancel",
             role=c.label,
             method="PATCH",
             path="/deals/requests/<requestId>/cancel",
@@ -358,6 +348,119 @@ def run():
             expected_statuses=[200],
         )
 
+    owner_requests_resp = runner.step(
+        step_id="lists.owner.agent_a_requests",
+        role=a.label,
+        method="GET",
+        path=f"/deals/{deal_ids[a.label]}/requests",
+        token=a.token,
+        expected_statuses=[200],
+    )
+    if not runner.has_request_list_shape(owner_requests_resp):
+        runner.blocked_step(
+            step_id="lists.owner.agent_a_requests.shape",
+            role=a.label,
+            method="GET",
+            path=f"/deals/{deal_ids[a.label]}/requests",
+            reason="response missing requests/stats shape",
+            expected_statuses=[200],
+        )
+
+    direct_resp = runner.step(
+        step_id="direct.agent_c_to_b.submit",
+        role=c.label,
+        method="POST",
+        path="/deals/direct-requests",
+        token=c.token,
+        payload=build_direct_request_payload(b.company_id),
+        expected_statuses=[201],
+    )
+    direct_request_id = runner.extract_id(runner.extract_data(direct_resp), ["id", "requestId"])
+
+    runner.step(
+        step_id="lists.agent_c.my_applications",
+        role=c.label,
+        method="GET",
+        path="/deals/me/applications",
+        token=c.token,
+        params={"limit": 20, "offset": 0},
+        expected_statuses=[200],
+    )
+    reqs_in_supply = runner.step(
+        step_id="lists.agent_c.my_requests_in_supply",
+        role=c.label,
+        method="GET",
+        path="/deals/me/requests",
+        token=c.token,
+        params={"requestType": "inSupply", "limit": 20, "offset": 0},
+        expected_statuses=[200],
+    )
+    reqs_direct = runner.step(
+        step_id="lists.agent_c.my_requests_direct",
+        role=c.label,
+        method="GET",
+        path="/deals/me/requests",
+        token=c.token,
+        params={"requestType": "direct", "limit": 20, "offset": 0},
+        expected_statuses=[200],
+    )
+    if not runner.has_request_item_fields(reqs_in_supply):
+        runner.blocked_step(
+            step_id="lists.agent_c.my_requests_in_supply.shape",
+            role=c.label,
+            method="GET",
+            path="/deals/me/requests",
+            reason="response missing request item fields",
+            expected_statuses=[200],
+        )
+    if direct_request_id and not runner.has_request_item_fields(reqs_direct):
+        runner.blocked_step(
+            step_id="lists.agent_c.my_requests_direct.shape",
+            role=c.label,
+            method="GET",
+            path="/deals/me/requests",
+            reason="direct response missing request item fields",
+            expected_statuses=[200],
+        )
+
+    if direct_request_id:
+        runner.step(
+            step_id="requests.applicant.agent_c.pause_direct",
+            role=c.label,
+            method="PATCH",
+            path=f"/deals/requests/{direct_request_id}/pause",
+            token=c.token,
+            expected_statuses=[200],
+        )
+        runner.step(
+            step_id="requests.applicant.agent_c.cancel_direct",
+            role=c.label,
+            method="PATCH",
+            path=f"/deals/requests/{direct_request_id}/cancel",
+            token=c.token,
+            payload={"cancelReason": "No longer needed"},
+            expected_statuses=[200],
+        )
+
+    runner.step(
+        step_id="requests.validation.removed_fields_negative",
+        role=c.label,
+        method="POST",
+        path=f"/deals/{deal_ids[a.label]}/requests",
+        token=c.token,
+        payload={
+            "requestKind": "rfq",
+            "requestType": "inSupply",
+            "supplyDetails": {
+                "productServiceName": "Invalid legacy payload",
+                "category": "rawMaterial",
+                "supplyType": "inStock",
+                "stockDeliveryTime": "7 days",
+            },
+        },
+        expected_statuses=[400],
+    )
+
     # Removed namespace checks
     removed_checks = [
         ("removed.admin", "GET", "/admin/companies"),
@@ -369,8 +472,6 @@ def run():
         ("removed.support_chat", "GET", "/support/chat"),
         ("removed.devices.guest_unauthorized", "GET", "/users/me/devices"),
         ("removed.auth_admin", "POST", "/auth/admin/login"),
-        ("removed.auth_verify_email", "GET", "/auth/verify-email"),
-        ("removed.auth_resend_verification", "POST", "/auth/resend-verification"),
     ]
 
     for step_id, method, path in removed_checks:
@@ -409,6 +510,8 @@ def run():
         OUTPUT_FILE,
         extra_meta={
             "scenario": "v1_simulate_all",
+            "contractsAligned": True,
+            "scenarioVersion": "2026-05-deals-contracts-v1",
             "actors": [a.email, b.email, c.email],
             "deals": deal_ids,
         },

@@ -303,6 +303,24 @@ class ScenarioRunner:
         with open(output_path, "w", encoding="utf-8") as handle:
             json.dump({"meta": meta, "steps": self.steps}, handle, ensure_ascii=False, indent=2)
 
+    def has_request_list_shape(self, response: Dict[str, Any]) -> bool:
+        data = self.extract_data(response)
+        if not isinstance(data, dict):
+            return False
+        return isinstance(data.get("requests"), list) and isinstance(data.get("stats"), dict)
+
+    def has_request_item_fields(self, response: Dict[str, Any]) -> bool:
+        data = self.extract_data(response)
+        if not isinstance(data, list):
+            return False
+        if not data:
+            return True
+        item = data[0]
+        if not isinstance(item, dict):
+            return False
+        required = ["id", "requestKind", "requestType", "status"]
+        return all(key in item for key in required)
+
 
 def build_password_reset_debug_otp(response: Dict[str, Any]) -> Optional[str]:
     data = (response.get("json") or {}).get("data") or {}
@@ -316,6 +334,78 @@ def build_email_verification_debug_otp(response: Dict[str, Any]) -> Optional[str
     debug = data.get("debugOtp") or {}
     otp = debug.get("otp")
     return otp if isinstance(otp, str) and len(otp) == 6 else None
+
+
+def build_supply_details(
+    product_service_name: str,
+    category: str = "rawMaterial",
+    supply_type: str = "assembleToOrder",
+    quality_level: str = "other",
+    quality_level_other_text: str = "Aerospace grade",
+) -> Dict[str, Any]:
+    payload = {
+        "productServiceName": product_service_name,
+        "category": category,
+        "supplyType": supply_type,
+        "qualityLevel": quality_level,
+    }
+    if quality_level == "other":
+        payload["qualityLevelOtherText"] = quality_level_other_text
+    return payload
+
+
+def build_demand_details(
+    product_service_name: str,
+    available_quantity: int,
+    unit_price: int,
+    currency: str = "USD",
+) -> Dict[str, Any]:
+    return {
+        "productServiceName": product_service_name,
+        "availableQuantity": available_quantity,
+        "unitPrice": unit_price,
+        "currency": currency,
+    }
+
+
+def build_in_supply_request_payload(
+    request_kind: str,
+    *,
+    supply_details: Optional[Dict[str, Any]] = None,
+    demand_details: Optional[Dict[str, Any]] = None,
+    attachments: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {
+        "requestKind": request_kind,
+        "requestType": "inSupply",
+        "attachments": attachments or [],
+    }
+    if request_kind == "demand":
+        payload["demandDetails"] = demand_details or build_demand_details("Industrial resin", 100, 50)
+    else:
+        payload["supplyDetails"] = supply_details or build_supply_details("Steel coils")
+    return payload
+
+
+def build_direct_request_payload(
+    target_company_id: int,
+    request_kind: str = "rfq",
+    *,
+    supply_details: Optional[Dict[str, Any]] = None,
+    demand_details: Optional[Dict[str, Any]] = None,
+    attachments: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {
+        "targetCompanyId": target_company_id,
+        "requestKind": request_kind,
+        "requestType": "direct",
+        "attachments": attachments or [],
+    }
+    if request_kind == "demand":
+        payload["demandDetails"] = demand_details or build_demand_details("Industrial resin", 100, 50)
+    else:
+        payload["supplyDetails"] = supply_details or build_supply_details("Steel coils")
+    return payload
 
 
 def pick_register_file_id(runner: ScenarioRunner, role: str) -> Optional[int]:

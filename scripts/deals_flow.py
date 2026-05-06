@@ -3,7 +3,15 @@ import os
 import sys
 import time
 
-from v1_scenario_lib import ScenarioRunner, load_env_files, register_actor, resolve_base_url
+from v1_scenario_lib import (
+    ScenarioRunner,
+    build_direct_request_payload,
+    build_in_supply_request_payload,
+    build_supply_details,
+    load_env_files,
+    register_actor,
+    resolve_base_url,
+)
 
 
 def run():
@@ -64,12 +72,12 @@ def run():
         expected_statuses=[200],
     )
 
-    deal_cancel_id = create_deal("owner.create_deal.cancel_track", "V1 Supply Deal - Cancel")
-    deal_accept_id = create_deal("owner.create_deal.accept_track", "V1 Supply Deal - Accept")
-    deal_withdraw_id = create_deal("owner.create_deal.withdraw_track", "V1 Supply Deal - Withdraw")
+    deal_cancel_id = create_deal("deals.owner.create.cancel_track", "V1 Supply Deal - Cancel")
+    deal_accept_id = create_deal("deals.owner.create.accept_track", "V1 Supply Deal - Accept")
+    deal_withdraw_id = create_deal("deals.owner.create.withdraw_track", "V1 Supply Deal - Withdraw")
 
     runner.step(
-        step_id="owner.my_deals",
+        step_id="lists.owner.my_deals",
         role=owner.label,
         method="GET",
         path="/deals/me/deals",
@@ -79,7 +87,7 @@ def run():
 
     if deal_accept_id:
         runner.step(
-            step_id="applicant.get_deal",
+            step_id="deals.applicant.get_detail",
             role=applicant.label,
             method="GET",
             path=f"/deals/{deal_accept_id}",
@@ -90,31 +98,26 @@ def run():
     cancel_req_id = None
     if deal_cancel_id:
         cancel_req_resp = runner.step(
-            step_id="applicant.submit_request_cancel_path",
+            step_id="requests.in_supply.submit.cancel_track",
             role=applicant.label,
             method="POST",
             path=f"/deals/{deal_cancel_id}/requests",
             token=applicant.token,
-            payload={
-                "requestKind": "supply",
-                "supplyDetails": {
-                    "productServiceName": "Steel sheets",
-                    "category": "rawMaterial",
-                    "quantityRequired": 70,
-                },
-                "attachments": [],
-            },
+            payload=build_in_supply_request_payload(
+                "supply",
+                supply_details=build_supply_details("Steel sheets"),
+            ),
             expected_statuses=[201],
         )
         cancel_req_id = runner.require_id(
             runner.extract_data(cancel_req_resp),
             keys=["id", "requestId"],
-            context="applicant.submit_request_cancel_path",
+            context="requests.in_supply.submit.cancel_track",
         )
 
     if cancel_req_id:
         runner.step(
-            step_id="applicant.pause_request",
+            step_id="requests.applicant.pause",
             role=applicant.label,
             method="PATCH",
             path=f"/deals/requests/{cancel_req_id}/pause",
@@ -122,7 +125,7 @@ def run():
             expected_statuses=[200],
         )
         runner.step(
-            step_id="applicant.cancel_request",
+            step_id="requests.applicant.cancel",
             role=applicant.label,
             method="PATCH",
             path=f"/deals/requests/{cancel_req_id}/cancel",
@@ -131,25 +134,20 @@ def run():
             expected_statuses=[200],
         )
         runner.step(
-            step_id="applicant.reapply_after_cancel",
+            step_id="requests.in_supply.reapply_after_cancel",
             role=applicant.label,
             method="POST",
             path=f"/deals/{deal_cancel_id}/requests",
             token=applicant.token,
-            payload={
-                "requestKind": "supply",
-                "supplyDetails": {
-                    "productServiceName": "Steel sheets",
-                    "category": "rawMaterial",
-                    "quantityRequired": 40,
-                },
-                "attachments": [],
-            },
+            payload=build_in_supply_request_payload(
+                "supply",
+                supply_details=build_supply_details("Steel sheets"),
+            ),
             expected_statuses=[201],
         )
     else:
         runner.blocked_step(
-            step_id="applicant.pause_request",
+            step_id="requests.applicant.pause",
             role=applicant.label,
             method="PATCH",
             path="/deals/requests/<requestId>/pause",
@@ -157,7 +155,7 @@ def run():
             expected_statuses=[200],
         )
         runner.blocked_step(
-            step_id="applicant.cancel_request",
+            step_id="requests.applicant.cancel",
             role=applicant.label,
             method="PATCH",
             path="/deals/requests/<requestId>/cancel",
@@ -168,41 +166,41 @@ def run():
     accepted_req_id = None
     if deal_accept_id:
         accepted_req_resp = runner.step(
-            step_id="applicant.submit_request_accept_path",
+            step_id="requests.in_supply.submit.accept_track",
             role=applicant.label,
             method="POST",
             path=f"/deals/{deal_accept_id}/requests",
             token=applicant.token,
-            payload={
-                "requestKind": "demand",
-                "demandDetails": {
-                    "productServiceName": "Steel sheets",
-                    "availableQuantity": 120,
-                    "unitPrice": 410,
-                    "currency": "USD",
-                },
-                "attachments": [],
-            },
+            payload=build_in_supply_request_payload("demand"),
             expected_statuses=[201],
         )
         accepted_req_id = runner.require_id(
             runner.extract_data(accepted_req_resp),
             keys=["id", "requestId"],
-            context="applicant.submit_request_accept_path",
+            context="requests.in_supply.submit.accept_track",
         )
 
-        runner.step(
-            step_id="owner.list_requests",
+        owner_list_resp = runner.step(
+            step_id="lists.owner.deal_requests",
             role=owner.label,
             method="GET",
             path=f"/deals/{deal_accept_id}/requests",
             token=owner.token,
             expected_statuses=[200],
         )
+        if not runner.has_request_list_shape(owner_list_resp):
+            runner.blocked_step(
+                step_id="lists.owner.deal_requests.shape",
+                role=owner.label,
+                method="GET",
+                path=f"/deals/{deal_accept_id}/requests",
+                reason="response missing requests/stats shape",
+                expected_statuses=[200],
+            )
 
     if deal_accept_id and accepted_req_id:
         runner.step(
-            step_id="owner.accept_request",
+            step_id="requests.owner.accept",
             role=owner.label,
             method="PATCH",
             path=f"/deals/{deal_accept_id}/requests/{accepted_req_id}/status",
@@ -210,9 +208,18 @@ def run():
             payload={"status": "accepted"},
             expected_statuses=[200],
         )
+        runner.step(
+            step_id="requests.owner.reject_after_accept_negative",
+            role=owner.label,
+            method="PATCH",
+            path=f"/deals/{deal_accept_id}/requests/{accepted_req_id}/status",
+            token=owner.token,
+            payload={"status": "rejected"},
+            expected_statuses=[400],
+        )
     else:
         runner.blocked_step(
-            step_id="owner.accept_request",
+            step_id="requests.owner.accept",
             role=owner.label,
             method="PATCH",
             path="/deals/<dealId>/requests/<requestId>/status",
@@ -223,31 +230,26 @@ def run():
     withdraw_req_id = None
     if deal_withdraw_id:
         withdraw_req_resp = runner.step(
-            step_id="applicant.submit_request_withdraw_alias",
+            step_id="requests.in_supply.submit.withdraw_alias_track",
             role=applicant.label,
             method="POST",
             path=f"/deals/{deal_withdraw_id}/requests",
             token=applicant.token,
-            payload={
-                "requestKind": "rfq",
-                "supplyDetails": {
-                    "productServiceName": "Steel sheets",
-                    "category": "rawMaterial",
-                    "quantityRequired": 50,
-                },
-                "attachments": [],
-            },
+            payload=build_in_supply_request_payload(
+                "rfq",
+                supply_details=build_supply_details("Steel sheets"),
+            ),
             expected_statuses=[201],
         )
         withdraw_req_id = runner.require_id(
             runner.extract_data(withdraw_req_resp),
             keys=["id", "requestId"],
-            context="applicant.submit_request_withdraw_alias",
+            context="requests.in_supply.submit.withdraw_alias_track",
         )
 
     if withdraw_req_id:
         runner.step(
-            step_id="applicant.withdraw_alias",
+            step_id="requests.applicant.withdraw_alias",
             role=applicant.label,
             method="DELETE",
             path=f"/deals/requests/{withdraw_req_id}",
@@ -257,7 +259,7 @@ def run():
         )
     else:
         runner.blocked_step(
-            step_id="applicant.withdraw_alias",
+            step_id="requests.applicant.withdraw_alias",
             role=applicant.label,
             method="DELETE",
             path="/deals/requests/<requestId>",
@@ -265,18 +267,109 @@ def run():
             expected_statuses=[200],
         )
 
+    direct_resp = runner.step(
+        step_id="direct.applicant.submit",
+        role=applicant.label,
+        method="POST",
+        path="/deals/direct-requests",
+        token=applicant.token,
+        payload=build_direct_request_payload(owner.company_id),
+        expected_statuses=[201],
+    )
+    direct_request_id = runner.require_id(
+        runner.extract_data(direct_resp),
+        keys=["id", "requestId"],
+        context="direct.applicant.submit",
+    )
+
     runner.step(
-        step_id="applicant.my_requests",
+        step_id="lists.applicant.my_applications",
+        role=applicant.label,
+        method="GET",
+        path="/deals/me/applications",
+        token=applicant.token,
+        params={"limit": 20, "offset": 0},
+        expected_statuses=[200],
+    )
+    my_requests_in_supply = runner.step(
+        step_id="lists.applicant.my_requests_in_supply",
         role=applicant.label,
         method="GET",
         path="/deals/me/requests",
         token=applicant.token,
+        params={"requestType": "inSupply", "limit": 20, "offset": 0},
         expected_statuses=[200],
     )
+    my_requests_direct = runner.step(
+        step_id="lists.applicant.my_requests_direct",
+        role=applicant.label,
+        method="GET",
+        path="/deals/me/requests",
+        token=applicant.token,
+        params={"requestType": "direct", "limit": 20, "offset": 0},
+        expected_statuses=[200],
+    )
+    if not runner.has_request_item_fields(my_requests_in_supply):
+        runner.blocked_step(
+            step_id="lists.applicant.my_requests_in_supply.shape",
+            role=applicant.label,
+            method="GET",
+            path="/deals/me/requests",
+            reason="response missing request item fields",
+            expected_statuses=[200],
+        )
+    if direct_request_id and not runner.has_request_item_fields(my_requests_direct):
+        runner.blocked_step(
+            step_id="lists.applicant.my_requests_direct.shape",
+            role=applicant.label,
+            method="GET",
+            path="/deals/me/requests",
+            reason="direct response missing request item fields",
+            expected_statuses=[200],
+        )
+
+    if direct_request_id:
+        runner.step(
+            step_id="requests.applicant.pause_direct",
+            role=applicant.label,
+            method="PATCH",
+            path=f"/deals/requests/{direct_request_id}/pause",
+            token=applicant.token,
+            expected_statuses=[200],
+        )
+        runner.step(
+            step_id="requests.applicant.cancel_direct",
+            role=applicant.label,
+            method="PATCH",
+            path=f"/deals/requests/{direct_request_id}/cancel",
+            token=applicant.token,
+            payload={"cancelReason": "Cancel direct path"},
+            expected_statuses=[200],
+        )
+
+    if deal_cancel_id:
+        runner.step(
+            step_id="requests.validation.removed_fields_negative",
+            role=applicant.label,
+            method="POST",
+            path=f"/deals/{deal_cancel_id}/requests",
+            token=applicant.token,
+            payload={
+                "requestKind": "rfq",
+                "requestType": "inSupply",
+                "supplyDetails": {
+                    "productServiceName": "Legacy invalid payload",
+                    "category": "rawMaterial",
+                    "supplyType": "inStock",
+                    "stockDeliveryTime": "2 weeks",
+                },
+            },
+            expected_statuses=[400],
+        )
 
     if deal_accept_id:
         runner.step(
-            step_id="owner.update_deal",
+            step_id="deals.owner.update",
             role=owner.label,
             method="PUT",
             path=f"/deals/{deal_accept_id}",
@@ -285,7 +378,7 @@ def run():
             expected_statuses=[200],
         )
         runner.step(
-            step_id="owner.archive_deal",
+            step_id="deals.owner.archive",
             role=owner.label,
             method="DELETE",
             path=f"/deals/{deal_accept_id}",
@@ -297,6 +390,8 @@ def run():
         output_path,
         extra_meta={
             "scenario": "v1_deals_flow",
+            "contractsAligned": True,
+            "scenarioVersion": "2026-05-deals-contracts-v1",
             "actors": [owner.email, applicant.email],
         },
     )

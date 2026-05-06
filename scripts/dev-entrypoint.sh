@@ -49,6 +49,9 @@ if [ "${AUTO_MIGRATE:-false}" = "true" ]; then
   fi
 fi
 
+echo "🔎 Verifying database schema..."
+node scripts/verify-schema.js
+
 if [ "${AUTO_SEED:-false}" = "true" ]; then
   echo "🌱 Running database seeder..."
   if [ -n "${SEED_MODE:-}" ]; then

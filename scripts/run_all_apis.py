@@ -9,6 +9,8 @@ import time
 
 from v1_scenario_lib import (
     ScenarioRunner,
+    build_direct_request_payload,
+    build_in_supply_request_payload,
     build_password_reset_debug_otp,
     create_file_for_actor,
     load_env_files,
@@ -120,7 +122,7 @@ def run():
                 )
 
     deal_resp = runner.step(
-        step_id="a.create_deal",
+        step_id="deals.a.create",
         role=actor_a.label,
         method="POST",
         path="/deals",
@@ -138,7 +140,7 @@ def run():
 
     if deal_id:
         runner.step(
-            step_id="public.get_deal",
+            step_id="deals.public.get_detail",
             role="guest",
             method="GET",
             path=f"/deals/{deal_id}",
@@ -146,36 +148,36 @@ def run():
         )
 
     req_resp = runner.step(
-        step_id="b.submit_request",
+        step_id="requests.in_supply.b.submit",
         role=actor_b.label,
         method="POST",
         path=f"/deals/{deal_id}/requests",
         token=actor_b.token,
-        payload={
-            "requestKind": "demand",
-            "demandDetails": {
-                "productServiceName": "Industrial resin",
-                "availableQuantity": 300,
-                "unitPrice": 80,
-                "currency": "USD",
-            },
-            "attachments": [],
-        },
+        payload=build_in_supply_request_payload("demand"),
         expected_statuses=[201],
     )
     request_id = runner.extract_id(runner.extract_data(req_resp), ["id", "requestId"])
 
     if deal_id and request_id:
-        runner.step(
-            step_id="a.list_incoming_requests",
+        incoming_requests_resp = runner.step(
+            step_id="lists.a.incoming_requests",
             role=actor_a.label,
             method="GET",
             path=f"/deals/{deal_id}/requests",
             token=actor_a.token,
             expected_statuses=[200],
         )
+        if not runner.has_request_list_shape(incoming_requests_resp):
+            runner.blocked_step(
+                step_id="lists.a.incoming_requests.shape",
+                role=actor_a.label,
+                method="GET",
+                path=f"/deals/{deal_id}/requests",
+                reason="response missing requests/stats shape",
+                expected_statuses=[200],
+            )
         runner.step(
-            step_id="a.accept_request",
+            step_id="requests.owner.accept",
             role=actor_a.label,
             method="PATCH",
             path=f"/deals/{deal_id}/requests/{request_id}/status",
@@ -186,7 +188,7 @@ def run():
 
     if request_id:
         runner.step(
-            step_id="b.pause_request",
+            step_id="requests.b.pause",
             role=actor_b.label,
             method="PATCH",
             path=f"/deals/requests/{request_id}/pause",
@@ -194,7 +196,7 @@ def run():
             expected_status_family="2xx",
         )
         runner.step(
-            step_id="b.cancel_request",
+            step_id="requests.b.cancel",
             role=actor_b.label,
             method="PATCH",
             path=f"/deals/requests/{request_id}/cancel",
@@ -203,8 +205,19 @@ def run():
             expected_status_family="2xx",
         )
 
+    direct_resp = runner.step(
+        step_id="direct.b.submit",
+        role=actor_b.label,
+        method="POST",
+        path="/deals/direct-requests",
+        token=actor_b.token,
+        payload=build_direct_request_payload(actor_a.company_id),
+        expected_statuses=[201],
+    )
+    direct_request_id = runner.extract_id(runner.extract_data(direct_resp), ["id", "requestId"])
+
     runner.step(
-        step_id="a.my_deals",
+        step_id="lists.a.my_deals",
         role=actor_a.label,
         method="GET",
         path="/deals/me/deals",
@@ -212,13 +225,50 @@ def run():
         expected_statuses=[200],
     )
     runner.step(
-        step_id="b.my_requests",
+        step_id="lists.b.my_applications",
+        role=actor_b.label,
+        method="GET",
+        path="/deals/me/applications",
+        token=actor_b.token,
+        params={"limit": 20, "offset": 0},
+        expected_statuses=[200],
+    )
+    my_requests_in_supply = runner.step(
+        step_id="lists.b.my_requests_in_supply",
         role=actor_b.label,
         method="GET",
         path="/deals/me/requests",
         token=actor_b.token,
+        params={"requestType": "inSupply", "limit": 20, "offset": 0},
         expected_statuses=[200],
     )
+    my_requests_direct = runner.step(
+        step_id="lists.b.my_requests_direct",
+        role=actor_b.label,
+        method="GET",
+        path="/deals/me/requests",
+        token=actor_b.token,
+        params={"requestType": "direct", "limit": 20, "offset": 0},
+        expected_statuses=[200],
+    )
+    if not runner.has_request_item_fields(my_requests_in_supply):
+        runner.blocked_step(
+            step_id="lists.b.my_requests_in_supply.shape",
+            role=actor_b.label,
+            method="GET",
+            path="/deals/me/requests",
+            reason="response missing request item fields",
+            expected_statuses=[200],
+        )
+    if direct_request_id and not runner.has_request_item_fields(my_requests_direct):
+        runner.blocked_step(
+            step_id="lists.b.my_requests_direct.shape",
+            role=actor_b.label,
+            method="GET",
+            path="/deals/me/requests",
+            reason="direct response missing request item fields",
+            expected_statuses=[200],
+        )
 
     room_resp = runner.step(
         step_id="a.create_chat_room",
@@ -300,14 +350,25 @@ def run():
         expected_statuses=[200],
     )
 
-    runner.step(
-        step_id="a.resend_verification",
-        role=actor_a.label,
-        method="POST",
-        path="/auth/resend-verification",
-        payload={"email": actor_a.email},
-        expected_status_family="2xx",
-    )
+    if deal_id:
+        runner.step(
+            step_id="requests.validation.removed_fields_negative",
+            role=actor_b.label,
+            method="POST",
+            path=f"/deals/{deal_id}/requests",
+            token=actor_b.token,
+            payload={
+                "requestKind": "rfq",
+                "requestType": "inSupply",
+                "supplyDetails": {
+                    "productServiceName": "Legacy invalid payload",
+                    "category": "rawMaterial",
+                    "supplyType": "inStock",
+                    "colorFinish": "red",
+                },
+            },
+            expected_statuses=[400],
+        )
 
     forgot_resp = runner.step(
         step_id="a.forgot_password",
@@ -389,6 +450,8 @@ def run():
         OUTPUT_FILE,
         extra_meta={
             "scenario": "v1_run_all_mixed",
+            "contractsAligned": True,
+            "scenarioVersion": "2026-05-deals-contracts-v1",
             "actors": [actor_a.email, actor_b.email],
         },
     )

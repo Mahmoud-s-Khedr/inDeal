@@ -22,6 +22,7 @@
     "prisma:generate": "node scripts/prisma-cli.js generate",
     "prisma:db:push": "node scripts/prisma-cli.js db push --accept-data-loss",
     "prisma:migrate:deploy": "node scripts/prisma-cli.js migrate deploy",
+    "prisma:verify-schema": "node scripts/verify-schema.js",
     "docs:verify": "node scripts/verify-swagger-coverage.js && npm run contracts:verify",
     "contracts:verify": "node scripts/verify-http-contract-coverage.js && node scripts/verify-socket-contract-coverage.js",
     "vercel-build": "echo 'No build step required for Express API'"

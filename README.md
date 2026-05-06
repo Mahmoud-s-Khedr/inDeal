@@ -88,3 +88,12 @@ npm run dev
 
 - Legacy SQL schema/migration files under `AI_DOCS/` were removed.
 - Prisma schema is now the source of truth for schema synchronization.
+- Local Docker startup runs `prisma migrate deploy`, then `node scripts/verify-schema.js`, then seeding.
+- If startup fails with Prisma `P2021` / missing tables while `migrate deploy` says "No pending migrations", local migration history is drifted. Reset local volumes and recreate:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+- The repository includes a baseline migration at `prisma/migrations/20250101000000_baseline_init`.
