@@ -42,6 +42,13 @@ app.get('/', (req, res) => {
   res.send('inDeal API is running');
 });
 
+// Backward compatibility for legacy verification links sent as /verify-email?email=...&otp=...
+app.get('/verify-email', (req, res) => {
+  const qs = new URLSearchParams(req.query).toString();
+  const target = qs ? `/api/v1/auth/verify-email?${qs}` : '/api/v1/auth/verify-email';
+  res.redirect(302, target);
+});
+
 // API Routes
 app.use('/api', routes);
 

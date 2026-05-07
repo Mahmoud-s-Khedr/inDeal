@@ -91,6 +91,15 @@ const verifyEmail = catchAsync(async (req, res) => {
   sendResponse(res, 200, result, result.message);
 });
 
+const verifyEmailByQuery = catchAsync(async (req, res) => {
+  const result = await authService.verifyEmail({
+    email: req.query.email,
+    otp: req.query.otp,
+    ipAddress: req.ip,
+  });
+  sendResponse(res, 200, result, result.message);
+});
+
 module.exports = {
   createRegistrationUploadUrl,
   register,
@@ -101,6 +110,7 @@ module.exports = {
   verifyOtp,
   resendVerification,
   verifyEmail,
+  verifyEmailByQuery,
   resetPassword,
   logout,
 };

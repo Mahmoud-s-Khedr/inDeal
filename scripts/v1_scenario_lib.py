@@ -44,7 +44,7 @@ def load_env_files() -> Dict[str, str]:
     return env
 
 
-def resolve_base_url(default: str = "http://localhost:3000/api/v1") -> str:
+def resolve_base_url(default: str = "https://api-test.indealeg.com//api/v1") -> str:
     return (
         os.environ.get("API_BASE_URL")
         or os.environ.get("BASE_URL")

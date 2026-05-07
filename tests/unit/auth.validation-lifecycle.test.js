@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   verifyEmailSchema,
+  verifyEmailQuerySchema,
   resendVerificationSchema,
 } = require('../../src/modules/auth/validation/auth.validation');
 const { updatePasswordSchema } = require('../../src/modules/user/validation/user.validation');
@@ -21,6 +22,16 @@ test('resendVerificationSchema requires valid email', () => {
   assert.throws(() => {
     resendVerificationSchema.parse({ body: { email: 'bad-email' } });
   });
+});
+
+test('verifyEmailQuerySchema accepts valid query params', () => {
+  const parsed = verifyEmailQuerySchema.parse({
+    query: {
+      email: 'agent@indeal.com',
+      otp: '123456',
+    },
+  });
+  assert.equal(parsed.query.otp, '123456');
 });
 
 test('updatePasswordSchema enforces min 8 chars', () => {

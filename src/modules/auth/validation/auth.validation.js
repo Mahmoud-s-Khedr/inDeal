@@ -155,6 +155,13 @@ const verifyEmailSchema = z.object({
   }),
 });
 
+const verifyEmailQuerySchema = z.object({
+  query: z.object({
+    email: z.string().email(),
+    otp: z.string().regex(/^\d{6}$/, { message: 'OTP must be a 6-digit code' }),
+  }),
+});
+
 const resubmitSchema = z.object({
   body: z.object({
     company: z
@@ -183,5 +190,6 @@ module.exports = {
   verifyOtpSchema,
   resendVerificationSchema,
   verifyEmailSchema,
+  verifyEmailQuerySchema,
   resubmitSchema,
 };
