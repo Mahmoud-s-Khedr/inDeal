@@ -39,7 +39,6 @@ const renderVerificationHtml = ({ success, title, message }) => {
       <div class="badge">${icon}</div>
       <h1>${safeTitle}</h1>
       <p>${safeMessage}</p>
-      <a href="${homeUrl}">Open inDeal</a>
     </div>
   </div>
 </body>
