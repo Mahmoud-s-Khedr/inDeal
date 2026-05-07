@@ -11,7 +11,6 @@ const {
   verifyOtpSchema,
   resendVerificationSchema,
   verifyEmailSchema,
-  verifyEmailQuerySchema,
 } = require('../validation/auth.validation');
 const fileModule = require('../../file');
 const { createUploadUrlSchema } = fileModule.validation;
@@ -40,7 +39,7 @@ router.post(
   authController.resendVerification
 );
 router.post('/verify-email', validate(verifyEmailSchema), authController.verifyEmail);
-router.get('/verify-email', validate(verifyEmailQuerySchema), authController.verifyEmailByQuery);
+router.get('/verify-email', authController.verifyEmailByQuery);
 router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
 
 module.exports = router;
