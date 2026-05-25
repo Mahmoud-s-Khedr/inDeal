@@ -17,6 +17,7 @@ const {
   listMyRequestsSchema,
   listMyApplicationsSchema,
   withdrawRequestSchema,
+  sendDealEmailSchema,
 } = require('../validation/deal.validation');
 
 const router = express.Router();
@@ -63,6 +64,8 @@ router.get(
 );
 
 // Submit request/bid on a deal
+router.post('/send-email', protect, validate(sendDealEmailSchema), dealController.sendDealEmail);
+
 router.post(
   '/direct-requests',
   protect,

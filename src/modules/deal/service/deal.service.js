@@ -105,6 +105,14 @@ const sanitizeRequestAttachment = (attachment, fileUrl = null) => ({
   fileUrl,
 });
 
+const escapeHtml = (value = '') =>
+  String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+
 const sanitizeSupplyDetails = (item) => {
   if (!item) return null;
   return {
@@ -509,10 +517,6 @@ const createDealRequest = async (dealId, applicantCompanyId, payload) => {
       requestKind: payload.requestKind,
     });
 
-    notifyDealOwnerOfNewRequest(deal, applicant, request).catch((err) => {
-      logger.error('Failed to send new request notification', { error: err.message });
-    });
-
     const [enriched] = await enrichRequests([sanitizeRequest(request)]);
     return enriched;
   } catch (error) {
@@ -751,21 +755,100 @@ const withdrawRequest = async (requestId, companyId, cancelReason) => {
   return cancelRequest(requestId, companyId, cancelReason);
 };
 
-const notifyDealOwnerOfNewRequest = async (deal, applicant, request) => {
-  const ownerCompany = await companyRepository.findById(deal.company_id);
-  if (!ownerCompany || !ownerCompany.email) return;
+const sendDealEmail = async (senderCompanyId, payload) => {
+  const deal = await dealRepository.findById(payload.dealId);
+  if (!deal) {
+    throw new AppError('Deal not found', 404);
+  }
+
+  if (deal.company_id === senderCompanyId) {
+    throw new AppError('Cannot send email to your own deal', 400);
+  }
+
+  const [senderCompany, ownerCompany] = await Promise.all([
+    companyRepository.findById(senderCompanyId),
+    companyRepository.findByIdWithAgentEmail(deal.company_id),
+  ]);
+
+  if (!senderCompany) {
+    throw new AppError('Sender company not found', 404);
+  }
+  if (!ownerCompany) {
+    throw new AppError('Deal owner company not found', 404);
+  }
+  if (!ownerCompany.agent_email) {
+    throw new AppError('Deal owner agent does not have an email configured', 400);
+  }
+
+  const normalizedContactInfo = payload.contactInfo?.trim();
+  const safeSubject = escapeHtml(payload.subject);
+  const safeMessage = escapeHtml(payload.message);
+  const safeContactInfo = normalizedContactInfo ? escapeHtml(normalizedContactInfo) : null;
+  const safeSenderCompanyName = escapeHtml(senderCompany.name || `Company ${senderCompany.id}`);
+  const safeDealName = escapeHtml(deal.deal_name || `Deal #${deal.id}`);
 
   await sendMail({
-    to: ownerCompany.email,
-    subject: `New request on "${deal.deal_name}"`,
-    text: `You have a new request from ${applicant.name} on your deal "${deal.deal_name}".${request.request_offer ? ` Offer: ${request.request_offer}` : ''}`,
+    to: ownerCompany.agent_email,
+    subject: `${payload.subject} - ${deal.deal_name}`,
+    text: [
+      `New message about your deal "${deal.deal_name}".`,
+      `From: ${senderCompany.name || `Company ${senderCompany.id}`}`,
+      `Subject: ${payload.subject}`,
+      '',
+      payload.message,
+      normalizedContactInfo ? `\nContact info: ${normalizedContactInfo}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
     html: `
-      <h2>New Request on Your Deal</h2>
-      <p>You have a new request from <strong>${applicant.name}</strong> on your deal "<strong>${deal.deal_name}</strong>".</p>
-      ${request.request_offer ? `<p><strong>Offer Amount:</strong> ${request.request_offer}</p>` : ''}
-      ${request.request_details ? `<p><strong>Details:</strong> ${request.request_details}</p>` : ''}
-      <p>Log in to view and respond to this request.</p>
+      <div style="margin:0;padding:24px;background:#f3f7fb;font-family:Arial,sans-serif;color:#12304a;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #dbe7f3;">
+          <tr>
+            <td style="padding:22px 24px;background:linear-gradient(135deg,#0d5fc1 0%,#12cfc8 100%);">
+              <div style="font-size:28px;line-height:1;font-weight:700;color:#ffffff;letter-spacing:0.3px;">InDeal</div>
+              <div style="margin-top:8px;font-size:14px;color:#eaf6ff;">New message on your deal</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 24px 10px 24px;">
+              <p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;">
+                You received a new message regarding your deal
+                "<strong>${safeDealName}</strong>".
+              </p>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7fbff;border:1px solid #d8e8f7;border-radius:10px;">
+                <tr>
+                  <td style="padding:14px 16px;">
+                    <p style="margin:0 0 8px 0;font-size:14px;"><strong>From:</strong> ${safeSenderCompanyName}</p>
+                    <p style="margin:0 0 8px 0;font-size:14px;"><strong>Subject:</strong> ${safeSubject}</p>
+                    ${safeContactInfo ? `<p style="margin:0;font-size:14px;"><strong>Contact info:</strong> ${safeContactInfo}</p>` : ''}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 24px 24px 24px;">
+              <p style="margin:0 0 8px 0;font-size:14px;font-weight:700;color:#0d5fc1;">Message</p>
+              <div style="padding:14px 16px;background:#ffffff;border:1px solid #d8e8f7;border-radius:10px;font-size:14px;line-height:1.7;color:#1b3e5b;">
+                ${safeMessage.replaceAll('\n', '<br/>')}
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:14px 24px;background:#f7fbff;border-top:1px solid #dbe7f3;font-size:12px;color:#5b7793;">
+              This notification was sent by InDeal.
+            </td>
+          </tr>
+        </table>
+      </div>
     `,
+  });
+
+  logger.info('Deal owner email sent', {
+    dealId: payload.dealId,
+    senderCompanyId,
+    recipientCompanyId: ownerCompany.id,
+    recipientEmail: ownerCompany.agent_email,
   });
 };
 
@@ -804,6 +887,7 @@ module.exports = {
   pauseRequest,
   cancelRequest,
   withdrawRequest,
+  sendDealEmail,
   __testables: {
     sanitizeDeal,
     sanitizeRequest,
@@ -811,5 +895,6 @@ module.exports = {
     inferRequestDetailsSummary,
     getOpenDealLimitErrorMessage,
     ensureCanTransitionToOpen,
+    escapeHtml,
   },
 };

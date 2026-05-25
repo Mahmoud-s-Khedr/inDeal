@@ -110,6 +110,11 @@ const cancelRequest = catchAsync(async (req, res) => {
   sendResponse(res, 200, request, 'Request canceled');
 });
 
+const sendDealEmail = catchAsync(async (req, res) => {
+  await dealService.sendDealEmail(getCompanyId(req), req.body);
+  sendResponse(res, 200, null, 'Email sent successfully');
+});
+
 module.exports = {
   // Deal endpoints
   createDeal,
@@ -128,4 +133,5 @@ module.exports = {
   pauseRequest,
   cancelRequest,
   withdrawRequest,
+  sendDealEmail,
 };

@@ -65,6 +65,21 @@ const findById = async (companyId) => {
   return result.rows[0];
 };
 
+const findByIdWithAgentEmail = async (companyId) => {
+  const result = await pool.query(
+    `
+      SELECT c.*,
+             u.email AS agent_email
+      FROM companies c
+      LEFT JOIN users u ON c.agent_id = u.id
+      WHERE c.id = $1
+      LIMIT 1
+    `,
+    [companyId]
+  );
+  return result.rows[0];
+};
+
 const findByName = async (name) => {
   const result = await pool.query(
     `
@@ -431,6 +446,7 @@ module.exports = {
   createCompany,
   findByAgentId,
   findById,
+  findByIdWithAgentEmail,
   findByName,
   findCompanyProfileById,
   listByStatus,

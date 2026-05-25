@@ -33,3 +33,12 @@ test('GET /api/v1/admin/* is removed from v1 runtime', async () => {
   const res = await request(app).get('/api/v1/admin/company-review-requests');
   assert.equal(res.status, 404);
 });
+
+test('POST /api/v1/deals/send-email requires authentication', async () => {
+  const res = await request(app).post('/api/v1/deals/send-email').send({
+    dealId: 1,
+    subject: 'Hello',
+    message: 'Testing',
+  });
+  assert.equal(res.status, 401);
+});

@@ -386,6 +386,27 @@ const withdrawRequestSchema = z
     }
   });
 
+const sendDealEmailSchema = z.object({
+  body: z.object({
+    dealId: z.coerce.number().int().positive(),
+    subject: z
+      .string()
+      .trim()
+      .min(1, 'subject is required')
+      .max(200, 'subject must be at most 200 characters'),
+    message: z
+      .string()
+      .trim()
+      .min(1, 'message is required')
+      .max(5000, 'message must be at most 5000 characters'),
+    contactInfo: z
+      .string()
+      .trim()
+      .max(500, 'contactInfo must be at most 500 characters')
+      .optional(),
+  }),
+});
+
 module.exports = {
   dealTypeEnumValues,
   dealStatusEnumValues,
@@ -406,4 +427,5 @@ module.exports = {
   listMyRequestsSchema,
   listMyApplicationsSchema,
   withdrawRequestSchema,
+  sendDealEmailSchema,
 };

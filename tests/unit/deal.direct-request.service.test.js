@@ -34,7 +34,12 @@ const loadDealServiceWithMocks = (mocksByResolvedPath) => {
   }
 };
 
-const buildHarness = ({ targetCompanyActive = true, hasExistingDirect = false } = {}) => {
+const buildHarness = ({
+  targetCompanyActive = true,
+  hasExistingDirect = false,
+  dealOwnerCompanyId = 20,
+  dealOwnerHasEmail = true,
+} = {}) => {
   class AppError extends Error {
     constructor(message, statusCode) {
       super(message);
@@ -45,6 +50,7 @@ const buildHarness = ({ targetCompanyActive = true, hasExistingDirect = false } 
   const state = {
     listFilters: null,
     createdRequestPayload: null,
+    sentEmails: [],
   };
 
   const now = new Date().toISOString();
@@ -75,6 +81,7 @@ const buildHarness = ({ targetCompanyActive = true, hasExistingDirect = false } 
 
   const dealRequestRepository = {
     findExistingDirectRequest: async () => (hasExistingDirect ? { id: 9 } : null),
+    findExistingRequest: async () => null,
     createRequest: async (_client, payload) => {
       state.createdRequestPayload = payload;
       return requestRow;
@@ -95,7 +102,15 @@ const buildHarness = ({ targetCompanyActive = true, hasExistingDirect = false } 
       companyReview: {},
     },
     [resolveFromDealService('../repository/deal.repository')]: {
-      findById: async () => null,
+      findById: async (id) =>
+        id === 999
+          ? null
+          : {
+              id,
+              company_id: dealOwnerCompanyId,
+              deal_name: `Deal ${id}`,
+              status: 'open',
+            },
       countOpenByCompanyId: async () => 0,
     },
     [resolveFromDealService('../repository/dealRequest.repository')]: dealRequestRepository,
@@ -115,8 +130,30 @@ const buildHarness = ({ targetCompanyActive = true, hasExistingDirect = false } 
       repository: {
         companyRepository: {
           findById: async (id) => {
+            if (id === dealOwnerCompanyId) {
+              return {
+                id,
+                status: id === 20 ? (targetCompanyActive ? 'active' : 'underReview') : 'active',
+                name: `Company ${id}`,
+                email: dealOwnerHasEmail ? `owner${id}@example.com` : null,
+              };
+            }
             if (id === 20) return { id, status: targetCompanyActive ? 'active' : 'underReview' };
-            return { id, status: 'active', name: `Company ${id}` };
+            return {
+              id,
+              status: 'active',
+              name: `Company ${id}`,
+              email: `company${id}@example.com`,
+            };
+          },
+          findByIdWithAgentEmail: async (id) => {
+            if (id !== dealOwnerCompanyId) return null;
+            return {
+              id,
+              status: 'active',
+              name: `Company ${id}`,
+              agent_email: dealOwnerHasEmail ? `owner-agent${id}@example.com` : null,
+            };
           },
         },
       },
@@ -125,7 +162,12 @@ const buildHarness = ({ targetCompanyActive = true, hasExistingDirect = false } 
       repository: { fileRepository: { findByIds: async () => [] } },
       service: { getFileById: async () => null },
     },
-    [resolveFromDealService('../../../infrastructure/config/mailer')]: { sendMail: async () => {} },
+    [resolveFromDealService('../../../infrastructure/config/mailer')]: {
+      sendMail: async (payload) => {
+        state.sentEmails.push(payload);
+        return { id: 'test-message-id' };
+      },
+    },
     [resolveFromDealService('../../../shared/utils/logger')]: {
       info: () => {},
       error: () => {},
@@ -192,4 +234,93 @@ test('getMyRequests and getMyApplications pass segmentation filters', async () =
   assert.deepEqual(state.listFilters.requestKinds, ['demand']);
   assert.equal(state.listFilters.requestType, 'inSupply');
   assert.equal(state.listFilters.includeDirect, false);
+});
+
+test('sendDealEmail rejects when deal is not found', async () => {
+  const { dealService, AppError } = buildHarness();
+
+  await assert.rejects(
+    () =>
+      dealService.sendDealEmail(10, {
+        dealId: 999,
+        subject: 'Follow up',
+        message: 'Please check details.',
+      }),
+    (error) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.statusCode, 404);
+      assert.match(error.message, /Deal not found/);
+      return true;
+    }
+  );
+});
+
+test('sendDealEmail rejects sending to own deal', async () => {
+  const { dealService, AppError } = buildHarness({ dealOwnerCompanyId: 10 });
+
+  await assert.rejects(
+    () =>
+      dealService.sendDealEmail(10, {
+        dealId: 1,
+        subject: 'Follow up',
+        message: 'Please check details.',
+      }),
+    (error) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.statusCode, 400);
+      assert.match(error.message, /own deal/i);
+      return true;
+    }
+  );
+});
+
+test('sendDealEmail rejects when owner has no email', async () => {
+  const { dealService, AppError } = buildHarness({ dealOwnerHasEmail: false });
+
+  await assert.rejects(
+    () =>
+      dealService.sendDealEmail(10, {
+        dealId: 1,
+        subject: 'Follow up',
+        message: 'Please check details.',
+      }),
+    (error) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.statusCode, 400);
+      assert.match(error.message, /agent does not have an email/i);
+      return true;
+    }
+  );
+});
+
+test('sendDealEmail sends formatted email to deal owner', async () => {
+  const { dealService, state } = buildHarness();
+
+  await dealService.sendDealEmail(10, {
+    dealId: 1,
+    subject: 'Need quotation',
+    message: 'Can you share MOQ and lead time?\nThanks',
+    contactInfo: 'buyer@example.com',
+  });
+
+  assert.equal(state.sentEmails.length, 1);
+  assert.equal(state.sentEmails[0].to, 'owner-agent20@example.com');
+  assert.match(state.sentEmails[0].subject, /Need quotation/);
+  assert.match(state.sentEmails[0].text, /buyer@example.com/);
+  assert.match(state.sentEmails[0].html, /New Deal Message/);
+});
+
+test('createDealRequest does not send owner notification email', async () => {
+  const { dealService, state } = buildHarness();
+
+  await dealService.createDealRequest(1, 10, {
+    requestKind: 'rfq',
+    supplyDetails: {
+      productServiceName: 'Copper wire',
+      category: 'rawMaterial',
+    },
+    attachments: [],
+  });
+
+  assert.equal(state.sentEmails.length, 0);
 });

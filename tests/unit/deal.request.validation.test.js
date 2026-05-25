@@ -6,6 +6,7 @@ const {
   createDealRequestSchema,
   createDirectRequestSchema,
   listMyRequestsSchema,
+  sendDealEmailSchema,
 } = require('../../src/modules/deal/validation/deal.validation');
 
 test('createDealRequest validates new supplyType values and rejects legacy value', () => {
@@ -156,4 +157,42 @@ test('createDirectRequest enforces targetCompanyId and direct requestType', () =
     },
   });
   assert.equal(invalid.success, false);
+});
+
+test('sendDealEmail validates required fields and rejects invalid payloads', () => {
+  const valid = sendDealEmailSchema.safeParse({
+    body: {
+      dealId: 12,
+      subject: 'RFQ inquiry',
+      message: 'Please share current availability and terms.',
+      contactInfo: 'procurement@example.com',
+    },
+  });
+  assert.equal(valid.success, true);
+
+  const missing = sendDealEmailSchema.safeParse({
+    body: {
+      dealId: 12,
+      message: 'Hello',
+    },
+  });
+  assert.equal(missing.success, false);
+
+  const invalidDealId = sendDealEmailSchema.safeParse({
+    body: {
+      dealId: 0,
+      subject: 'Valid subject',
+      message: 'Valid message',
+    },
+  });
+  assert.equal(invalidDealId.success, false);
+
+  const whitespaceSubject = sendDealEmailSchema.safeParse({
+    body: {
+      dealId: 12,
+      subject: '   ',
+      message: 'Valid message',
+    },
+  });
+  assert.equal(whitespaceSubject.success, false);
 });
