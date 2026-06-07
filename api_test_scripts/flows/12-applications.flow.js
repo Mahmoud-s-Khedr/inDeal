@@ -6,8 +6,8 @@
  * 2. Search for a deal to apply to
  * 3. Create a deal request (application)
  * 4. Get my sent requests
- * 5. Update request status (e.g. pause/cancel)
- * 6. Delete the request
+ * 5. Pause the request
+ * 6. Cancel the request with reason
  */
 
 import { readFileSync } from 'fs';
@@ -116,11 +116,11 @@ export async function runApplicationsFlow(credentials = null) {
 
       await delayBetweenRequests();
 
-      // Step 6: Delete the Request
+      // Step 6: Cancel the Request
       results.push(
-        await step('Delete the request', async () => {
-          const result = await apiClient.deleteRequest(createdRequestId);
-          console.log(chalk.gray('    Request deleted successfully'));
+        await step('Cancel the request', async () => {
+          const result = await apiClient.cancelRequest(createdRequestId, 'No longer needed');
+          console.log(chalk.gray('    Request canceled successfully'));
           return result;
         })
       );

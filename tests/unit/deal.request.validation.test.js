@@ -9,7 +9,7 @@ const {
   sendDealEmailSchema,
 } = require('../../src/modules/deal/validation/deal.validation');
 
-test('createDealRequest validates new supplyType values and rejects legacy value', () => {
+test('createDealRequest accepts SRS-aligned supplyType values and rejects removed values', () => {
   const valid = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
@@ -17,7 +17,7 @@ test('createDealRequest validates new supplyType values and rejects legacy value
       supplyDetails: {
         productServiceName: 'Steel bars',
         category: 'rawMaterial',
-        supplyType: 'assembleToOrder',
+        supplyType: 'either',
       },
     },
   });
@@ -30,57 +30,30 @@ test('createDealRequest validates new supplyType values and rejects legacy value
       supplyDetails: {
         productServiceName: 'Steel bars',
         category: 'rawMaterial',
-        supplyType: 'either',
+        supplyType: 'assembleToOrder',
       },
     },
   });
   assert.equal(legacy.success, false);
 });
 
-test('qualityLevel other requires qualityLevelOtherText', () => {
-  const missingOtherText = createDealRequestSchema.safeParse({
+test('supply-side payload accepts SRS-required colorFinish field', () => {
+  const parsed = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
       requestKind: 'rfq',
       supplyDetails: {
         productServiceName: 'Custom valve',
         category: 'industrialEquipment',
-        qualityLevel: 'other',
+        colorFinish: 'Brushed steel',
       },
     },
   });
-  assert.equal(missingOtherText.success, false);
-
-  const validOther = createDealRequestSchema.safeParse({
-    params: { id: 1 },
-    body: {
-      requestKind: 'rfq',
-      supplyDetails: {
-        productServiceName: 'Custom valve',
-        category: 'industrialEquipment',
-        qualityLevel: 'other',
-        qualityLevelOtherText: 'Aerospace grade',
-      },
-    },
-  });
-  assert.equal(validOther.success, true);
+  assert.equal(parsed.success, true);
 });
 
-test('removed fields are rejected from request detail payloads', () => {
-  const withColorFinish = createDealRequestSchema.safeParse({
-    params: { id: 1 },
-    body: {
-      requestKind: 'supply',
-      supplyDetails: {
-        productServiceName: 'Pipe',
-        category: 'industrialEquipment',
-        colorFinish: 'Blue',
-      },
-    },
-  });
-  assert.equal(withColorFinish.success, false);
-
-  const withStockDeliveryTime = createDealRequestSchema.safeParse({
+test('demand-side payload accepts SRS-required stockDeliveryTime field', () => {
+  const parsed = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
       requestKind: 'demand',
@@ -90,7 +63,35 @@ test('removed fields are rejected from request detail payloads', () => {
       },
     },
   });
-  assert.equal(withStockDeliveryTime.success, false);
+  assert.equal(parsed.success, true);
+});
+
+test('removed backend-only fields are rejected from request detail payloads', () => {
+  const withQualityLevelOtherText = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestKind: 'supply',
+      supplyDetails: {
+        productServiceName: 'Pipe',
+        category: 'industrialEquipment',
+        qualityLevelOtherText: 'Special grade',
+      },
+    },
+  });
+  assert.equal(withQualityLevelOtherText.success, false);
+
+  const withEngineerToOrder = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestKind: 'rfq',
+      supplyDetails: {
+        productServiceName: 'Pump',
+        category: 'industrialEquipment',
+        supplyType: 'engineerToOrder',
+      },
+    },
+  });
+  assert.equal(withEngineerToOrder.success, false);
 });
 
 test('listMyRequests accepts requestType filter', () => {
@@ -105,20 +106,7 @@ test('listMyRequests accepts requestType filter', () => {
   assert.equal(parsed.query.requestType, 'inSupply');
 });
 
-test('createDealRequest accepts direct requestType and defaults to inSupply', () => {
-  const directParsed = createDealRequestSchema.parse({
-    params: { id: 1 },
-    body: {
-      requestKind: 'rfq',
-      requestType: 'direct',
-      supplyDetails: {
-        productServiceName: 'Custom valve',
-        category: 'industrialEquipment',
-      },
-    },
-  });
-  assert.equal(directParsed.body.requestType, 'direct');
-
+test('createDealRequest defaults requestType to inSupply and rejects direct requestType', () => {
   const defaultParsed = createDealRequestSchema.parse({
     params: { id: 1 },
     body: {
@@ -130,6 +118,19 @@ test('createDealRequest accepts direct requestType and defaults to inSupply', ()
     },
   });
   assert.equal(defaultParsed.body.requestType, 'inSupply');
+
+  const directParsed = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestKind: 'rfq',
+      requestType: 'direct',
+      supplyDetails: {
+        productServiceName: 'Custom valve',
+        category: 'industrialEquipment',
+      },
+    },
+  });
+  assert.equal(directParsed.success, false);
 });
 
 test('createDirectRequest enforces targetCompanyId and direct requestType', () => {

@@ -12,6 +12,9 @@ const logger = require('../../../shared/utils/logger');
 const { companyRepository } = companyModule.repository;
 const { fileRepository } = fileModule.repository;
 const fileService = fileModule.service;
+const ACTIVE_REQUEST_STATUSES = ['pending', 'paused', 'accepted'];
+const ACTIVE_IN_SUPPLY_REQUEST_CONSTRAINT = 'uq_deal_requests_active_in_supply';
+const ACTIVE_DIRECT_REQUEST_CONSTRAINT = 'uq_deal_requests_active_direct';
 
 const getFileUrl = async (fileId) => {
   if (!fileId) return null;
@@ -133,7 +136,7 @@ const sanitizeSupplyDetails = (item) => {
     dimensionsSize: item.dimensions_size,
     certificationsRequired: item.certifications_required || [],
     qualityLevel: item.quality_level,
-    qualityLevelOtherText: item.quality_level_other_text,
+    colorFinish: item.color_finish,
     countryOfOrigin: item.country_of_origin,
     maxLeadTimeAccepted: item.max_lead_time_accepted,
     deliveryMethodPreference: item.delivery_method_preference,
@@ -156,6 +159,7 @@ const sanitizeDemandDetails = (item) => {
     availabilityType: item.availability_type,
     quantityInStock: item.quantity_in_stock ? parseFloat(item.quantity_in_stock) : null,
     maxProduceQuantity: item.max_produce_quantity ? parseFloat(item.max_produce_quantity) : null,
+    stockDeliveryTime: item.stock_delivery_time,
     productionLeadTime: item.production_lead_time,
     specsMatchRfq: item.specs_match_rfq,
     differencesFromRfq: item.differences_from_rfq,
@@ -260,13 +264,21 @@ const inferRequestDetailsSummary = (payload) => {
   return name ? `Supply request: ${name}` : 'Supply request';
 };
 
+const isUniqueConstraintViolation = (error, constraintName) =>
+  error?.code === '23505' && error?.constraint === constraintName;
+
+const lockCompanyDeals = async (client, companyId) => {
+  await client.query('SELECT pg_advisory_xact_lock($1)', [Number(companyId)]);
+};
+
 const getOpenDealLimitErrorMessage = () =>
   `Open deal limit reached (${config.deals.maxOpenPerCompany}). Close existing deals before creating new ones.`;
 
-const ensureCanTransitionToOpen = async ({ companyId, currentStatus, nextStatus }) => {
+const ensureCanTransitionToOpen = async ({ companyId, currentStatus, nextStatus, client }) => {
   if (nextStatus !== 'open' || currentStatus === 'open') return;
 
-  const openDeals = await dealRepository.countOpenByCompanyId(companyId);
+  await lockCompanyDeals(client, companyId);
+  const openDeals = await dealRepository.countOpenByCompanyId(companyId, client);
   if (openDeals >= config.deals.maxOpenPerCompany) {
     throw new AppError(getOpenDealLimitErrorMessage(), 400);
   }
@@ -281,17 +293,18 @@ const createDeal = async (companyId, payload) => {
     throw new AppError('Company must be active to create deals', 403);
   }
 
-  const openDeals = await dealRepository.countOpenByCompanyId(companyId);
-  if (openDeals >= config.deals.maxOpenPerCompany) {
-    throw new AppError(getOpenDealLimitErrorMessage(), 400);
-  }
-
   const attachments = payload.attachments || [];
   await ensureFilesExist(attachments.map((item) => item.fileId));
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    await lockCompanyDeals(client, companyId);
+
+    const openDeals = await dealRepository.countOpenByCompanyId(companyId, client);
+    if (openDeals >= config.deals.maxOpenPerCompany) {
+      throw new AppError(getOpenDealLimitErrorMessage(), 400);
+    }
 
     const deal = await dealRepository.createDeal(client, {
       companyId,
@@ -401,12 +414,6 @@ const updateDeal = async (dealId, companyId, updates) => {
     throw new AppError('Unauthorized to update this deal', 403);
   }
 
-  await ensureCanTransitionToOpen({
-    companyId,
-    currentStatus: deal.status,
-    nextStatus: updates.status,
-  });
-
   const attachments = updates.attachments;
   if (attachments) {
     await ensureFilesExist(attachments.map((item) => item.fileId));
@@ -418,6 +425,12 @@ const updateDeal = async (dealId, companyId, updates) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    await ensureCanTransitionToOpen({
+      companyId,
+      currentStatus: deal.status,
+      nextStatus: updates.status,
+      client,
+    });
 
     const updated = await dealRepository.updateById(dealId, dbUpdates, client);
     if (attachments) {
@@ -457,7 +470,7 @@ const createDealRequest = async (dealId, applicantCompanyId, payload) => {
   if (!deal) {
     throw new AppError('Deal not found', 404);
   }
-  if (!['open', 'negotiating'].includes(deal.status)) {
+  if (deal.status !== 'open') {
     throw new AppError('Deal is not open for requests', 400);
   }
 
@@ -470,7 +483,11 @@ const createDealRequest = async (dealId, applicantCompanyId, payload) => {
     throw new AppError('Your company must be active to submit requests', 403);
   }
 
-  const existing = await dealRequestRepository.findExistingRequest(dealId, applicantCompanyId);
+  const existing = await dealRequestRepository.findExistingRequest(
+    dealId,
+    applicantCompanyId,
+    ACTIVE_REQUEST_STATUSES
+  );
   if (existing) {
     throw new AppError('You already have a request on this deal', 400);
   }
@@ -521,6 +538,9 @@ const createDealRequest = async (dealId, applicantCompanyId, payload) => {
     return enriched;
   } catch (error) {
     await client.query('ROLLBACK');
+    if (isUniqueConstraintViolation(error, ACTIVE_IN_SUPPLY_REQUEST_CONSTRAINT)) {
+      throw new AppError('You already have a request on this deal', 400);
+    }
     throw error;
   } finally {
     client.release();
@@ -546,7 +566,8 @@ const createDirectRequest = async (applicantCompanyId, payload) => {
 
   const existing = await dealRequestRepository.findExistingDirectRequest(
     applicantCompanyId,
-    payload.targetCompanyId
+    payload.targetCompanyId,
+    ACTIVE_REQUEST_STATUSES
   );
   if (existing) {
     throw new AppError('You already have an active direct request for this company', 400);
@@ -598,6 +619,9 @@ const createDirectRequest = async (applicantCompanyId, payload) => {
     return enriched;
   } catch (error) {
     await client.query('ROLLBACK');
+    if (isUniqueConstraintViolation(error, ACTIVE_DIRECT_REQUEST_CONSTRAINT)) {
+      throw new AppError('You already have an active direct request for this company', 400);
+    }
     throw error;
   } finally {
     client.release();
@@ -687,11 +711,6 @@ const updateRequestStatus = async (dealId, requestId, companyId, newStatus) => {
 
   const updated = await dealRequestRepository.updateStatus(requestId, newStatus);
   logger.info('Deal request status updated', { requestId, dealId, newStatus });
-
-  if (newStatus === 'accepted') {
-    await dealRepository.updateStatus(dealId, 'negotiating');
-    logger.info('Deal moved to negotiating', { dealId });
-  }
 
   notifyApplicantOfStatusChange(request, newStatus).catch((err) => {
     logger.error('Failed to send status change notification', { error: err.message });

@@ -44,7 +44,7 @@ const REQUIRED_COLUMNS = {
     'request_type',
     'status',
   ],
-  deal_request_supply_details: ['request_id', 'quality_level_other_text'],
+  deal_request_supply_details: ['request_id', 'color_finish'],
   chat_rooms: ['company_a_id', 'company_b_id', 'status', 'encryption_key'],
   chat_messages: ['room_id', 'sender_user_id', 'message_text', 'sent_at'],
   chat_message_reads: ['message_id', 'company_id', 'read_at'],

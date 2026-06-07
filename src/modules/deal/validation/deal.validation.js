@@ -2,7 +2,7 @@ const { z } = require('zod');
 
 // Enums (matching v1 model)
 const dealTypeEnumValues = ['supply', 'demand'];
-const dealStatusEnumValues = ['open', 'closed', 'negotiating', 'archived'];
+const dealStatusEnumValues = ['open', 'closed', 'archived'];
 const dealRequestStatusEnumValues = ['pending', 'paused', 'accepted', 'rejected', 'canceled'];
 const dealRequestKindEnumValues = ['supply', 'demand', 'rfq'];
 const dealRequestTypeEnumValues = ['direct', 'inSupply'];
@@ -60,22 +60,15 @@ const supplyDetailsSchema = z
     paymentTermsPreference: z.string().max(500).optional(),
     incoterm: z.enum(incotermValues).optional(),
     bulkDiscountExpectation: z.string().max(500).optional(),
-    supplyType: z.enum(['inStock', 'assembleToOrder', 'makeToOrder', 'engineerToOrder']).optional(),
+    supplyType: z.enum(['inStock', 'makeToOrder', 'either']).optional(),
     keySpecifications: z.string().max(2000).optional(),
     material: z.string().max(200).optional(),
     dimensionsSize: z.string().max(200).optional(),
     certificationsRequired: z.array(z.string().min(1).max(150)).optional(),
     qualityLevel: z
-      .enum([
-        'standard',
-        'industrialGuide',
-        'foodGrade',
-        'pharmaceuticalGrade',
-        'exportQuality',
-        'other',
-      ])
+      .enum(['standard', 'industrialGuide', 'foodGrade', 'pharmaceuticalGrade', 'exportQuality'])
       .optional(),
-    qualityLevelOtherText: z.string().min(1).max(255).optional(),
+    colorFinish: z.string().max(200).optional(),
     countryOfOrigin: z.string().max(100).optional(),
     maxLeadTimeAccepted: z.string().max(100).optional(),
     deliveryMethodPreference: z
@@ -84,24 +77,7 @@ const supplyDetailsSchema = z
     packagingRequirements: z.string().max(1000).optional(),
     specialConditionsNotes: z.string().max(2000).optional(),
   })
-  .strict()
-  .superRefine((data, ctx) => {
-    if (data.qualityLevel === 'other' && !data.qualityLevelOtherText?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['qualityLevelOtherText'],
-        message: 'qualityLevelOtherText is required when qualityLevel is other',
-      });
-    }
-
-    if (data.qualityLevel !== 'other' && data.qualityLevelOtherText) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['qualityLevelOtherText'],
-        message: 'qualityLevelOtherText is only allowed when qualityLevel is other',
-      });
-    }
-  });
+  .strict();
 
 const demandDetailsSchema = z
   .object({
@@ -116,6 +92,7 @@ const demandDetailsSchema = z
     availabilityType: z.enum(['inStock', 'makeToOrder', 'mixed']).optional(),
     quantityInStock: z.coerce.number().nonnegative().optional(),
     maxProduceQuantity: z.coerce.number().nonnegative().optional(),
+    stockDeliveryTime: z.string().max(100).optional(),
     productionLeadTime: z.string().max(100).optional(),
     specsMatchRfq: z.enum(['yes', 'no', 'partial']).optional(),
     differencesFromRfq: z.string().max(2000).optional(),
@@ -197,7 +174,7 @@ const createDealRequestSchema = z
     }),
     body: z.object({
       requestKind: z.enum(dealRequestKindEnumValues),
-      requestType: z.enum(dealRequestTypeEnumValues).optional().default('inSupply'),
+      requestType: z.literal('inSupply').optional().default('inSupply'),
       supplyDetails: supplyDetailsSchema.optional(),
       demandDetails: demandDetailsSchema.optional(),
       attachments: z.array(requestAttachmentInputSchema).max(20).optional().default([]),

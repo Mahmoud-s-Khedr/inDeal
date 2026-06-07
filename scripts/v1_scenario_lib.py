@@ -339,18 +339,17 @@ def build_email_verification_debug_otp(response: Dict[str, Any]) -> Optional[str
 def build_supply_details(
     product_service_name: str,
     category: str = "rawMaterial",
-    supply_type: str = "assembleToOrder",
-    quality_level: str = "other",
-    quality_level_other_text: str = "Aerospace grade",
+    supply_type: str = "makeToOrder",
+    quality_level: str = "standard",
+    color_finish: str = "Brushed steel",
 ) -> Dict[str, Any]:
     payload = {
         "productServiceName": product_service_name,
         "category": category,
         "supplyType": supply_type,
         "qualityLevel": quality_level,
+        "colorFinish": color_finish,
     }
-    if quality_level == "other":
-        payload["qualityLevelOtherText"] = quality_level_other_text
     return payload
 
 
@@ -365,6 +364,7 @@ def build_demand_details(
         "availableQuantity": available_quantity,
         "unitPrice": unit_price,
         "currency": currency,
+        "stockDeliveryTime": "2 days",
     }
 
 

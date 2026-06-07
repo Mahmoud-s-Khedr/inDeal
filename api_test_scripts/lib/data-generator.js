@@ -270,9 +270,9 @@ export function generateDeal(overrides = {}) {
 
   return {
     dealName: faker.commerce.productName(),
-    description: faker.lorem.paragraphs(2),
+    dealDescription: faker.lorem.paragraphs(2),
     dealType,
-    price: parseFloat(faker.commerce.price({ min: 1000, max: 100000 })),
+    dealValue: parseFloat(faker.commerce.price({ min: 1000, max: 100000 })),
     ...overrides,
   };
 }
@@ -282,8 +282,15 @@ export function generateDeal(overrides = {}) {
  */
 export function generateDealRequest(overrides = {}) {
   return {
-    message: faker.lorem.paragraph(),
-    proposedPrice: parseFloat(faker.commerce.price({ min: 1000, max: 100000 })),
+    requestKind: 'rfq',
+    supplyDetails: {
+      productServiceName: faker.commerce.productName(),
+      category: 'rawMaterial',
+      quantityRequired: faker.number.int({ min: 10, max: 1000 }),
+      deliveryLocation: faker.helpers.arrayElement(EGYPTIAN_CITIES),
+      supplyType: faker.helpers.arrayElement(['inStock', 'makeToOrder', 'either']),
+      colorFinish: faker.helpers.arrayElement(['Matte black', 'Brushed steel', 'Natural']),
+    },
     ...overrides,
   };
 }

@@ -84,6 +84,10 @@ const findByCompanyId = async (companyId, { status, keyword, limit = 50, offset 
     query += ` AND d.status = $${paramIndex}`;
     params.push(status);
     paramIndex += 1;
+  } else {
+    query += ` AND d.status != $${paramIndex}`;
+    params.push('archived');
+    paramIndex += 1;
   }
 
   if (keyword) {
@@ -470,8 +474,9 @@ const listAll = async ({ status, limit = 50, offset = 0 } = {}) => {
   return result.rows;
 };
 
-const countOpenByCompanyId = async (companyId) => {
-  const result = await pool.query(
+const countOpenByCompanyId = async (companyId, client = null) => {
+  const executor = run(client);
+  const result = await executor.query(
     `
       SELECT COUNT(*) AS total
       FROM deals

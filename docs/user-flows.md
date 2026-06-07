@@ -256,9 +256,12 @@ HTTP sequence:
 
 1. Public discovery:
    - `GET /deals` with query filters.
+   - Public endpoint; when a valid auth token is present, results should exclude deals owned by the caller's company.
    - `GET /deals/:id` for details.
 2. Owner management (authenticated):
    - `GET /deals/me/deals`
+     - Returns owned deals excluding archived entries by default.
+     - `status=archived` can be used when archived-only results are needed.
    - `POST /deals`
      ```json
      {
@@ -283,7 +286,7 @@ Failure/client handling:
 
 ## Flow F: Applications/Requests Lifecycle (Applicant + Owner)
 
-Goal: submit offers/requests to deals and manage both "My Applications" and "My Requests" buckets.
+Goal: submit offers/requests to deals and manage both "My Applications" and "My Requests" buckets. `Direct RFQ` and deal-owner email are supported backend extensions added after the original SRS.
 
 Preconditions:
 
@@ -296,6 +299,7 @@ HTTP sequence:
    - Direct RFQ: `POST /deals/direct-requests`
    - In-supply deal application: `POST /deals/:id/requests`
    - Direct request example:
+
    ```json
    {
      "targetCompanyId": 45,
@@ -304,31 +308,31 @@ HTTP sequence:
      "supplyDetails": {
        "productServiceName": "Steel coils",
        "category": "rawMaterial",
-       "supplyType": "assembleToOrder"
+       "supplyType": "either"
      }
    }
    ```
 
    - In-supply request example:
    - `POST /deals/:id/requests`
+
    ```json
    {
      "requestKind": "rfq",
-     "requestType": "inSupply",
      "supplyDetails": {
        "productServiceName": "Steel coils",
        "category": "rawMaterial",
-       "supplyType": "assembleToOrder",
-       "qualityLevel": "other",
-       "qualityLevelOtherText": "Aerospace grade"
+       "supplyType": "makeToOrder",
+       "colorFinish": "Brushed steel"
      },
      "attachments": [{ "fileId": 321, "sortOrder": 1 }]
    }
    ```
 
-   - `requestType` accepts `direct` or `inSupply`.
+   - `requestType` accepts `direct` only on the direct endpoint.
    - Direct endpoint enforces `requestType=direct`.
-   - Deal-scoped endpoint normalizes to `requestType=inSupply`.
+   - Deal-scoped endpoint accepts only `inSupply`.
+
 2. Applicant tracks submitted offers (My Applications):
    - `GET /deals/me/applications`
    - Returns submitted offers only (`requestKind = demand`).
@@ -354,10 +358,9 @@ Failure/client handling:
 - Authorization errors for wrong role/company (`403`): hide forbidden actions by role in UI.
 - Invalid request status transition (`400`): refresh request state and re-render available actions.
 - Validation failures (`400`) to surface explicitly:
-  - `stockDeliveryTime` is no longer accepted in request payloads.
-  - `colorFinish` is no longer accepted in request payloads.
-  - `supplyType` must be one of `inStock`, `assembleToOrder`, `makeToOrder`, `engineerToOrder`.
-  - `qualityLevelOtherText` is required when `qualityLevel = other` and forbidden otherwise.
+  - `stockDeliveryTime` is accepted on demand-side request payloads.
+  - `colorFinish` is accepted on supply-side request payloads.
+  - `supplyType` must be one of `inStock`, `makeToOrder`, `either`.
 
 ## Flow G: Chat Enablement + Realtime Messaging
 

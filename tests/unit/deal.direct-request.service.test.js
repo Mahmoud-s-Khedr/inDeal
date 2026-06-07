@@ -37,8 +37,12 @@ const loadDealServiceWithMocks = (mocksByResolvedPath) => {
 const buildHarness = ({
   targetCompanyActive = true,
   hasExistingDirect = false,
+  hasExistingDealRequest = false,
   dealOwnerCompanyId = 20,
   dealOwnerHasEmail = true,
+  dealStatus = 'open',
+  createRequestError = null,
+  requestLookupRow = null,
 } = {}) => {
   class AppError extends Error {
     constructor(message, statusCode) {
@@ -51,6 +55,8 @@ const buildHarness = ({
     listFilters: null,
     createdRequestPayload: null,
     sentEmails: [],
+    dealStatusUpdates: [],
+    updatedRequestStatuses: [],
   };
 
   const now = new Date().toISOString();
@@ -73,6 +79,13 @@ const buildHarness = ({
     created_at: now,
     updated_at: now,
   };
+  const requestById = requestLookupRow || {
+    ...requestRow,
+    id: 77,
+    deal_id: 1,
+    target_company_id: null,
+    request_type: 'inSupply',
+  };
 
   const client = {
     query: async () => ({ rows: [] }),
@@ -81,14 +94,37 @@ const buildHarness = ({
 
   const dealRequestRepository = {
     findExistingDirectRequest: async () => (hasExistingDirect ? { id: 9 } : null),
-    findExistingRequest: async () => null,
+    findExistingRequest: async () => (hasExistingDealRequest ? { id: 8 } : null),
     createRequest: async (_client, payload) => {
+      if (createRequestError) {
+        throw createRequestError;
+      }
       state.createdRequestPayload = payload;
-      return requestRow;
+      return {
+        ...requestRow,
+        deal_id: payload.dealId ?? null,
+        applicant_company_id: payload.applicantCompanyId,
+        target_company_id: payload.targetCompanyId ?? null,
+        request_kind: payload.requestKind,
+        request_type: payload.requestType,
+        request_details: payload.requestDetails,
+        request_offer: payload.requestOffer ?? null,
+        status: payload.status || 'pending',
+      };
     },
     findByApplicantCompanyId: async (_companyId, filters) => {
       state.listFilters = filters;
       return [];
+    },
+    findById: async () => requestById,
+    updateStatus: async (requestId, status) => {
+      state.updatedRequestStatuses.push({ requestId, status });
+      return {
+        ...requestById,
+        id: requestId,
+        status,
+        updated_at: now,
+      };
     },
   };
 
@@ -109,9 +145,13 @@ const buildHarness = ({
               id,
               company_id: dealOwnerCompanyId,
               deal_name: `Deal ${id}`,
-              status: 'open',
+              status: dealStatus,
             },
       countOpenByCompanyId: async () => 0,
+      updateStatus: async (dealId, status) => {
+        state.dealStatusUpdates.push({ dealId, status });
+        return { id: dealId, status };
+      },
     },
     [resolveFromDealService('../repository/dealRequest.repository')]: dealRequestRepository,
     [resolveFromDealService('../repository/dealAttachment.repository')]: {
@@ -307,7 +347,7 @@ test('sendDealEmail sends formatted email to deal owner', async () => {
   assert.equal(state.sentEmails[0].to, 'owner-agent20@example.com');
   assert.match(state.sentEmails[0].subject, /Need quotation/);
   assert.match(state.sentEmails[0].text, /buyer@example.com/);
-  assert.match(state.sentEmails[0].html, /New Deal Message/);
+  assert.match(state.sentEmails[0].html, /New message on your deal/);
 });
 
 test('createDealRequest does not send owner notification email', async () => {
@@ -323,4 +363,61 @@ test('createDealRequest does not send owner notification email', async () => {
   });
 
   assert.equal(state.sentEmails.length, 0);
+});
+
+test('createDealRequest rejects negotiating deals after SRS alignment', async () => {
+  const { dealService, AppError } = buildHarness({ dealStatus: 'negotiating' });
+
+  await assert.rejects(
+    () =>
+      dealService.createDealRequest(1, 10, {
+        requestKind: 'rfq',
+        supplyDetails: {
+          productServiceName: 'Copper wire',
+          category: 'rawMaterial',
+        },
+      }),
+    (error) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.statusCode, 400);
+      assert.match(error.message, /not open for requests/);
+      return true;
+    }
+  );
+});
+
+test('createDealRequest maps DB unique constraint violations to duplicate request error', async () => {
+  const { dealService, AppError } = buildHarness({
+    createRequestError: {
+      code: '23505',
+      constraint: 'uq_deal_requests_active_in_supply',
+    },
+  });
+
+  await assert.rejects(
+    () =>
+      dealService.createDealRequest(1, 10, {
+        requestKind: 'rfq',
+        supplyDetails: {
+          productServiceName: 'Copper wire',
+          category: 'rawMaterial',
+        },
+      }),
+    (error) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.statusCode, 400);
+      assert.match(error.message, /already have a request on this deal/);
+      return true;
+    }
+  );
+});
+
+test('updateRequestStatus no longer mutates deal status on acceptance', async () => {
+  const { dealService, state } = buildHarness();
+
+  const result = await dealService.updateRequestStatus(1, 77, 20, 'accepted');
+
+  assert.equal(result.status, 'accepted');
+  assert.deepEqual(state.updatedRequestStatuses, [{ requestId: 77, status: 'accepted' }]);
+  assert.deepEqual(state.dealStatusUpdates, []);
 });

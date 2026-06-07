@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const { swaggerSpec } = require('../../src/infrastructure/config/swagger');
+const dealRouter = require('../../src/modules/deal/routes/deal.routes');
 
 const root = path.resolve(__dirname, '../../src');
 
@@ -55,4 +56,14 @@ test('route registry still exposes v1 endpoint groups', () => {
     const found = endpoints.some((pathItem) => pathItem.startsWith(prefix));
     assert.equal(found, true, `Missing endpoint prefix: ${prefix}`);
   }
+});
+
+test('deals search route keeps public access with optional auth context', () => {
+  const searchRouteLayer = dealRouter.stack.find(
+    (layer) => layer.route && layer.route.path === '/' && layer.route.methods.get
+  );
+
+  assert.ok(searchRouteLayer, 'GET /deals route missing');
+  const middlewareNames = searchRouteLayer.route.stack.map((layer) => layer.handle.name);
+  assert.deepEqual(middlewareNames, ['optionalAuth', 'validator', '']);
 });

@@ -134,6 +134,11 @@ class ApiClient {
     return res.data;
   }
 
+  async verifyEmail(email, otp) {
+    const res = await this.client.post('/auth/verify-email', { email, otp });
+    return res.data;
+  }
+
   async resetPassword(email, otp, password, confirmPassword) {
     const res = await this.client.post('/auth/reset-password', {
       email,
@@ -351,6 +356,11 @@ class ApiClient {
     return res.data;
   }
 
+  async getMyApplications() {
+    const res = await this.client.get('/deals/me/applications');
+    return res.data;
+  }
+
   async createDealRequest(dealId, data) {
     const res = await this.client.post(`/deals/${dealId}/requests`, data);
     return res.data;
@@ -373,15 +383,18 @@ class ApiClient {
     return res.data;
   }
 
-  async cancelRequest(requestId, cancellationReason) {
+  async cancelRequest(requestId, cancelReason) {
     const res = await this.client.patch(`/deals/requests/${requestId}/cancel`, {
-      cancellationReason,
+      cancelReason,
     });
     return res.data;
   }
 
-  async deleteRequest(requestId) {
-    const res = await this.client.delete(`/deals/requests/${requestId}`);
+  async deleteRequest(requestId, cancelReason) {
+    const res = await this.client.delete(`/deals/requests/${requestId}`, {
+      data: cancelReason ? { cancelReason } : undefined,
+      params: cancelReason ? undefined : { cancelReason: 'Withdrawn via test client' },
+    });
     return res.data;
   }
 

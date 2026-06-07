@@ -117,6 +117,7 @@ npm run flow:registration
 - Gets signed URL for document upload
 - Uploads document to R2
 - Registers agent + company
+- Verifies email using the dev `debugOtp` when available
 - Attempts initial login
 
 ### 2. Login/Logout Session
@@ -274,11 +275,13 @@ npx artillery report report.json
 
 ### Email Verification Required
 
-If login fails with "email not verified", either:
+In development, `POST /auth/register` should return `data.debugOtp.otp`. The registration flow uses that OTP automatically by calling `POST /auth/verify-email` before login.
 
-1. Check email for verification link
-2. Use the admin panel to manually activate the user
-3. Mark email as verified in the database
+If login still fails with "email not verified", check:
+
+1. The registration response included `debugOtp`
+2. The verification step succeeded before login
+3. You are running against a development environment that exposes debug OTPs
 
 ### OTP Not Working
 

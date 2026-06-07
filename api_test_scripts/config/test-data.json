@@ -2,66 +2,66 @@
   "_comment": "Auto-generated test data. Edit values as needed, especially email addresses for testing email flows.",
   "users": [
     {
-      "username": "mike_green_DR0G",
-      "email": "hillard.gutkowski@yahoo.com",
-      "password": "TestHR9PUpfs!",
-      "firstName": "Hillard",
-      "lastName": "Gutkowski",
-      "jobTitle": "Internal Accountability Developer",
+      "username": "ariane_lubowitz_CvUS",
+      "email": "matteo.stamm@hotmail.com",
+      "password": "TestFkeABG9N!",
+      "firstName": "Matteo",
+      "lastName": "Stamm",
+      "jobTitle": "Human Web Strategist",
       "id": "user-1"
     },
     {
-      "username": "kenneth_koepp_2wM2",
-      "email": "camden.jenkins29@gmail.com",
-      "password": "TestNJlFvec9!",
-      "firstName": "Camden",
-      "lastName": "Jenkins",
-      "jobTitle": "Central Operations Assistant",
+      "username": "emanuel_pfannerstill_A6tt",
+      "email": "damon.barrows@hotmail.com",
+      "password": "TestVtILVE9z!",
+      "firstName": "Damon",
+      "lastName": "Barrows",
+      "jobTitle": "Forward Optimization Liaison",
       "id": "user-2"
     }
   ],
   "companies": [
     {
-      "name": "Boyer - Herman",
-      "description": "Monitored intangible standardization. Artificiose perferendis circumvenio caveo commodo corrupti optio summopere urbs theatrum. Custodia creator repellendus taedium summisse ducimus speciosus. Tremo exercitationem decumbo calcar caste admiratio cognatus volutabrum arguo demum.",
-      "address": "636 Michale Wells, Shubra El Kheima, Egypt",
-      "phone": "+206493451328",
-      "website": "https://dirty-pendant.org/",
-      "companyType": "eCommerce",
-      "companyIndustry": "healthcare",
-      "contacts": [
-        {
-          "type": "email",
-          "value": "Orion_Greenfelder83@yahoo.com"
-        },
-        {
-          "type": "phone",
-          "value": "+207281229145"
-        }
-      ],
-      "locations": ["Tanta", "Port Said"],
-      "id": "company-1",
-      "userId": "user-1"
-    },
-    {
-      "name": "Champlin - Schamberger",
-      "description": "Total heuristic approach. Defero adsuesco copiose denique corroboro crux capitulus statim deserunt subvenio. Cibus tergeo concido decipio sint surculus suppellex aro bardus. Suscipio aeneus suspendo comparo talis asperiores vestrum defungo laboriosam.",
-      "address": "886 Hamill Fall, Cairo, Egypt",
-      "phone": "+206404867908",
-      "website": "https://immaculate-bungalow.info",
-      "companyType": "logistics",
+      "name": "Brakus, Price and Daniel",
+      "description": "Triple-buffered dynamic framework. Curtus avarus sed ultio articulus socius voco comitatus. Suspendo defendo tolero atavus comparo vaco currus copia adiuvo. Autus thema coma natus comis acsi patrocinor quo vero.",
+      "address": "9376 McDermott Divide, Port Said, Egypt",
+      "phone": "+203112376703",
+      "website": "https://old-fashioned-event.net",
+      "companyType": "franchise",
       "companyIndustry": "education",
       "contacts": [
         {
           "type": "email",
-          "value": "Maxime34@gmail.com"
+          "value": "Howell_Ullrich92@yahoo.com"
         },
         {
           "type": "phone",
-          "value": "+209687315706"
+          "value": "+201828505481"
         }
       ],
-      "locations": ["Zagazig"],
+      "locations": ["New Cairo", "Giza", "Shubra El Kheima"],
+      "id": "company-1",
+      "userId": "user-1"
+    },
+    {
+      "name": "Balistreri Group",
+      "description": "Sharable incremental collaboration. Caterva earum aranea aduro copia thalassinus bis. Nihil terra clarus. Strenuus talio porro acidus nam triumphus defleo debitis.",
+      "address": "3496 Vincenza Light, Cairo, Egypt",
+      "phone": "+201955588349",
+      "website": "https://other-bourgeoisie.name/",
+      "companyType": "wholesaler",
+      "companyIndustry": "transportation",
+      "contacts": [
+        {
+          "type": "email",
+          "value": "Miguel.Heidenreich93@gmail.com"
+        },
+        {
+          "type": "phone",
+          "value": "+202848489168"
+        }
+      ],
+      "locations": ["New Cairo", "Ismailia"],
       "id": "company-2",
       "userId": "user-2"
     }
@@ -76,5 +76,5 @@
     "passwordResetOtp": "",
     "_note": "These are populated during test runs or manually for email flow testing"
   },
-  "generatedAt": "2026-04-25T03:06:07.349Z"
+  "generatedAt": "2026-06-07T02:13:21.570Z"
 }

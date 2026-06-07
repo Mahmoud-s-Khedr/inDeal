@@ -169,7 +169,9 @@ test('createDeal keeps existing open-deal-limit behavior', async () => {
     }
   );
 
-  assert.equal(state.poolConnectCalls, 0);
+  assert.equal(state.poolConnectCalls, 1);
+  assert.equal(state.beginCalls, 1);
+  assert.equal(state.rollbackCalls, 1);
 });
 
 test('updateDeal rejects transition to open when max open deals limit is reached', async () => {
@@ -194,7 +196,9 @@ test('updateDeal rejects transition to open when max open deals limit is reached
   );
 
   assert.equal(state.countOpenCalls, 1);
-  assert.equal(state.poolConnectCalls, 0);
+  assert.equal(state.poolConnectCalls, 1);
+  assert.equal(state.beginCalls, 1);
+  assert.equal(state.rollbackCalls, 1);
   assert.equal(state.updateCalls, 0);
 });
 

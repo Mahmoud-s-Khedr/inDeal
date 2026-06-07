@@ -6,8 +6,10 @@
  * 2. Create a deal
  * 3. Get my deals
  * 4. Update a deal
- * 5. Search deals
- * 6. Delete a deal
+ * 5. Close a deal
+ * 6. Reopen a deal
+ * 7. Search deals
+ * 8. Delete a deal
  */
 
 import { readFileSync } from 'fs';
@@ -76,7 +78,9 @@ export async function runDealsFlow(credentials = null) {
       results.push(
         await step('Get my deals', async () => {
           const result = await apiClient.getMyDeals();
-          console.log(chalk.gray(`    Total deals found: ${result.data?.length || 0}`));
+          console.log(
+            chalk.gray('    Total non-archived deals found: ' + (result.data?.length || 0))
+          );
           return result;
         })
       );
@@ -95,7 +99,29 @@ export async function runDealsFlow(credentials = null) {
 
       await delayBetweenRequests();
 
-      // Step 5: Search Deals
+      // Step 5: Close the Deal
+      results.push(
+        await step('Close the deal', async () => {
+          const result = await apiClient.updateDeal(createdDealId, { status: 'closed' });
+          console.log(chalk.gray('    Deal closed'));
+          return result;
+        })
+      );
+
+      await delayBetweenRequests();
+
+      // Step 6: Reopen the Deal
+      results.push(
+        await step('Reopen the deal', async () => {
+          const result = await apiClient.updateDeal(createdDealId, { status: 'open' });
+          console.log(chalk.gray('    Deal reopened'));
+          return result;
+        })
+      );
+
+      await delayBetweenRequests();
+
+      // Step 7: Search Deals
       results.push(
         await step('Search deals', async () => {
           const result = await apiClient.getDeals({ limit: 10 });
@@ -110,7 +136,7 @@ export async function runDealsFlow(credentials = null) {
 
       await delayBetweenRequests();
 
-      // Step 6: Delete the Deal
+      // Step 8: Delete the Deal
       results.push(
         await step('Delete the deal', async () => {
           const result = await apiClient.deleteDeal(createdDealId);

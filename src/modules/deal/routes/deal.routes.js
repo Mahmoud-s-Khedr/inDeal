@@ -1,5 +1,6 @@
 const express = require('express');
 const protect = require('../../../core/middleware/authMiddleware');
+const optionalAuth = require('../../../core/middleware/optionalAuthMiddleware');
 const validate = require('../../../core/middleware/validateMiddleware');
 const dealController = require('../controller/deal.controller');
 const {
@@ -27,7 +28,7 @@ const router = express.Router();
 // ─────────────────────────────────────────────────────────────
 
 // Search/list deals (public, but auth adds context)
-router.get('/', validate(searchDealsSchema), dealController.searchDeals);
+router.get('/', optionalAuth, validate(searchDealsSchema), dealController.searchDeals);
 
 // Get single deal (public)
 router.get('/:id', validate(getDealSchema), dealController.getDeal);

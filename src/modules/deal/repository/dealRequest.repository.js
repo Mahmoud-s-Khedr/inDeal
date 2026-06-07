@@ -432,7 +432,7 @@ const findAcceptedDealBetweenCompanies = async ({ dealId, companyAId, companyBId
       JOIN deals d ON r.deal_id = d.id
       WHERE r.deal_id = $1
         AND r.status = 'accepted'
-        AND d.status IN ('open', 'negotiating', 'closed')
+        AND d.status IN ('open', 'closed')
         AND (
           (d.company_id = $2 AND r.applicant_company_id = $3)
           OR (d.company_id = $3 AND r.applicant_company_id = $2)

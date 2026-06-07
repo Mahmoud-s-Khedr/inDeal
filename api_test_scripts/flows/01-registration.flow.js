@@ -5,7 +5,7 @@
  * 1. Get signed URL for document upload
  * 2. Upload company document to R2
  * 3. Register agent + company
- * 4. (Email verification - requires manual step or mock)
+ * 4. Verify email using dev debug OTP
  * 5. Initial login
  */
 
@@ -120,7 +120,33 @@ export async function runRegistrationFlow(customData = null) {
 
         await delayBetweenRequests();
 
-        // Step 3: Attempt login
+        // Step 3: Verify email
+        results.push(
+          await step(`Verify email (${userData.email})`, async () => {
+            const otp = registrationResult?.data?.debugOtp?.otp;
+
+            if (!otp) {
+              throw new Error(
+                'Registration response did not include debugOtp. Manual verification is required before login.'
+              );
+            }
+
+            const verificationResult = await apiClient.verifyEmail(userData.email, otp);
+            console.log(chalk.gray('    Verification completed using dev debugOtp'));
+            return verificationResult;
+          })
+        );
+
+        if (!results[results.length - 1].success) {
+          console.log(
+            chalk.red(`  ✗ Email verification failed for ${userData.email}, skipping login`)
+          );
+          continue;
+        }
+
+        await delayBetweenRequests();
+
+        // Step 4: Attempt login
         results.push(
           await step(`Initial login attempt (${userData.email})`, async () => {
             const loginResult = await apiClient.login(userData.email, userData.password);
@@ -136,12 +162,14 @@ export async function runRegistrationFlow(customData = null) {
         });
       }
 
-      // Step 4: V1 note
+      // Step 5: Auth mode note
       results.push(
-        await step('V1 auth mode (info)', async () => {
-          console.log(chalk.gray('    Email verification endpoints are removed in v1.'));
-          console.log(chalk.gray('    Newly registered users are expected to be login-ready.'));
-          return { status: 'login_ready' };
+        await step('Auth mode (info)', async () => {
+          console.log(chalk.gray('    Registration flow uses: register → verify-email → login.'));
+          console.log(
+            chalk.gray('    Downstream flows depend on registration creating verified users.')
+          );
+          return { status: 'verified_before_login' };
         })
       );
 
