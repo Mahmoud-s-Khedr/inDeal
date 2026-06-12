@@ -1,6 +1,8 @@
 const express = require('express');
 const protect = require('../../../core/middleware/authMiddleware');
 const validate = require('../../../core/middleware/validateMiddleware');
+const routeContract = require('../../../core/contracts/http/routeContract');
+const { docsRequestSchemas } = require('../../../core/contracts/http/modules/company.contracts');
 const companyController = require('../controller/company.controller');
 const {
   updateCompanySchema,
@@ -64,6 +66,7 @@ router.get(
 router.post(
   '/me/documents',
   protect,
+  routeContract({ requestSchema: docsRequestSchemas.createDocumentSchema }),
   validate(createDocumentSchema),
   companyController.createMyDocument
 );
@@ -83,6 +86,7 @@ router.delete(
 router.put(
   '/me/documents/:documentId',
   protect,
+  routeContract({ requestSchema: docsRequestSchemas.updateDocumentSchema }),
   validate(updateDocumentSchema),
   companyController.updateMyDocument
 );

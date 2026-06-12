@@ -1,8 +1,8 @@
 const routeContract = (contract) => {
-  const middleware = (req, res, next) => next();
-  middleware.__isRouteContractMiddleware = true;
-  middleware.__routeContract = contract || {};
-  return middleware;
+  const routeContractMiddleware = (req, res, next) => next();
+  routeContractMiddleware.__isRouteContractMiddleware = true;
+  routeContractMiddleware.__routeContract = contract || {};
+  return routeContractMiddleware;
 };
 
 module.exports = routeContract;

@@ -1,5 +1,7 @@
 const express = require('express');
 const validate = require('../../../core/middleware/validateMiddleware');
+const routeContract = require('../../../core/contracts/http/routeContract');
+const { docsRequestSchemas } = require('../../../core/contracts/http/modules/auth.contracts');
 const authController = require('../controller/auth.controller');
 const protect = require('../../../core/middleware/authMiddleware');
 const {
@@ -22,8 +24,19 @@ router.post(
   validate(createUploadUrlSchema),
   authController.createRegistrationUploadUrl
 );
-router.post('/register', validate(registerSchema), authController.register);
-router.post('/resubmit', protect, validate(resubmitSchema), authController.resubmit);
+router.post(
+  '/register',
+  routeContract({ requestSchema: docsRequestSchemas.registerSchema }),
+  validate(registerSchema),
+  authController.register
+);
+router.post(
+  '/resubmit',
+  protect,
+  routeContract({ requestSchema: docsRequestSchemas.resubmitSchema }),
+  validate(resubmitSchema),
+  authController.resubmit
+);
 router.post('/login', validate(loginSchema), authController.login);
 router.post('/logout', protect, authController.logout);
 router.post('/forgot-password', validate(forgotPasswordSchema), authController.forgotPassword);

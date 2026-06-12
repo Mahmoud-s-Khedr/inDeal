@@ -2,6 +2,8 @@ const express = require('express');
 const protect = require('../../../core/middleware/authMiddleware');
 const optionalAuth = require('../../../core/middleware/optionalAuthMiddleware');
 const validate = require('../../../core/middleware/validateMiddleware');
+const routeContract = require('../../../core/contracts/http/routeContract');
+const { docsRequestSchemas } = require('../../../core/contracts/http/modules/deal.contracts');
 const dealController = require('../controller/deal.controller');
 const {
   createDealSchema,
@@ -28,7 +30,13 @@ const router = express.Router();
 // ─────────────────────────────────────────────────────────────
 
 // Search/list deals (public, but auth adds context)
-router.get('/', optionalAuth, validate(searchDealsSchema), dealController.searchDeals);
+router.get(
+  '/',
+  optionalAuth,
+  routeContract({ requestSchema: docsRequestSchemas.searchDealsSchema }),
+  validate(searchDealsSchema),
+  dealController.searchDeals
+);
 
 // Get single deal (public)
 router.get('/:id', validate(getDealSchema), dealController.getDeal);
@@ -70,6 +78,7 @@ router.post('/send-email', protect, validate(sendDealEmailSchema), dealControlle
 router.post(
   '/direct-requests',
   protect,
+  routeContract({ requestSchema: docsRequestSchemas.createDirectRequestSchema }),
   validate(createDirectRequestSchema),
   dealController.createDirectRequest
 );
@@ -77,6 +86,7 @@ router.post(
 router.post(
   '/:id/requests',
   protect,
+  routeContract({ requestSchema: docsRequestSchemas.createDealRequestSchema }),
   validate(createDealRequestSchema),
   dealController.createDealRequest
 );
