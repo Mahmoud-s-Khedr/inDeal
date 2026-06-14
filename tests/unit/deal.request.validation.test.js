@@ -37,6 +37,35 @@ test('createDealRequest accepts SRS-aligned supplyType values and rejects remove
   assert.equal(legacy.success, false);
 });
 
+test('createDealRequest accepts SRS-aligned supply delivery and quality enums', () => {
+  const parsed = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestKind: 'supply',
+      supplyDetails: {
+        productServiceName: 'Steel bars',
+        category: 'rawMaterial',
+        deliveryMethodPreference: 'supplier delivers',
+        qualityLevel: 'industrial guide',
+      },
+    },
+  });
+  assert.equal(parsed.success, true);
+
+  const legacy = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestKind: 'supply',
+      supplyDetails: {
+        productServiceName: 'Steel bars',
+        category: 'rawMaterial',
+        deliveryMethodPreference: 'supplierDelivers',
+      },
+    },
+  });
+  assert.equal(legacy.success, false);
+});
+
 test('supply-side payload accepts SRS-required colorFinish field', () => {
   const parsed = createDealRequestSchema.safeParse({
     params: { id: 1 },
@@ -64,6 +93,34 @@ test('demand-side payload accepts SRS-required stockDeliveryTime field', () => {
     },
   });
   assert.equal(parsed.success, true);
+});
+
+test('demand-side payload accepts SRS-aligned availability and specsMatchRfq values', () => {
+  const parsed = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestKind: 'demand',
+      demandDetails: {
+        productServiceName: 'Pump',
+        availabilityType: 'assemble to order',
+        specsMatchRfq: 'exact',
+      },
+    },
+  });
+  assert.equal(parsed.success, true);
+
+  const legacy = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestKind: 'demand',
+      demandDetails: {
+        productServiceName: 'Pump',
+        availabilityType: 'inStock',
+        specsMatchRfq: 'yes',
+      },
+    },
+  });
+  assert.equal(legacy.success, false);
 });
 
 test('removed backend-only fields are rejected from request detail payloads', () => {

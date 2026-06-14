@@ -53,6 +53,7 @@ const buildHarness = ({
 
   const state = {
     listFilters: null,
+    countFilters: null,
     createdRequestPayload: null,
     sentEmails: [],
     dealStatusUpdates: [],
@@ -116,6 +117,10 @@ const buildHarness = ({
       state.listFilters = filters;
       return [];
     },
+    countByApplicantCompanyId: async (_companyId, filters) => {
+      state.countFilters = filters;
+      return 0;
+    },
     findById: async () => requestById,
     updateStatus: async (requestId, status) => {
       state.updatedRequestStatuses.push({ requestId, status });
@@ -136,6 +141,9 @@ const buildHarness = ({
     [resolveFromDealService('../../../infrastructure/config/env')]: {
       deals: { maxOpenPerCompany: 5 },
       companyReview: {},
+    },
+    [resolveFromDealService('../../../infrastructure/config/storage')]: {
+      publicUrl: 'https://files.example.com',
     },
     [resolveFromDealService('../repository/deal.repository')]: {
       findById: async (id) =>
@@ -263,14 +271,19 @@ test('createDirectRequest rejects duplicate active direct request', async () => 
   );
 });
 
-test('getMyRequests and getMyApplications pass segmentation filters', async () => {
+test('getMyRequests is canonical outgoing history and getMyApplications remains a filtered alias', async () => {
   const { dealService, state } = buildHarness();
 
-  await dealService.getMyRequests(10, {});
-  assert.deepEqual(state.listFilters.requestKinds, ['supply', 'rfq']);
+  const requests = await dealService.getMyRequests(10, {});
+  assert.equal(requests.pagination.total, 0);
+  assert.equal(requests.items.length, 0);
+  assert.equal(state.listFilters.requestKinds, undefined);
   assert.equal(state.listFilters.includeDirect, true);
+  assert.equal(state.countFilters.requestKinds, undefined);
 
-  await dealService.getMyApplications(10, {});
+  const applications = await dealService.getMyApplications(10, {});
+  assert.equal(applications.pagination.total, 0);
+  assert.equal(applications.items.length, 0);
   assert.deepEqual(state.listFilters.requestKinds, ['demand']);
   assert.equal(state.listFilters.requestType, 'inSupply');
   assert.equal(state.listFilters.includeDirect, false);

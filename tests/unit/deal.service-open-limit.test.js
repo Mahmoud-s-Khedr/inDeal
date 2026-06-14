@@ -115,6 +115,9 @@ const buildHarness = ({
       deals: { maxOpenPerCompany },
       companyReview: {},
     },
+    [resolveFromDealService('../../../infrastructure/config/storage')]: {
+      publicUrl: 'https://files.example.com',
+    },
     [resolveFromDealService('../repository/deal.repository')]: dealRepositoryMock,
     [resolveFromDealService('../repository/dealRequest.repository')]: {},
     [resolveFromDealService('../repository/dealAttachment.repository')]: {

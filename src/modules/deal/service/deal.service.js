@@ -7,23 +7,48 @@ const dealAttachmentRepository = require('../repository/dealAttachment.repositor
 const dealRequestDetailsRepository = require('../repository/dealRequestDetails.repository');
 const companyModule = require('../../company');
 const fileModule = require('../../file');
+const { publicUrl } = require('../../../infrastructure/config/storage');
 const { sendMail } = require('../../../infrastructure/config/mailer');
 const logger = require('../../../shared/utils/logger');
 const { companyRepository } = companyModule.repository;
 const { fileRepository } = fileModule.repository;
-const fileService = fileModule.service;
 const ACTIVE_REQUEST_STATUSES = ['pending', 'paused', 'accepted'];
 const ACTIVE_IN_SUPPLY_REQUEST_CONSTRAINT = 'uq_deal_requests_active_in_supply';
 const ACTIVE_DIRECT_REQUEST_CONSTRAINT = 'uq_deal_requests_active_direct';
 
-const getFileUrl = async (fileId) => {
-  if (!fileId) return null;
-  try {
-    const file = await fileService.getFileById(fileId);
-    return file.publicUrl;
-  } catch {
-    return null;
+const buildPublicUrl = (filePath) => {
+  if (!publicUrl || !filePath) return null;
+  return `${publicUrl.replace(/\/$/, '')}/${filePath}`;
+};
+
+const buildPagination = ({ total, limit, offset, returnedCount }) => ({
+  total,
+  limit,
+  offset,
+  hasMore: offset + returnedCount < total,
+});
+
+const logListMetrics = (operation, startedAt, details = {}) => {
+  logger.debug({
+    operation,
+    durationMs: Date.now() - startedAt,
+    ...details,
+  });
+};
+
+const loadFileUrlsByIds = async (fileIds = []) => {
+  const uniqueFileIds = [...new Set(fileIds.filter(Boolean))];
+  if (!uniqueFileIds.length) return new Map();
+
+  const files = await fileRepository.findByIds(uniqueFileIds);
+  const fileUrlById = new Map();
+
+  for (const file of files) {
+    if (file.deletedAt) continue;
+    fileUrlById.set(file.id, buildPublicUrl(file.filePath));
   }
+
+  return fileUrlById;
 };
 
 const sanitizeDeal = (deal) => {
@@ -187,6 +212,7 @@ const attachDealAttachments = async (deals) => {
 
   const dealIds = deals.map((deal) => deal.id);
   const attachments = await dealAttachmentRepository.listByDealIds(dealIds);
+  const fileUrlById = await loadFileUrlsByIds(attachments.map((attachment) => attachment.file_id));
   const attachmentByDealId = new Map();
 
   for (const attachment of attachments) {
@@ -198,13 +224,17 @@ const attachDealAttachments = async (deals) => {
 
   for (const deal of deals) {
     const dealAttachments = attachmentByDealId.get(deal.id) || [];
-    deal.attachments = await Promise.all(
-      dealAttachments.map(async (attachment) => {
-        const fileUrl = await getFileUrl(attachment.file_id);
-        return sanitizeDealAttachment(attachment, fileUrl);
-      })
+    deal.attachments = dealAttachments.map((attachment) =>
+      sanitizeDealAttachment(attachment, fileUrlById.get(attachment.file_id) || null)
     );
   }
+
+  logger.debug({
+    operation: 'attachDealAttachments',
+    dealCount: deals.length,
+    attachmentCount: attachments.length,
+    fileLookupCount: fileUrlById.size,
+  });
 
   return deals;
 };
@@ -218,6 +248,7 @@ const enrichRequests = async (requests) => {
     dealRequestDetailsRepository.getDemandDetailsByRequestIds(requestIds),
     dealRequestDetailsRepository.getAttachmentsByRequestIds(requestIds),
   ]);
+  const fileUrlById = await loadFileUrlsByIds(requestAttachmentRows.map((row) => row.file_id));
 
   const supplyByRequestId = new Map(supplyDetailsRows.map((row) => [row.request_id, row]));
   const demandByRequestId = new Map(demandDetailsRows.map((row) => [row.request_id, row]));
@@ -235,13 +266,17 @@ const enrichRequests = async (requests) => {
     request.demandDetails = sanitizeDemandDetails(demandByRequestId.get(request.id));
 
     const requestAttachments = attachmentsByRequestId.get(request.id) || [];
-    request.attachments = await Promise.all(
-      requestAttachments.map(async (attachment) => {
-        const fileUrl = await getFileUrl(attachment.file_id);
-        return sanitizeRequestAttachment(attachment, fileUrl);
-      })
+    request.attachments = requestAttachments.map((attachment) =>
+      sanitizeRequestAttachment(attachment, fileUrlById.get(attachment.file_id) || null)
     );
   }
+
+  logger.debug({
+    operation: 'enrichRequests',
+    requestCount: requests.length,
+    attachmentCount: requestAttachmentRows.length,
+    fileLookupCount: fileUrlById.size,
+  });
 
   return requests;
 };
@@ -280,6 +315,7 @@ const ensureCanTransitionToOpen = async ({ companyId, currentStatus, nextStatus,
   await lockCompanyDeals(client, companyId);
   const openDeals = await dealRepository.countOpenByCompanyId(companyId, client);
   if (openDeals >= config.deals.maxOpenPerCompany) {
+    logger.warn({ companyId, openDeals }, 'Open deal cap prevented reopening deal');
     throw new AppError(getOpenDealLimitErrorMessage(), 400);
   }
 };
@@ -303,6 +339,7 @@ const createDeal = async (companyId, payload) => {
 
     const openDeals = await dealRepository.countOpenByCompanyId(companyId, client);
     if (openDeals >= config.deals.maxOpenPerCompany) {
+      logger.warn({ companyId, openDeals }, 'Open deal cap prevented deal creation');
       throw new AppError(getOpenDealLimitErrorMessage(), 400);
     }
 
@@ -340,6 +377,7 @@ const getDealById = async (dealId) => {
 };
 
 const searchDeals = async (filters, excludeCompanyId = null) => {
+  const startedAt = Date.now();
   const {
     keyword,
     dealType,
@@ -386,23 +424,41 @@ const searchDeals = async (filters, excludeCompanyId = null) => {
 
   const sanitized = deals.map(sanitizeDeal);
   await attachDealAttachments(sanitized);
+  logListMetrics('searchDeals', startedAt, {
+    total,
+    returnedCount: sanitized.length,
+    excludeCompanyId,
+  });
 
   return {
-    deals: sanitized,
-    pagination: {
+    items: sanitized,
+    pagination: buildPagination({
       total,
       limit,
       offset,
-      hasMore: offset + deals.length < total,
-    },
+      returnedCount: deals.length,
+    }),
   };
 };
 
 const getMyDeals = async (companyId, filters = {}) => {
-  const deals = await dealRepository.findByCompanyId(companyId, filters);
+  const startedAt = Date.now();
+  const { limit = 50, offset = 0 } = filters;
+  const [deals, total] = await Promise.all([
+    dealRepository.findByCompanyId(companyId, filters),
+    dealRepository.countByCompanyId(companyId, filters),
+  ]);
   const sanitized = deals.map(sanitizeDeal);
   await attachDealAttachments(sanitized);
-  return sanitized;
+  logListMetrics('getMyDeals', startedAt, {
+    companyId,
+    total,
+    returnedCount: sanitized.length,
+  });
+  return {
+    items: sanitized,
+    pagination: buildPagination({ total, limit, offset, returnedCount: sanitized.length }),
+  };
 };
 
 const updateDeal = async (dealId, companyId, updates) => {
@@ -489,6 +545,7 @@ const createDealRequest = async (dealId, applicantCompanyId, payload) => {
     ACTIVE_REQUEST_STATUSES
   );
   if (existing) {
+    logger.warn({ dealId, applicantCompanyId }, 'Duplicate active in-supply request rejected');
     throw new AppError('You already have a request on this deal', 400);
   }
 
@@ -539,6 +596,10 @@ const createDealRequest = async (dealId, applicantCompanyId, payload) => {
   } catch (error) {
     await client.query('ROLLBACK');
     if (isUniqueConstraintViolation(error, ACTIVE_IN_SUPPLY_REQUEST_CONSTRAINT)) {
+      logger.warn(
+        { dealId, applicantCompanyId, constraint: ACTIVE_IN_SUPPLY_REQUEST_CONSTRAINT },
+        'DB unique protection rejected duplicate active in-supply request'
+      );
       throw new AppError('You already have a request on this deal', 400);
     }
     throw error;
@@ -570,6 +631,10 @@ const createDirectRequest = async (applicantCompanyId, payload) => {
     ACTIVE_REQUEST_STATUSES
   );
   if (existing) {
+    logger.warn(
+      { applicantCompanyId, targetCompanyId: payload.targetCompanyId },
+      'Duplicate active direct request rejected'
+    );
     throw new AppError('You already have an active direct request for this company', 400);
   }
 
@@ -620,6 +685,14 @@ const createDirectRequest = async (applicantCompanyId, payload) => {
   } catch (error) {
     await client.query('ROLLBACK');
     if (isUniqueConstraintViolation(error, ACTIVE_DIRECT_REQUEST_CONSTRAINT)) {
+      logger.warn(
+        {
+          applicantCompanyId,
+          targetCompanyId: payload.targetCompanyId,
+          constraint: ACTIVE_DIRECT_REQUEST_CONSTRAINT,
+        },
+        'DB unique protection rejected duplicate active direct request'
+      );
       throw new AppError('You already have an active direct request for this company', 400);
     }
     throw error;
@@ -629,6 +702,8 @@ const createDirectRequest = async (applicantCompanyId, payload) => {
 };
 
 const getDealRequests = async (dealId, companyId, filters = {}) => {
+  const startedAt = Date.now();
+  const { limit = 50, offset = 0 } = filters;
   const deal = await dealRepository.findById(dealId);
   if (!deal) {
     throw new AppError('Deal not found', 404);
@@ -637,16 +712,29 @@ const getDealRequests = async (dealId, companyId, filters = {}) => {
     throw new AppError('Unauthorized to view requests for this deal', 403);
   }
 
-  const [requests, stats] = await Promise.all([
+  const [requests, total, stats] = await Promise.all([
     dealRequestRepository.findByDealId(dealId, filters),
+    dealRequestRepository.countByDealId(dealId, filters),
     dealRequestRepository.getRequestStats(dealId),
   ]);
 
   const sanitizedRequests = requests.map(sanitizeRequest);
   await enrichRequests(sanitizedRequests);
+  logListMetrics('getDealRequests', startedAt, {
+    companyId,
+    dealId,
+    total,
+    returnedCount: sanitizedRequests.length,
+  });
 
   return {
-    requests: sanitizedRequests,
+    items: sanitizedRequests,
+    pagination: buildPagination({
+      total,
+      limit,
+      offset,
+      returnedCount: sanitizedRequests.length,
+    }),
     stats: {
       total: parseInt(stats.total, 10),
       pending: parseInt(stats.pending, 10),
@@ -661,32 +749,42 @@ const getDealRequests = async (dealId, companyId, filters = {}) => {
   };
 };
 
-const getMyRequests = async (companyId, filters = {}) => {
-  const requestType = filters.requestType;
-  const includeDirect = !requestType || requestType === 'direct';
-  const includeInSupply = !requestType || requestType === 'inSupply';
-  const requestKinds = includeInSupply ? ['supply', 'rfq'] : undefined;
-
-  const requests = await dealRequestRepository.findByApplicantCompanyId(companyId, {
-    ...filters,
-    requestKinds,
-    includeDirect,
-  });
+const listOutgoingRequests = async (companyId, filters = {}, overrides = {}) => {
+  const startedAt = Date.now();
+  const mergedFilters = { ...filters, ...overrides };
+  const { limit = 50, offset = 0 } = mergedFilters;
+  const [requests, total] = await Promise.all([
+    dealRequestRepository.findByApplicantCompanyId(companyId, mergedFilters),
+    dealRequestRepository.countByApplicantCompanyId(companyId, mergedFilters),
+  ]);
   const sanitized = requests.map(sanitizeRequest);
   await enrichRequests(sanitized);
-  return sanitized;
+  logListMetrics('listOutgoingRequests', startedAt, {
+    companyId,
+    total,
+    returnedCount: sanitized.length,
+    requestType: mergedFilters.requestType || null,
+    includeDirect: mergedFilters.includeDirect,
+    requestKinds: mergedFilters.requestKinds || null,
+  });
+  return {
+    items: sanitized,
+    pagination: buildPagination({ total, limit, offset, returnedCount: sanitized.length }),
+  };
+};
+
+const getMyRequests = async (companyId, filters = {}) => {
+  return listOutgoingRequests(companyId, filters, {
+    includeDirect: filters.requestType === 'inSupply' ? false : true,
+  });
 };
 
 const getMyApplications = async (companyId, filters = {}) => {
-  const requests = await dealRequestRepository.findByApplicantCompanyId(companyId, {
-    ...filters,
+  return listOutgoingRequests(companyId, filters, {
     requestType: 'inSupply',
     requestKinds: ['demand'],
     includeDirect: false,
   });
-  const sanitized = requests.map(sanitizeRequest);
-  await enrichRequests(sanitized);
-  return sanitized;
 };
 
 const updateRequestStatus = async (dealId, requestId, companyId, newStatus) => {

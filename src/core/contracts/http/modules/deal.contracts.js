@@ -35,18 +35,20 @@ const supplyDetailsSchema = z.object({
   paymentTermsPreference: z.string().max(500).optional(),
   incoterm: z.enum(incotermValues).optional(),
   bulkDiscountExpectation: z.string().max(500).optional(),
-  supplyType: z.enum(['inStock', 'makeToOrder', 'either']).optional(),
+  supplyType: z.enum(['in stock', 'make to order', 'either']).optional(),
   keySpecifications: z.string().max(2000).optional(),
   material: z.string().max(200).optional(),
   dimensionsSize: z.string().max(200).optional(),
   certificationsRequired: z.array(z.string().min(1).max(150)).optional(),
   qualityLevel: z
-    .enum(['standard', 'industrialGuide', 'foodGrade', 'pharmaceuticalGrade', 'exportQuality'])
+    .enum(['standard', 'industrial guide', 'food grade', 'pharmaceutical grade', 'export quality'])
     .optional(),
   colorFinish: z.string().max(200).optional(),
   countryOfOrigin: z.string().max(100).optional(),
   maxLeadTimeAccepted: z.string().max(100).optional(),
-  deliveryMethodPreference: z.enum(['supplierDelivers', 'buyerCollects', 'thirdParty']).optional(),
+  deliveryMethodPreference: z
+    .enum(['supplier delivers', 'buyer collects', 'third party'])
+    .optional(),
   packagingRequirements: z.string().max(1000).optional(),
   specialConditionsNotes: z.string().max(2000).optional(),
 });
@@ -60,12 +62,14 @@ const demandDetailsSchema = z.object({
   totalPrice: z.coerce.number().positive().optional(),
   volumeDiscountTiers: z.array(z.string().min(1).max(100)).optional(),
   moq: z.coerce.number().positive().optional(),
-  availabilityType: z.enum(['inStock', 'makeToOrder', 'mixed']).optional(),
+  availabilityType: z
+    .enum(['in stock', 'assemble to order', 'make to order', 'engineering to order', 'mixed'])
+    .optional(),
   quantityInStock: z.coerce.number().nonnegative().optional(),
   maxProduceQuantity: z.coerce.number().nonnegative().optional(),
   stockDeliveryTime: z.string().max(100).optional(),
   productionLeadTime: z.string().max(100).optional(),
-  specsMatchRfq: z.enum(['yes', 'no', 'partial']).optional(),
+  specsMatchRfq: z.enum(['exact', 'partial']).optional(),
   differencesFromRfq: z.string().max(2000).optional(),
   materialOffered: z.string().max(200).optional(),
   dimensions: z.string().max(200).optional(),

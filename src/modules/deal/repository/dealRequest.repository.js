@@ -2,6 +2,125 @@ const { pool } = require('../../../infrastructure/config/db');
 
 const run = (client) => client || pool;
 
+const appendApplicantRequestFilters = ({
+  baseQuery,
+  params,
+  startParamIndex,
+  status,
+  keyword,
+  requestKinds,
+  requestType,
+  includeDirect = false,
+}) => {
+  let query = baseQuery;
+  let paramIndex = startParamIndex;
+
+  if (status) {
+    query += ` AND r.status = $${paramIndex}`;
+    params.push(status);
+    paramIndex += 1;
+  }
+
+  if (requestType) {
+    query += ` AND r.request_type = $${paramIndex}`;
+    params.push(requestType);
+    paramIndex += 1;
+  }
+
+  if (Array.isArray(requestKinds) && requestKinds.length && includeDirect) {
+    query += ` AND (r.request_kind = ANY($${paramIndex}::text[]) OR r.request_type = 'direct')`;
+    params.push(requestKinds);
+    paramIndex += 1;
+  } else if (Array.isArray(requestKinds) && requestKinds.length) {
+    query += ` AND r.request_kind = ANY($${paramIndex}::text[])`;
+    params.push(requestKinds);
+    paramIndex += 1;
+  } else if (includeDirect === false && !requestType) {
+    query += ` AND r.request_type != 'direct'`;
+  }
+
+  if (keyword) {
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', r.request_details, r.cancel_reason, d.deal_name, oc.name, tc.name))";
+    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
+    query = query.replace(
+      '0::float8 AS search_score',
+      `((
+          (
+            0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
+            0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
+          ) * 0.8
+        ) + (
+          GREATEST(
+            similarity(${normalizedDoc}, ${normalizedKeyword}),
+            word_similarity(${normalizedDoc}, ${normalizedKeyword})
+          ) * 0.2
+        ))::float8 AS search_score`
+    );
+
+    query += ` AND (
+      ${arabicTsVector} @@ ${arabicTsQuery}
+      OR ${simpleTsVector} @@ ${simpleTsQuery}
+      OR ${normalizedDoc} % ${normalizedKeyword}
+    )`;
+    params.push(keyword);
+    paramIndex += 1;
+  }
+
+  return { query, paramIndex };
+};
+
+const appendDealRequestFilters = ({ baseQuery, params, startParamIndex, status, keyword }) => {
+  let query = baseQuery;
+  let paramIndex = startParamIndex;
+
+  if (status) {
+    query += ` AND r.status = $${paramIndex}`;
+    params.push(status);
+    paramIndex += 1;
+  }
+
+  if (keyword) {
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', r.request_details, r.cancel_reason, c.name, c.company_type, c.company_industry))";
+    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
+    query = query.replace(
+      '0::float8 AS search_score',
+      `((
+          (
+            0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
+            0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
+          ) * 0.8
+        ) + (
+          GREATEST(
+            similarity(${normalizedDoc}, ${normalizedKeyword}),
+            word_similarity(${normalizedDoc}, ${normalizedKeyword})
+          ) * 0.2
+        ))::float8 AS search_score`
+    );
+
+    query += ` AND (
+      ${arabicTsVector} @@ ${arabicTsQuery}
+      OR ${simpleTsVector} @@ ${simpleTsQuery}
+      OR ${normalizedDoc} % ${normalizedKeyword}
+    )`;
+    params.push(keyword);
+    paramIndex += 1;
+  }
+
+  return { query, paramIndex };
+};
+
 /**
  * Create a deal request or direct request
  */
@@ -67,7 +186,9 @@ const findById = async (requestId) => {
  * Find requests by deal ID (for deal owner to see all bids)
  */
 const findByDealId = async (dealId, { status, keyword, limit = 50, offset = 0 } = {}) => {
-  let query = `
+  const params = [dealId];
+  const built = appendDealRequestFilters({
+    baseQuery: `
       SELECT r.*,
              c.name AS applicant_company_name,
              c.logo AS applicant_company_logo,
@@ -77,48 +198,14 @@ const findByDealId = async (dealId, { status, keyword, limit = 50, offset = 0 } 
       FROM deal_requests r
       JOIN companies c ON r.applicant_company_id = c.id
       WHERE r.deal_id = $1
-  `;
-  const params = [dealId];
-  let paramIndex = 2;
-
-  if (status) {
-    query += ` AND r.status = $${paramIndex}`;
-    params.push(status);
-    paramIndex += 1;
-  }
-
-  if (keyword) {
-    const normalizedDoc =
-      "public.normalize_search_text(concat_ws(' ', r.request_details, r.cancel_reason, c.name, c.company_type, c.company_industry))";
-    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
-    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
-    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
-    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
-    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
-
-    query = query.replace(
-      '0::float8 AS search_score',
-      `((
-          (
-            0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
-            0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
-          ) * 0.8
-        ) + (
-          GREATEST(
-            similarity(${normalizedDoc}, ${normalizedKeyword}),
-            word_similarity(${normalizedDoc}, ${normalizedKeyword})
-          ) * 0.2
-        ))::float8 AS search_score`
-    );
-
-    query += ` AND (
-      ${arabicTsVector} @@ ${arabicTsQuery}
-      OR ${simpleTsVector} @@ ${simpleTsQuery}
-      OR ${normalizedDoc} % ${normalizedKeyword}
-    )`;
-    params.push(keyword);
-    paramIndex += 1;
-  }
+  `,
+    params,
+    startParamIndex: 2,
+    status,
+    keyword,
+  });
+  let query = built.query;
+  const paramIndex = built.paramIndex;
 
   if (keyword) {
     query += `
@@ -153,7 +240,9 @@ const findByApplicantCompanyId = async (
   companyId,
   { status, keyword, requestKinds, requestType, includeDirect = false, limit = 50, offset = 0 } = {}
 ) => {
-  let query = `
+  const params = [companyId];
+  const built = appendApplicantRequestFilters({
+    baseQuery: `
       SELECT r.*,
              d.deal_name,
              d.deal_type,
@@ -170,66 +259,17 @@ const findByApplicantCompanyId = async (
       LEFT JOIN companies oc ON d.company_id = oc.id
       LEFT JOIN companies tc ON r.target_company_id = tc.id
       WHERE r.applicant_company_id = $1
-  `;
-  const params = [companyId];
-  let paramIndex = 2;
-
-  if (status) {
-    query += ` AND r.status = $${paramIndex}`;
-    params.push(status);
-    paramIndex += 1;
-  }
-
-  if (requestType) {
-    query += ` AND r.request_type = $${paramIndex}`;
-    params.push(requestType);
-    paramIndex += 1;
-  }
-
-  if (Array.isArray(requestKinds) && requestKinds.length && includeDirect) {
-    query += ` AND (r.request_kind = ANY($${paramIndex}::text[]) OR r.request_type = 'direct')`;
-    params.push(requestKinds);
-    paramIndex += 1;
-  } else if (Array.isArray(requestKinds) && requestKinds.length) {
-    query += ` AND r.request_kind = ANY($${paramIndex}::text[])`;
-    params.push(requestKinds);
-    paramIndex += 1;
-  } else if (includeDirect) {
-    query += ` AND r.request_type = 'direct'`;
-  }
-
-  if (keyword) {
-    const normalizedDoc =
-      "public.normalize_search_text(concat_ws(' ', r.request_details, r.cancel_reason, d.deal_name, oc.name, tc.name))";
-    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
-    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
-    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
-    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
-    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
-
-    query = query.replace(
-      '0::float8 AS search_score',
-      `((
-          (
-            0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
-            0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
-          ) * 0.8
-        ) + (
-          GREATEST(
-            similarity(${normalizedDoc}, ${normalizedKeyword}),
-            word_similarity(${normalizedDoc}, ${normalizedKeyword})
-          ) * 0.2
-        ))::float8 AS search_score`
-    );
-
-    query += ` AND (
-      ${arabicTsVector} @@ ${arabicTsQuery}
-      OR ${simpleTsVector} @@ ${simpleTsQuery}
-      OR ${normalizedDoc} % ${normalizedKeyword}
-    )`;
-    params.push(keyword);
-    paramIndex += 1;
-  }
+  `,
+    params,
+    startParamIndex: 2,
+    status,
+    keyword,
+    requestKinds,
+    requestType,
+    includeDirect,
+  });
+  let query = built.query;
+  const paramIndex = built.paramIndex;
 
   if (keyword) {
     query += ` ORDER BY search_score DESC, r.created_at DESC`;
@@ -241,6 +281,35 @@ const findByApplicantCompanyId = async (
 
   const result = await pool.query(query, params);
   return result.rows;
+};
+
+const countByApplicantCompanyId = async (
+  companyId,
+  { status, keyword, requestKinds, requestType, includeDirect = false } = {}
+) => {
+  const params = [companyId];
+  const built = appendApplicantRequestFilters({
+    baseQuery: `
+      SELECT COUNT(*) AS total,
+             0::float8 AS search_score
+      FROM deal_requests r
+      LEFT JOIN deals d ON r.deal_id = d.id
+      LEFT JOIN companies oc ON d.company_id = oc.id
+      LEFT JOIN companies tc ON r.target_company_id = tc.id
+      WHERE r.applicant_company_id = $1
+    `,
+    params,
+    startParamIndex: 2,
+    status,
+    keyword,
+    requestKinds,
+    requestType,
+    includeDirect,
+  });
+
+  const countQuery = built.query.replace(',\n             0::float8 AS search_score', '');
+  const result = await pool.query(countQuery, params);
+  return parseInt(result.rows[0].total, 10);
 };
 
 /**
@@ -289,11 +358,23 @@ const findExistingDirectRequest = async (
 /**
  * Count requests for a deal
  */
-const countByDealId = async (dealId) => {
-  const result = await pool.query(
-    `SELECT COUNT(*) AS total FROM deal_requests WHERE deal_id = $1`,
-    [dealId]
-  );
+const countByDealId = async (dealId, { status, keyword } = {}) => {
+  const params = [dealId];
+  const built = appendDealRequestFilters({
+    baseQuery: `
+      SELECT COUNT(*) AS total,
+             0::float8 AS search_score
+      FROM deal_requests r
+      JOIN companies c ON r.applicant_company_id = c.id
+      WHERE r.deal_id = $1
+    `,
+    params,
+    startParamIndex: 2,
+    status,
+    keyword,
+  });
+  const countQuery = built.query.replace(',\n             0::float8 AS search_score', '');
+  const result = await pool.query(countQuery, params);
   return parseInt(result.rows[0].total, 10);
 };
 
@@ -449,6 +530,7 @@ module.exports = {
   findById,
   findByDealId,
   findByApplicantCompanyId,
+  countByApplicantCompanyId,
   findExistingRequest,
   findExistingDirectRequest,
   countByDealId,
