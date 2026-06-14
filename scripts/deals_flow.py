@@ -297,16 +297,16 @@ def run():
         method="GET",
         path="/deals/me/requests",
         token=applicant.token,
-        params={"requestType": "inSupply", "limit": 20, "offset": 0},
+        params={"limit": 20, "offset": 0},
         expected_statuses=[200],
     )
     my_requests_direct = runner.step(
         step_id="lists.applicant.my_requests_direct",
         role=applicant.label,
         method="GET",
-        path="/deals/me/requests",
+        path="/deals/me/direct-requests",
         token=applicant.token,
-        params={"requestType": "direct", "limit": 20, "offset": 0},
+        params={"limit": 20, "offset": 0},
         expected_statuses=[200],
     )
     if not runner.has_request_item_fields(my_requests_in_supply):
@@ -323,7 +323,7 @@ def run():
             step_id="lists.applicant.my_requests_direct.shape",
             role=applicant.label,
             method="GET",
-            path="/deals/me/requests",
+            path="/deals/me/direct-requests",
             reason="direct response missing request item fields",
             expected_statuses=[200],
         )

@@ -19,6 +19,8 @@ const {
   listDealRequestsSchema,
   listMyRequestsSchema,
   listMyApplicationsSchema,
+  listMyDirectRequestsSchema,
+  updateDealRequestSchema,
   withdrawRequestSchema,
   sendDealEmailSchema,
 } = require('../validation/deal.validation');
@@ -72,6 +74,13 @@ router.get(
   dealController.getMyApplications
 );
 
+router.get(
+  '/me/direct-requests',
+  protect,
+  validate(listMyDirectRequestsSchema),
+  dealController.getMyDirectRequests
+);
+
 // Submit request/bid on a deal
 router.post('/send-email', protect, validate(sendDealEmailSchema), dealController.sendDealEmail);
 
@@ -89,6 +98,14 @@ router.post(
   routeContract({ requestSchema: docsRequestSchemas.createDealRequestSchema }),
   validate(createDealRequestSchema),
   dealController.createDealRequest
+);
+
+router.put(
+  '/requests/:requestId',
+  protect,
+  routeContract({ requestSchema: docsRequestSchemas.updateDealRequestSchema }),
+  validate(updateDealRequestSchema),
+  dealController.updateRequest
 );
 
 // Get requests for my deal (as owner)

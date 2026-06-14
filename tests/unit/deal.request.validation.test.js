@@ -6,6 +6,7 @@ const {
   createDealRequestSchema,
   createDirectRequestSchema,
   listMyRequestsSchema,
+  updateDealRequestSchema,
   sendDealEmailSchema,
 } = require('../../src/modules/deal/validation/deal.validation');
 
@@ -225,16 +226,25 @@ test('removed backend-only fields are rejected from request detail payloads', ()
   assert.equal(withRemovedFields.success, false);
 });
 
-test('listMyRequests accepts requestType filter', () => {
+test('listMyRequests accepts base filters and rejects requestType', () => {
   const parsed = listMyRequestsSchema.parse({
+    query: {
+      status: 'pending',
+      limit: 10,
+      offset: 0,
+    },
+  });
+
+  assert.equal(parsed.query.status, 'pending');
+
+  const invalid = listMyRequestsSchema.safeParse({
     query: {
       requestType: 'inSupply',
       limit: 10,
       offset: 0,
     },
   });
-
-  assert.equal(parsed.query.requestType, 'inSupply');
+  assert.equal(invalid.success, false);
 });
 
 test('createDealRequest requires requestType and routes by detail kind', () => {
@@ -299,6 +309,58 @@ test('createDirectRequest enforces targetCompanyId and supply-only payload', () 
     },
   });
   assert.equal(invalid.success, false);
+});
+
+test('updateDealRequest accepts supply-side replacement payload', () => {
+  const parsed = updateDealRequestSchema.safeParse({
+    params: { requestId: 55 },
+    body: {
+      supplyDetails: {
+        productServiceName: 'Copper wire',
+        category: 'rawMaterial',
+      },
+      attachments: [{ fileId: 9, sortOrder: 0 }],
+    },
+  });
+  assert.equal(parsed.success, true);
+});
+
+test('updateDealRequest accepts demand-side replacement payload', () => {
+  const parsed = updateDealRequestSchema.safeParse({
+    params: { requestId: 55 },
+    body: {
+      demandDetails: {
+        productServiceName: 'Copper wire',
+      },
+      attachments: [],
+    },
+  });
+  assert.equal(parsed.success, true);
+});
+
+test('updateDealRequest rejects missing or mixed detail payloads', () => {
+  const missing = updateDealRequestSchema.safeParse({
+    params: { requestId: 55 },
+    body: {
+      attachments: [],
+    },
+  });
+  assert.equal(missing.success, false);
+
+  const mixed = updateDealRequestSchema.safeParse({
+    params: { requestId: 55 },
+    body: {
+      supplyDetails: {
+        productServiceName: 'Copper wire',
+        category: 'rawMaterial',
+      },
+      demandDetails: {
+        productServiceName: 'Pump',
+      },
+      attachments: [],
+    },
+  });
+  assert.equal(mixed.success, false);
 });
 
 test('sendDealEmail validates required fields and rejects invalid payloads', () => {

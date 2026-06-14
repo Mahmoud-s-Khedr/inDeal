@@ -71,6 +71,58 @@ const appendApplicantRequestFilters = ({
   return { query, paramIndex };
 };
 
+const appendIncomingDirectRequestFilters = ({
+  baseQuery,
+  params,
+  startParamIndex,
+  status,
+  keyword,
+}) => {
+  let query = baseQuery;
+  let paramIndex = startParamIndex;
+
+  if (status) {
+    query += ` AND r.status = $${paramIndex}`;
+    params.push(status);
+    paramIndex += 1;
+  }
+
+  if (keyword) {
+    const normalizedDoc =
+      "public.normalize_search_text(concat_ws(' ', r.request_details, r.cancel_reason, ac.name, d.deal_name))";
+    const normalizedKeyword = `public.normalize_search_text($${paramIndex})`;
+    const arabicTsVector = `to_tsvector('arabic', ${normalizedDoc})`;
+    const simpleTsVector = `to_tsvector('simple', ${normalizedDoc})`;
+    const arabicTsQuery = `websearch_to_tsquery('arabic', ${normalizedKeyword})`;
+    const simpleTsQuery = `websearch_to_tsquery('simple', ${normalizedKeyword})`;
+
+    query = query.replace(
+      '0::float8 AS search_score',
+      `((
+          (
+            0.6 * ts_rank_cd(${arabicTsVector}, ${arabicTsQuery}) +
+            0.4 * ts_rank_cd(${simpleTsVector}, ${simpleTsQuery})
+          ) * 0.8
+        ) + (
+          GREATEST(
+            similarity(${normalizedDoc}, ${normalizedKeyword}),
+            word_similarity(${normalizedDoc}, ${normalizedKeyword})
+          ) * 0.2
+        ))::float8 AS search_score`
+    );
+
+    query += ` AND (
+      ${arabicTsVector} @@ ${arabicTsQuery}
+      OR ${simpleTsVector} @@ ${simpleTsQuery}
+      OR ${normalizedDoc} % ${normalizedKeyword}
+    )`;
+    params.push(keyword);
+    paramIndex += 1;
+  }
+
+  return { query, paramIndex };
+};
+
 const appendDealRequestFilters = ({ baseQuery, params, startParamIndex, status, keyword }) => {
   let query = baseQuery;
   let paramIndex = startParamIndex;
@@ -278,6 +330,54 @@ const findByApplicantCompanyId = async (
   return result.rows;
 };
 
+const findIncomingDirectRequestsByTargetCompanyId = async (
+  companyId,
+  { status, keyword, limit = 50, offset = 0 } = {}
+) => {
+  const params = [companyId];
+  const built = appendIncomingDirectRequestFilters({
+    baseQuery: `
+      SELECT r.*,
+             d.deal_name,
+             d.deal_type,
+             d.deal_value,
+             d.status AS deal_status,
+             ac.name AS applicant_company_name,
+             ac.logo AS applicant_company_logo,
+             ac.company_type AS applicant_company_type,
+             ac.company_industry AS applicant_industry,
+             tc.name AS target_company_name,
+             tc.logo AS target_company_logo,
+             tc.company_type AS target_company_type,
+             tc.company_industry AS target_company_industry,
+             0::float8 AS search_score
+      FROM deal_requests r
+      LEFT JOIN deals d ON r.deal_id = d.id
+      JOIN companies ac ON r.applicant_company_id = ac.id
+      LEFT JOIN companies tc ON r.target_company_id = tc.id
+      WHERE r.target_company_id = $1
+        AND r.request_type = 'direct'
+  `,
+    params,
+    startParamIndex: 2,
+    status,
+    keyword,
+  });
+  let query = built.query;
+  const paramIndex = built.paramIndex;
+
+  if (keyword) {
+    query += ` ORDER BY search_score DESC, r.created_at DESC`;
+  } else {
+    query += ` ORDER BY r.created_at DESC`;
+  }
+  query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  params.push(limit, offset);
+
+  const result = await pool.query(query, params);
+  return result.rows;
+};
+
 const countByApplicantCompanyId = async (
   companyId,
   { status, keyword, requestType, includeDirect = false } = {}
@@ -299,6 +399,32 @@ const countByApplicantCompanyId = async (
     keyword,
     requestType,
     includeDirect,
+  });
+
+  const countQuery = built.query.replace(',\n             0::float8 AS search_score', '');
+  const result = await pool.query(countQuery, params);
+  return parseInt(result.rows[0].total, 10);
+};
+
+const countIncomingDirectRequestsByTargetCompanyId = async (
+  companyId,
+  { status, keyword } = {}
+) => {
+  const params = [companyId];
+  const built = appendIncomingDirectRequestFilters({
+    baseQuery: `
+      SELECT COUNT(*) AS total,
+             0::float8 AS search_score
+      FROM deal_requests r
+      JOIN companies ac ON r.applicant_company_id = ac.id
+      LEFT JOIN deals d ON r.deal_id = d.id
+      WHERE r.target_company_id = $1
+        AND r.request_type = 'direct'
+    `,
+    params,
+    startParamIndex: 2,
+    status,
+    keyword,
   });
 
   const countQuery = built.query.replace(',\n             0::float8 AS search_score', '');
@@ -425,7 +551,8 @@ const cancelRequest = async (requestId, byCompanyId, cancelReason) => {
 /**
  * Update request details (by applicant before decision)
  */
-const updateRequest = async (requestId, updates) => {
+const updateRequest = async (requestId, updates, client = null) => {
+  const executor = run(client);
   const fields = [];
   const values = [];
   let index = 1;
@@ -453,7 +580,7 @@ const updateRequest = async (requestId, updates) => {
 
   fields.push('updated_at = NOW()');
 
-  const result = await pool.query(
+  const result = await executor.query(
     `
       UPDATE deal_requests
       SET ${fields.join(', ')}
@@ -524,7 +651,9 @@ module.exports = {
   findById,
   findByDealId,
   findByApplicantCompanyId,
+  findIncomingDirectRequestsByTargetCompanyId,
   countByApplicantCompanyId,
+  countIncomingDirectRequestsByTargetCompanyId,
   findExistingRequest,
   findExistingDirectRequest,
   countByDealId,

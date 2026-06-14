@@ -32,8 +32,9 @@ It describes the actual backend behavior, even where that behavior is broader or
 6. Another active company can submit a deal-scoped request on an `open` deal through `POST /api/v1/deals/:id/requests`. The request becomes `pending`.
 7. An active company can also send a direct request not tied to a specific deal through `POST /api/v1/deals/direct-requests`. This also creates a `pending` request.
 8. The applicant can review its own outgoing requests through:
-   - `GET /api/v1/deals/me/requests` as the canonical outgoing-history endpoint across deal-scoped and direct requests
-   - `GET /api/v1/deals/me/applications` as a compatibility alias filtered to deal-scoped `inDemand` requests
+   - `GET /api/v1/deals/me/requests` for outgoing supply-side requests, including direct requests without a deal
+   - `GET /api/v1/deals/me/applications` for outgoing deal-scoped `inDemand` requests
+   - `GET /api/v1/deals/me/direct-requests` for incoming direct requests sent by other companies
 9. The applicant can pause or cancel its own request:
    - `PATCH /api/v1/deals/requests/:requestId/pause`
    - `PATCH /api/v1/deals/requests/:requestId/cancel`
@@ -447,7 +448,7 @@ Common errors:
 
 ### Endpoint & purpose
 
-Lists outgoing requests for the authenticated applicant company across deal-scoped and direct request flows.
+Lists outgoing supply-side requests for the authenticated applicant company, including both deal-scoped `inSupply` requests and direct requests without a deal.
 
 ### Request payload
 
@@ -455,18 +456,13 @@ Lists outgoing requests for the authenticated applicant company across deal-scop
 - Query:
   - `keyword?: string <= 200`
   - `status?: pending | paused | accepted | rejected | canceled`
-  - `requestType?: direct | inSupply | inDemand`
   - `limit?: 1..100` default `50`
   - `offset?: >= 0` default `0`
 
 ### Business logic
 
 - Controller requires company context.
-- Service maps filters into repository behavior:
-  - no `requestType`: include all outgoing deal-scoped requests and direct requests
-  - `requestType = direct`: only direct requests
-  - `requestType = inSupply`: only deal-scoped supply requests
-  - `requestType = inDemand`: only deal-scoped demand applications
+- Service includes outgoing deal-scoped `inSupply` requests plus outgoing direct requests.
 - Repository queries `deal_requests` left-joined to `deals`, owner company, and target company.
 - Keyword search includes request summary, cancel reason, deal name, owner company name, and target company name.
 - Service enriches:
@@ -474,6 +470,7 @@ Lists outgoing requests for the authenticated applicant company across deal-scop
   - demand details from `deal_request_demand_details`
   - request attachments from `deal_request_attachments`
   - attachment file URLs
+- Direct requests appear here because they are business-level supply requests with `dealId = null`.
 
 ### Response payload
 
@@ -495,7 +492,7 @@ Common errors:
 
 ### Endpoint & purpose
 
-Lists outgoing deal-scoped `inDemand` requests for the authenticated applicant company as a compatibility alias over the canonical outgoing-history model.
+Lists outgoing deal-scoped `inDemand` requests for the authenticated applicant company.
 
 ### Request payload
 
@@ -513,6 +510,45 @@ Lists outgoing deal-scoped `inDemand` requests for the authenticated applicant c
   - `requestType = inDemand`
   - `includeDirect = false`
 - Repository and enrichment path otherwise match `GET /deals/me/requests`.
+
+---
+
+## GET `/api/v1/deals/me/direct-requests`
+
+### Endpoint & purpose
+
+Lists incoming direct requests where the authenticated company is the target company.
+
+### Request payload
+
+- Auth: required
+- Query:
+  - `keyword?: string <= 200`
+  - `status?: pending | paused | accepted | rejected | canceled`
+  - `limit?: 1..100` default `50`
+  - `offset?: >= 0` default `0`
+
+### Business logic
+
+- Controller requires company context.
+- Service queries direct requests with:
+  - `target_company_id = currentCompanyId`
+  - `request_type = direct`
+- Repository and request enrichment match the other request-list endpoints.
+
+### Response payload
+
+Success:
+
+- Standard envelope with:
+  - `data.items: DealRequestDto[]`
+  - `data.pagination`
+
+Common errors:
+
+- `401` unauthenticated
+- `403: Company context required`
+- `400` validation errors
 
 ### Response payload
 

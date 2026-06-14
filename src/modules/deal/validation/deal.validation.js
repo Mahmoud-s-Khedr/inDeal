@@ -265,21 +265,38 @@ const createDirectRequestSchema = z
     }
   });
 
-const updateDealRequestSchema = z.object({
-  params: z.object({
-    dealId: z.coerce.number().int().positive(),
-    requestId: z.coerce.number().int().positive(),
-  }),
-  body: z
-    .object({
-      supplyDetails: supplyDetailsSchema.optional(),
-      demandDetails: demandDetailsSchema.optional(),
-      attachments: z.array(requestAttachmentInputSchema).max(20).optional(),
-    })
-    .refine((data) => Object.keys(data).length > 0, {
-      message: 'At least one field must be provided',
+const updateDealRequestSchema = z
+  .object({
+    params: z.object({
+      requestId: z.coerce.number().int().positive(),
     }),
-});
+    body: z
+      .object({
+        supplyDetails: supplyDetailsSchema.optional(),
+        demandDetails: demandDetailsSchema.optional(),
+        attachments: z.array(requestAttachmentInputSchema).max(20).default([]),
+      })
+      .strict(),
+  })
+  .superRefine((data, ctx) => {
+    const { supplyDetails, demandDetails } = data.body;
+
+    if (!supplyDetails && !demandDetails) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['body'],
+        message: 'Either supplyDetails or demandDetails is required',
+      });
+    }
+
+    if (supplyDetails && demandDetails) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['body'],
+        message: 'supplyDetails and demandDetails cannot be provided together',
+      });
+    }
+  });
 
 const dealRequestStatusSchema = z.object({
   params: z.object({
@@ -319,16 +336,26 @@ const listDealRequestsSchema = z.object({
 });
 
 const listMyRequestsSchema = z.object({
+  query: z
+    .object({
+      keyword: z.string().max(200).optional(),
+      status: z.enum(dealRequestStatusEnumValues).optional(),
+      limit: z.coerce.number().int().min(1).max(100).default(50),
+      offset: z.coerce.number().int().min(0).default(0),
+    })
+    .strict(),
+});
+
+const listMyApplicationsSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
     status: z.enum(dealRequestStatusEnumValues).optional(),
-    requestType: z.enum(dealRequestTypeEnumValues).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
   }),
 });
 
-const listMyApplicationsSchema = z.object({
+const listMyDirectRequestsSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
     status: z.enum(dealRequestStatusEnumValues).optional(),
@@ -403,6 +430,7 @@ module.exports = {
   listDealRequestsSchema,
   listMyRequestsSchema,
   listMyApplicationsSchema,
+  listMyDirectRequestsSchema,
   withdrawRequestSchema,
   sendDealEmailSchema,
 };

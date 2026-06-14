@@ -301,6 +301,41 @@ const inferRequestDetailsSummary = (payload, options = {}) => {
   return name ? `Supply request: ${name}` : 'Supply request';
 };
 
+const ensureFilesForRequestPayload = async (payload) => {
+  const attachments = payload.attachments || [];
+  await ensureFilesExist(attachments.map((item) => item.fileId));
+  return attachments;
+};
+
+const validateReplacementPayloadForRequestType = (requestType, payload) => {
+  if (requestType === 'direct') {
+    if (!payload.supplyDetails) {
+      throw new AppError('supplyDetails is required for direct requests', 400);
+    }
+    if (payload.demandDetails) {
+      throw new AppError('demandDetails is not allowed for direct requests', 400);
+    }
+    return;
+  }
+
+  if (requestType === 'inDemand') {
+    if (!payload.demandDetails) {
+      throw new AppError('demandDetails is required for inDemand requests', 400);
+    }
+    if (payload.supplyDetails) {
+      throw new AppError('supplyDetails is not allowed for inDemand requests', 400);
+    }
+    return;
+  }
+
+  if (!payload.supplyDetails) {
+    throw new AppError('supplyDetails is required for inSupply requests', 400);
+  }
+  if (payload.demandDetails) {
+    throw new AppError('demandDetails is not allowed for inSupply requests', 400);
+  }
+};
+
 const isUniqueConstraintViolation = (error, constraintName) =>
   error?.code === '23505' && error?.constraint === constraintName;
 
@@ -765,7 +800,7 @@ const listOutgoingRequests = async (companyId, filters = {}, overrides = {}) => 
 
 const getMyRequests = async (companyId, filters = {}) => {
   return listOutgoingRequests(companyId, filters, {
-    includeDirect: filters.requestType === 'inSupply' ? false : true,
+    includeDirect: true,
   });
 };
 
@@ -774,6 +809,97 @@ const getMyApplications = async (companyId, filters = {}) => {
     requestType: 'inDemand',
     includeDirect: false,
   });
+};
+
+const getMyDirectRequests = async (companyId, filters = {}) => {
+  const startedAt = Date.now();
+  const { limit = 50, offset = 0 } = filters;
+  const [requests, total] = await Promise.all([
+    dealRequestRepository.findIncomingDirectRequestsByTargetCompanyId(companyId, filters),
+    dealRequestRepository.countIncomingDirectRequestsByTargetCompanyId(companyId, filters),
+  ]);
+  const sanitized = requests.map(sanitizeRequest);
+  await enrichRequests(sanitized);
+  logListMetrics('getMyDirectRequests', startedAt, {
+    companyId,
+    total,
+    returnedCount: sanitized.length,
+  });
+
+  return {
+    items: sanitized,
+    pagination: buildPagination({ total, limit, offset, returnedCount: sanitized.length }),
+  };
+};
+
+const updateRequest = async (requestId, companyId, payload) => {
+  const request = await dealRequestRepository.findById(requestId);
+  if (!request) {
+    throw new AppError('Request not found', 404);
+  }
+  if (request.applicant_company_id !== companyId) {
+    throw new AppError('Unauthorized to update this request', 403);
+  }
+  if (!['pending', 'paused'].includes(request.status)) {
+    throw new AppError(
+      `Only pending or paused requests can be updated. Current status: ${request.status}`,
+      400
+    );
+  }
+
+  validateReplacementPayloadForRequestType(request.request_type, payload);
+  const attachments = await ensureFilesForRequestPayload(payload);
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const updated = await dealRequestRepository.updateRequest(
+      requestId,
+      {
+        requestDetails: inferRequestDetailsSummary(payload, {
+          isDirect: request.request_type === 'direct',
+        }),
+        requestOffer: inferRequestOffer({
+          requestType: request.request_type === 'direct' ? 'inSupply' : request.request_type,
+          supplyDetails: payload.supplyDetails,
+          demandDetails: payload.demandDetails,
+        }),
+      },
+      client
+    );
+
+    if (request.request_type === 'inDemand') {
+      await dealRequestDetailsRepository.upsertDemandDetails(
+        client,
+        requestId,
+        payload.demandDetails
+      );
+    } else {
+      await dealRequestDetailsRepository.upsertSupplyDetails(
+        client,
+        requestId,
+        payload.supplyDetails
+      );
+    }
+
+    await dealRequestDetailsRepository.replaceRequestAttachments(client, requestId, attachments);
+    await client.query('COMMIT');
+
+    logger.info('Request updated', {
+      requestId,
+      companyId,
+      requestType: request.request_type,
+    });
+
+    const [enriched] = await enrichRequests([sanitizeRequest(updated)]);
+    return enriched;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 const updateRequestStatus = async (dealId, requestId, companyId, newStatus) => {
@@ -989,6 +1115,8 @@ module.exports = {
   getDealRequests,
   getMyRequests,
   getMyApplications,
+  getMyDirectRequests,
+  updateRequest,
   updateRequestStatus,
   pauseRequest,
   cancelRequest,

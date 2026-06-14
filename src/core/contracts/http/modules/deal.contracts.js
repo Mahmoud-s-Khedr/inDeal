@@ -142,13 +142,12 @@ const createDirectRequestSchema = z.object({
 
 const updateDealRequestSchema = z.object({
   params: z.object({
-    dealId: z.coerce.number().int().positive(),
     requestId: z.coerce.number().int().positive(),
   }),
   body: z.object({
     supplyDetails: supplyDetailsSchema.optional(),
     demandDetails: demandDetailsSchema.optional(),
-    attachments: z.array(requestAttachmentInputSchema).max(20).optional(),
+    attachments: z.array(requestAttachmentInputSchema).max(20).default([]),
   }),
 });
 

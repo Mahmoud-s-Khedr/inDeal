@@ -76,6 +76,20 @@ const getMyApplications = catchAsync(async (req, res) => {
   sendResponse(res, 200, applications, 'My applications fetched');
 });
 
+const getMyDirectRequests = catchAsync(async (req, res) => {
+  const requests = await dealService.getMyDirectRequests(getCompanyId(req), req.query);
+  sendResponse(res, 200, requests, 'My direct requests fetched');
+});
+
+const updateRequest = catchAsync(async (req, res) => {
+  const request = await dealService.updateRequest(
+    req.params.requestId,
+    getCompanyId(req),
+    req.body
+  );
+  sendResponse(res, 200, request, 'Request updated successfully');
+});
+
 const updateRequestStatus = catchAsync(async (req, res) => {
   const request = await dealService.updateRequestStatus(
     req.params.dealId,
@@ -129,6 +143,8 @@ module.exports = {
   getDealRequests,
   getMyRequests,
   getMyApplications,
+  getMyDirectRequests,
+  updateRequest,
   updateRequestStatus,
   pauseRequest,
   cancelRequest,

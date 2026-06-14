@@ -54,10 +54,16 @@ const buildHarness = ({
   const state = {
     listFilters: null,
     countFilters: null,
+    incomingListFilters: null,
+    incomingCountFilters: null,
     createdRequestPayload: null,
     sentEmails: [],
     dealStatusUpdates: [],
     updatedRequestStatuses: [],
+    updatedRequestPayloads: [],
+    supplyUpserts: [],
+    demandUpserts: [],
+    attachmentReplacements: [],
   };
 
   const now = new Date().toISOString();
@@ -121,6 +127,14 @@ const buildHarness = ({
       state.countFilters = filters;
       return 0;
     },
+    findIncomingDirectRequestsByTargetCompanyId: async (_companyId, filters) => {
+      state.incomingListFilters = filters;
+      return [];
+    },
+    countIncomingDirectRequestsByTargetCompanyId: async (_companyId, filters) => {
+      state.incomingCountFilters = filters;
+      return 0;
+    },
     findById: async () => requestById,
     updateStatus: async (requestId, status) => {
       state.updatedRequestStatuses.push({ requestId, status });
@@ -128,6 +142,16 @@ const buildHarness = ({
         ...requestById,
         id: requestId,
         status,
+        updated_at: now,
+      };
+    },
+    updateRequest: async (requestId, payload) => {
+      state.updatedRequestPayloads.push({ requestId, payload });
+      return {
+        ...requestById,
+        id: requestId,
+        request_details: payload.requestDetails,
+        request_offer: payload.requestOffer,
         updated_at: now,
       };
     },
@@ -167,9 +191,15 @@ const buildHarness = ({
       replaceForDeal: async () => {},
     },
     [resolveFromDealService('../repository/dealRequestDetails.repository')]: {
-      upsertSupplyDetails: async () => {},
-      upsertDemandDetails: async () => {},
-      replaceRequestAttachments: async () => {},
+      upsertSupplyDetails: async (_client, requestId, details) => {
+        state.supplyUpserts.push({ requestId, details });
+      },
+      upsertDemandDetails: async (_client, requestId, details) => {
+        state.demandUpserts.push({ requestId, details });
+      },
+      replaceRequestAttachments: async (_client, requestId, attachments) => {
+        state.attachmentReplacements.push({ requestId, attachments });
+      },
       getSupplyDetailsByRequestIds: async () => [],
       getDemandDetailsByRequestIds: async () => [],
       getAttachmentsByRequestIds: async () => [],
@@ -207,7 +237,12 @@ const buildHarness = ({
       },
     },
     [resolveFromDealService('../../file')]: {
-      repository: { fileRepository: { findByIds: async () => [] } },
+      repository: {
+        fileRepository: {
+          findByIds: async (ids) =>
+            ids.map((id) => ({ id, filePath: `uploads/${id}.png`, deletedAt: null })),
+        },
+      },
       service: { getFileById: async () => null },
     },
     [resolveFromDealService('../../../infrastructure/config/mailer')]: {
@@ -262,6 +297,31 @@ test('createDealRequest derives requestOffer from supplyDetails.targetPrice', as
   assert.equal(state.createdRequestPayload.requestOffer, 1450);
 });
 
+test('createDealRequest persists demand details for inDemand requests', async () => {
+  const { dealService, state } = buildHarness();
+
+  const result = await dealService.createDealRequest(1, 10, {
+    requestType: 'inDemand',
+    demandDetails: {
+      productServiceName: 'Industrial resin',
+      availableQuantity: 100,
+      unitPrice: 50,
+      currency: 'USD',
+      certificationsHeld: 'ISO 9001',
+      warrantyPolicy: '12 months',
+      returnPolicy: 'Returns within 14 days',
+    },
+    attachments: [],
+  });
+
+  assert.equal(result.requestType, 'inDemand');
+  assert.equal(state.createdRequestPayload.requestType, 'inDemand');
+  assert.equal(state.createdRequestPayload.requestOffer, 50);
+  assert.equal(state.demandUpserts.length, 1);
+  assert.equal(state.supplyUpserts.length, 0);
+  assert.equal(state.demandUpserts[0].details.productServiceName, 'Industrial resin');
+});
+
 test('createDirectRequest rejects duplicate active direct request', async () => {
   const { dealService, AppError } = buildHarness({ hasExistingDirect: true });
 
@@ -289,6 +349,7 @@ test('getMyRequests is canonical outgoing history and getMyApplications remains 
   const requests = await dealService.getMyRequests(10, {});
   assert.equal(requests.pagination.total, 0);
   assert.equal(requests.items.length, 0);
+  assert.equal(state.listFilters.requestType, undefined);
   assert.equal(state.listFilters.includeDirect, true);
 
   const applications = await dealService.getMyApplications(10, {});
@@ -296,6 +357,16 @@ test('getMyRequests is canonical outgoing history and getMyApplications remains 
   assert.equal(applications.items.length, 0);
   assert.equal(state.listFilters.requestType, 'inDemand');
   assert.equal(state.listFilters.includeDirect, false);
+});
+
+test('getMyDirectRequests lists incoming direct requests by target company', async () => {
+  const { dealService, state } = buildHarness();
+
+  const requests = await dealService.getMyDirectRequests(10, {});
+  assert.equal(requests.pagination.total, 0);
+  assert.equal(requests.items.length, 0);
+  assert.deepEqual(state.incomingListFilters, {});
+  assert.deepEqual(state.incomingCountFilters, {});
 });
 
 test('sendDealEmail rejects when deal is not found', async () => {
@@ -442,4 +513,112 @@ test('updateRequestStatus no longer mutates deal status on acceptance', async ()
   assert.equal(result.status, 'accepted');
   assert.deepEqual(state.updatedRequestStatuses, [{ requestId: 77, status: 'accepted' }]);
   assert.deepEqual(state.dealStatusUpdates, []);
+});
+
+test('updateRequest updates sender-owned pending inSupply request', async () => {
+  const { dealService, state } = buildHarness();
+
+  const result = await dealService.updateRequest(77, 10, {
+    supplyDetails: {
+      productServiceName: 'Copper wire',
+      category: 'rawMaterial',
+      targetPrice: 1450,
+    },
+    attachments: [{ fileId: 5, sortOrder: 0 }],
+  });
+
+  assert.equal(result.requestOffer, 1450);
+  assert.equal(state.updatedRequestPayloads.length, 1);
+  assert.equal(state.updatedRequestPayloads[0].payload.requestOffer, 1450);
+  assert.equal(state.supplyUpserts.length, 1);
+  assert.equal(state.demandUpserts.length, 0);
+  assert.deepEqual(state.attachmentReplacements[0].attachments, [{ fileId: 5, sortOrder: 0 }]);
+});
+
+test('updateRequest rejects non-owner callers', async () => {
+  const { dealService, AppError } = buildHarness();
+
+  await assert.rejects(
+    () =>
+      dealService.updateRequest(77, 99, {
+        supplyDetails: {
+          productServiceName: 'Copper wire',
+          category: 'rawMaterial',
+        },
+        attachments: [],
+      }),
+    (error) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.statusCode, 403);
+      assert.match(error.message, /Unauthorized/);
+      return true;
+    }
+  );
+});
+
+test('updateRequest rejects non-editable statuses', async () => {
+  const { dealService, AppError } = buildHarness({
+    requestLookupRow: {
+      id: 77,
+      deal_id: 1,
+      applicant_company_id: 10,
+      target_company_id: null,
+      request_type: 'inSupply',
+      request_details: 'Supply request: Copper wire',
+      request_offer: 1200,
+      status: 'accepted',
+    },
+  });
+
+  await assert.rejects(
+    () =>
+      dealService.updateRequest(77, 10, {
+        supplyDetails: {
+          productServiceName: 'Copper wire',
+          category: 'rawMaterial',
+        },
+        attachments: [],
+      }),
+    (error) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.statusCode, 400);
+      assert.match(error.message, /Only pending or paused requests can be updated/);
+      return true;
+    }
+  );
+});
+
+test('updateRequest rejects detail type mutation attempts', async () => {
+  const { dealService, AppError } = buildHarness({
+    requestLookupRow: {
+      id: 77,
+      deal_id: null,
+      applicant_company_id: 10,
+      target_company_id: 20,
+      request_type: 'direct',
+      request_details: 'Direct request: Copper wire',
+      request_offer: 1200,
+      status: 'pending',
+    },
+  });
+
+  await assert.rejects(
+    () =>
+      dealService.updateRequest(77, 10, {
+        supplyDetails: {
+          productServiceName: 'Copper wire',
+          category: 'rawMaterial',
+        },
+        demandDetails: {
+          productServiceName: 'Copper wire',
+        },
+        attachments: [],
+      }),
+    (error) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.statusCode, 400);
+      assert.match(error.message, /demandDetails is not allowed for direct requests/);
+      return true;
+    }
+  );
 });

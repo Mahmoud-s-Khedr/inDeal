@@ -120,7 +120,7 @@ const upsertDemandDetails = async (client, requestId, details) => {
       )
       VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12,
-        $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
+        $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24
       )
       ON CONFLICT (request_id)
       DO UPDATE SET

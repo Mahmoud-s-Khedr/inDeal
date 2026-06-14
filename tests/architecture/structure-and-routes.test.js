@@ -72,6 +72,18 @@ test('deals search route keeps public access with optional auth context', () => 
   assert.deepEqual(middlewareNames, ['optionalAuth', 'routeContractMiddleware', 'validator', '']);
 });
 
+test('deal request routes expose direct inbox and update endpoint', () => {
+  const directInboxRoute = dealRouter.stack.find(
+    (layer) => layer.route && layer.route.path === '/me/direct-requests' && layer.route.methods.get
+  );
+  const updateRoute = dealRouter.stack.find(
+    (layer) => layer.route && layer.route.path === '/requests/:requestId' && layer.route.methods.put
+  );
+
+  assert.ok(directInboxRoute, 'GET /deals/me/direct-requests route missing');
+  assert.ok(updateRoute, 'PUT /deals/requests/:requestId route missing');
+});
+
 test('swagger request schemas are restored for date-based endpoints', () => {
   const cases = [
     {

@@ -17,22 +17,23 @@ Base URL: `/api/v1`
 
 ### Authenticated (Company User)
 
-| Method | Endpoint                                    | Purpose                                     |
-| ------ | ------------------------------------------- | ------------------------------------------- |
-| GET    | `/deals/me/deals`                           | List my deals; archived excluded by default |
-| POST   | `/deals`                                    | Create deal                                 |
-| PUT    | `/deals/:id`                                | Update own deal                             |
-| DELETE | `/deals/:id`                                | Archive own deal                            |
-| GET    | `/deals/me/applications`                    | List submitted in-supply demand offers      |
-| GET    | `/deals/me/requests`                        | List submitted requests and direct requests |
-| POST   | `/deals/direct-requests`                    | Create direct company-to-company request    |
-| POST   | `/deals/send-email`                         | Send email to a deal owner                  |
-| POST   | `/deals/:id/requests`                       | Create deal-scoped in-supply request        |
-| GET    | `/deals/:id/requests`                       | Owner: list requests on my deal             |
-| PATCH  | `/deals/:dealId/requests/:requestId/status` | Owner: accept or reject request             |
-| PATCH  | `/deals/requests/:requestId/pause`          | Applicant: pause own request                |
-| PATCH  | `/deals/requests/:requestId/cancel`         | Applicant: cancel own request               |
-| DELETE | `/deals/requests/:requestId`                | Applicant: withdraw alias for cancel        |
+| Method | Endpoint                                    | Purpose                                               |
+| ------ | ------------------------------------------- | ----------------------------------------------------- |
+| GET    | `/deals/me/deals`                           | List my deals; archived excluded by default           |
+| POST   | `/deals`                                    | Create deal                                           |
+| PUT    | `/deals/:id`                                | Update own deal                                       |
+| DELETE | `/deals/:id`                                | Archive own deal                                      |
+| GET    | `/deals/me/applications`                    | List submitted in-supply demand offers                |
+| GET    | `/deals/me/requests`                        | List submitted supply-side requests, including direct |
+| GET    | `/deals/me/direct-requests`                 | List incoming direct requests                         |
+| POST   | `/deals/direct-requests`                    | Create direct company-to-company request              |
+| POST   | `/deals/send-email`                         | Send email to a deal owner                            |
+| POST   | `/deals/:id/requests`                       | Create deal-scoped in-supply request                  |
+| GET    | `/deals/:id/requests`                       | Owner: list requests on my deal                       |
+| PATCH  | `/deals/:dealId/requests/:requestId/status` | Owner: accept or reject request                       |
+| PATCH  | `/deals/requests/:requestId/pause`          | Applicant: pause own request                          |
+| PATCH  | `/deals/requests/:requestId/cancel`         | Applicant: cancel own request                         |
+| DELETE | `/deals/requests/:requestId`                | Applicant: withdraw alias for cancel                  |
 
 ---
 
@@ -739,7 +740,7 @@ Notes:
 
 ## 4.8 GET `/deals/me/requests`
 
-Purpose: List submitted request records plus direct requests.  
+Purpose: List submitted supply-side request records, including direct requests without a deal.  
 Auth: Required
 
 ### Path Params DTO
@@ -752,7 +753,6 @@ None.
 {
   "keyword": "steel",
   "status": "pending",
-  "requestType": "direct",
   "limit": 50,
   "offset": 0
 }
@@ -762,7 +762,6 @@ Optional fields:
 
 - `keyword`: string
 - `status`: `pending | paused | accepted | rejected | canceled`
-- `requestType`: `direct | inSupply | inDemand`
 - `limit`: number, default `50`, max `100`
 - `offset`: number, default `0`
 
@@ -787,15 +786,66 @@ None.
 ### Sample Request
 
 ```http
-GET /api/v1/deals/me/requests?requestType=direct&limit=20&offset=0
+GET /api/v1/deals/me/requests?limit=20&offset=0
 Authorization: Bearer <token>
 ```
 
 Notes:
 
-- Without `requestType`, this endpoint includes deal requests plus direct requests.
-- With `requestType=inSupply`, this endpoint returns deal-scoped supply requests only.
-- With `requestType=inDemand`, this endpoint returns deal-scoped demand applications only.
+- This endpoint returns both deal-scoped `inSupply` requests and direct requests.
+- Direct requests are supply-side requests with no linked deal, so their `dealId` is `null`.
+
+## 4.8.1 GET `/deals/me/direct-requests`
+
+Purpose: List incoming direct requests sent to the authenticated company.  
+Auth: Required
+
+### Path Params DTO
+
+None.
+
+### Query DTO
+
+```json
+{
+  "keyword": "steel",
+  "status": "pending",
+  "limit": 50,
+  "offset": 0
+}
+```
+
+Optional fields:
+
+- `keyword`: string
+- `status`: `pending | paused | accepted | rejected | canceled`
+- `limit`: number, default `50`, max `100`
+- `offset`: number, default `0`
+
+### Request Body DTO
+
+None.
+
+### Success Response Envelope DTO
+
+```json
+{
+  "status": "success",
+  "message": "My direct requests fetched",
+  "data": ["DealRequestDto"]
+}
+```
+
+### Data DTO
+
+`DealRequestDto[]`
+
+### Sample Request
+
+```http
+GET /api/v1/deals/me/direct-requests?limit=20&offset=0
+Authorization: Bearer <token>
+```
 
 ## 4.9 POST `/deals/direct-requests`
 
