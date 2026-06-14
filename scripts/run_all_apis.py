@@ -364,7 +364,7 @@ def run():
                     "productServiceName": "Legacy invalid payload",
                     "category": "rawMaterial",
                     "supplyType": "inStock",
-                    "colorFinish": "red",
+                    "targetPriceMin": 100,
                 },
             },
             expected_statuses=[400],

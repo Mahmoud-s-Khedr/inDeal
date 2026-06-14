@@ -189,7 +189,7 @@ def run():
         token=b.token,
         payload=build_in_supply_request_payload(
             "supply",
-            supply_details=build_supply_details("Packaging cartons", category="packingAndContainers"),
+            supply_details=build_supply_details("Packaging cartons", category="packing"),
         ),
         expected_statuses=[201],
     )

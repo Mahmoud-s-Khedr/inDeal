@@ -110,20 +110,17 @@ Fields:
   "quantityRequired": 500,
   "deliveryLocation": "Alexandria, Egypt",
   "deliveryDate": "2026-07-01T00:00:00.000Z",
-  "targetPriceMin": 1200,
-  "targetPriceMax": 1500,
+  "targetPrice": 1500,
   "currency": "USD",
   "paymentTermsPreference": "30% advance, balance on delivery",
   "incoterm": "FOB",
   "bulkDiscountExpectation": "Volume-based pricing preferred",
-  "supplyType": "either",
+  "supplyType": "makeToOrder",
   "keySpecifications": "Galvanized, 0.8mm",
   "material": "Carbon steel",
   "dimensionsSize": "1250mm x coil",
-  "certificationsRequired": ["ISO 9001"],
+  "certificationsRequired": "ISO 9001",
   "qualityLevel": "industrialGuide",
-  "colorFinish": "Brushed steel",
-  "countryOfOrigin": "Egypt",
   "maxLeadTimeAccepted": "21 days",
   "deliveryMethodPreference": "supplierDelivers",
   "packagingRequirements": "Export-safe wrapping",
@@ -133,10 +130,10 @@ Fields:
 
 Key enums:
 
-- `category`: `packingAndContainers | rawMaterial | industrialEquipment | foodAndBeverage | chemicals | textileAndApparel | electronicsAndComponents | constructionMaterialsAndServices`
+- `category`: `packing | containers | rawMaterial | industrialEquipment | foodAndBeverage | chemicals | textileAndApparel | electronicsAndComponents | constructionMaterials | services`
 - `incoterm`: `EXW | CIF | FOB | DAP | DDP`
-- `supplyType`: `inStock | makeToOrder | either`
-- `qualityLevel`: `standard | industrialGuide | foodGrade | pharmaceuticalGrade | exportQuality`
+- `supplyType`: `inStock | assembleToOrder | makeToOrder | engineeringToOrder | mixed`
+- `qualityLevel`: `standard | industrialGuide | foodGrade | pharmaceuticalGrade | exportQuality | other`
 - `deliveryMethodPreference`: `supplierDelivers | buyerCollects | thirdParty`
 
 ### 3.4 DemandDetailsDto
@@ -154,16 +151,16 @@ Key enums:
   "availabilityType": "mixed",
   "quantityInStock": 4000,
   "maxProduceQuantity": 12000,
-  "stockDeliveryTime": "5 days",
   "productionLeadTime": "14 days",
   "specsMatchRfq": "partial",
   "differencesFromRfq": "Cap liner differs from requested brand",
   "materialOffered": "HDPE",
   "dimensions": "28mm",
-  "certificationsHeld": ["FDA"],
+  "certificationsHeld": "FDA",
   "paymentTerms": "Net 30",
   "deliveryTerms": "DAP",
-  "warrantyReturnPolicy": "Replacement for defects within 15 days",
+  "warrantyPolicy": "Replacement for defects within 15 days",
+  "returnPolicy": "Returns accepted within 15 days",
   "exclusivityConfidentiality": "Quote confidential for 30 days",
   "additionalNotes": "Sample available on request"
 }
@@ -171,8 +168,8 @@ Key enums:
 
 Key enums:
 
-- `availabilityType`: `inStock | makeToOrder | mixed`
-- `specsMatchRfq`: `yes | no | partial`
+- `availabilityType`: `inStock | assembleToOrder | makeToOrder | engineeringToOrder | mixed`
+- `specsMatchRfq`: `exact | partial`
 - `deliveryTerms`: `EXW | CIF | FOB | DAP | DDP`
 
 ### 3.5 DealDto
@@ -824,8 +821,8 @@ None.
   "supplyDetails": {
     "productServiceName": "Steel coils",
     "category": "rawMaterial",
-    "supplyType": "either",
-    "colorFinish": "Brushed steel"
+    "supplyType": "makeToOrder",
+    "targetPrice": 1500
   },
   "attachments": [
     {
@@ -875,8 +872,8 @@ Content-Type: application/json
   "supplyDetails": {
     "productServiceName": "Steel coils",
     "category": "rawMaterial",
-    "supplyType": "either",
-    "colorFinish": "Brushed steel"
+    "supplyType": "makeToOrder",
+    "targetPrice": 1500
   },
   "attachments": [
     {
@@ -981,8 +978,8 @@ None.
   "supplyDetails": {
     "productServiceName": "Steel coils",
     "category": "rawMaterial",
-    "supplyType": "either",
-    "colorFinish": "Brushed steel"
+    "supplyType": "makeToOrder",
+    "targetPrice": 1500
   },
   "attachments": [
     {
@@ -1029,8 +1026,8 @@ Content-Type: application/json
   "supplyDetails": {
     "productServiceName": "Steel coils",
     "category": "rawMaterial",
-    "supplyType": "either",
-    "colorFinish": "Brushed steel"
+    "supplyType": "makeToOrder",
+    "targetPrice": 1500
   },
   "attachments": [
     {

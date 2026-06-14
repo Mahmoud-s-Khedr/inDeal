@@ -341,14 +341,12 @@ def build_supply_details(
     category: str = "rawMaterial",
     supply_type: str = "makeToOrder",
     quality_level: str = "standard",
-    color_finish: str = "Brushed steel",
 ) -> Dict[str, Any]:
     payload = {
         "productServiceName": product_service_name,
         "category": category,
         "supplyType": supply_type,
         "qualityLevel": quality_level,
-        "colorFinish": color_finish,
     }
     return payload
 
@@ -364,7 +362,9 @@ def build_demand_details(
         "availableQuantity": available_quantity,
         "unitPrice": unit_price,
         "currency": currency,
-        "stockDeliveryTime": "2 days",
+        "certificationsHeld": "ISO 9001",
+        "warrantyPolicy": "12 months",
+        "returnPolicy": "Returns within 14 days",
     }
 
 

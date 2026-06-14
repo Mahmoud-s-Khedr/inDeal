@@ -67,9 +67,9 @@ const buildHarness = ({
     deal_id: null,
     applicant_company_id: 10,
     target_company_id: 20,
-    request_kind: 'rfq',
+    request_kind: 'supply',
     request_type: 'direct',
-    request_details: 'Supply request: Copper wire',
+    request_details: 'Direct request: Copper wire',
     request_offer: null,
     status: 'pending',
     canceled_at: null,
@@ -106,7 +106,7 @@ const buildHarness = ({
         deal_id: payload.dealId ?? null,
         applicant_company_id: payload.applicantCompanyId,
         target_company_id: payload.targetCompanyId ?? null,
-        request_kind: payload.requestKind,
+        request_kind: payload.requestType === 'inDemand' ? 'demand' : 'supply',
         request_type: payload.requestType,
         request_details: payload.requestDetails,
         request_offer: payload.requestOffer ?? null,
@@ -232,8 +232,6 @@ test('createDirectRequest creates direct request with expected repository payloa
 
   const result = await dealService.createDirectRequest(10, {
     targetCompanyId: 20,
-    requestKind: 'rfq',
-    requestType: 'direct',
     supplyDetails: {
       productServiceName: 'Copper wire',
       category: 'rawMaterial',
@@ -248,6 +246,22 @@ test('createDirectRequest creates direct request with expected repository payloa
   assert.equal(result.targetCompanyId, 20);
 });
 
+test('createDealRequest derives requestOffer from supplyDetails.targetPrice', async () => {
+  const { dealService, state } = buildHarness();
+
+  await dealService.createDealRequest(1, 10, {
+    requestType: 'inSupply',
+    supplyDetails: {
+      productServiceName: 'Copper wire',
+      category: 'rawMaterial',
+      targetPrice: 1450,
+    },
+    attachments: [],
+  });
+
+  assert.equal(state.createdRequestPayload.requestOffer, 1450);
+});
+
 test('createDirectRequest rejects duplicate active direct request', async () => {
   const { dealService, AppError } = buildHarness({ hasExistingDirect: true });
 
@@ -255,8 +269,6 @@ test('createDirectRequest rejects duplicate active direct request', async () => 
     () =>
       dealService.createDirectRequest(10, {
         targetCompanyId: 20,
-        requestKind: 'rfq',
-        requestType: 'direct',
         supplyDetails: {
           productServiceName: 'Copper wire',
           category: 'rawMaterial',
@@ -277,15 +289,12 @@ test('getMyRequests is canonical outgoing history and getMyApplications remains 
   const requests = await dealService.getMyRequests(10, {});
   assert.equal(requests.pagination.total, 0);
   assert.equal(requests.items.length, 0);
-  assert.equal(state.listFilters.requestKinds, undefined);
   assert.equal(state.listFilters.includeDirect, true);
-  assert.equal(state.countFilters.requestKinds, undefined);
 
   const applications = await dealService.getMyApplications(10, {});
   assert.equal(applications.pagination.total, 0);
   assert.equal(applications.items.length, 0);
-  assert.deepEqual(state.listFilters.requestKinds, ['demand']);
-  assert.equal(state.listFilters.requestType, 'inSupply');
+  assert.equal(state.listFilters.requestType, 'inDemand');
   assert.equal(state.listFilters.includeDirect, false);
 });
 
@@ -367,7 +376,7 @@ test('createDealRequest does not send owner notification email', async () => {
   const { dealService, state } = buildHarness();
 
   await dealService.createDealRequest(1, 10, {
-    requestKind: 'rfq',
+    requestType: 'inSupply',
     supplyDetails: {
       productServiceName: 'Copper wire',
       category: 'rawMaterial',
@@ -384,7 +393,7 @@ test('createDealRequest rejects negotiating deals after SRS alignment', async ()
   await assert.rejects(
     () =>
       dealService.createDealRequest(1, 10, {
-        requestKind: 'rfq',
+        requestType: 'inSupply',
         supplyDetails: {
           productServiceName: 'Copper wire',
           category: 'rawMaterial',
@@ -410,7 +419,7 @@ test('createDealRequest maps DB unique constraint violations to duplicate reques
   await assert.rejects(
     () =>
       dealService.createDealRequest(1, 10, {
-        requestKind: 'rfq',
+        requestType: 'inSupply',
         supplyDetails: {
           productServiceName: 'Copper wire',
           category: 'rawMaterial',

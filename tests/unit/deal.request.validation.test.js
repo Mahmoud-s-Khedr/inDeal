@@ -9,15 +9,15 @@ const {
   sendDealEmailSchema,
 } = require('../../src/modules/deal/validation/deal.validation');
 
-test('createDealRequest accepts SRS-aligned supplyType values and rejects removed values', () => {
+test('createDealRequest accepts camelCase supply enums and rejects removed values', () => {
   const valid = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
-      requestKind: 'supply',
+      requestType: 'inSupply',
       supplyDetails: {
         productServiceName: 'Steel bars',
         category: 'rawMaterial',
-        supplyType: 'either',
+        supplyType: 'assembleToOrder',
       },
     },
   });
@@ -26,27 +26,27 @@ test('createDealRequest accepts SRS-aligned supplyType values and rejects remove
   const legacy = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
-      requestKind: 'supply',
+      requestType: 'inSupply',
       supplyDetails: {
         productServiceName: 'Steel bars',
         category: 'rawMaterial',
-        supplyType: 'assembleToOrder',
+        supplyType: 'assemble to order',
       },
     },
   });
   assert.equal(legacy.success, false);
 });
 
-test('createDealRequest accepts SRS-aligned supply delivery and quality enums', () => {
+test('createDealRequest accepts camelCase supply delivery and quality enums', () => {
   const parsed = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
-      requestKind: 'supply',
+      requestType: 'inSupply',
       supplyDetails: {
         productServiceName: 'Steel bars',
         category: 'rawMaterial',
-        deliveryMethodPreference: 'supplier delivers',
-        qualityLevel: 'industrial guide',
+        deliveryMethodPreference: 'supplierDelivers',
+        qualityLevel: 'industrialGuide',
       },
     },
   });
@@ -55,54 +55,84 @@ test('createDealRequest accepts SRS-aligned supply delivery and quality enums', 
   const legacy = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
-      requestKind: 'supply',
+      requestType: 'inSupply',
       supplyDetails: {
         productServiceName: 'Steel bars',
         category: 'rawMaterial',
-        deliveryMethodPreference: 'supplierDelivers',
+        deliveryMethodPreference: 'supplier delivers',
       },
     },
   });
   assert.equal(legacy.success, false);
 });
 
-test('supply-side payload accepts SRS-required colorFinish field', () => {
+test('supply-side payload accepts targetPrice and string certificationsRequired', () => {
   const parsed = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
-      requestKind: 'rfq',
+      requestType: 'inSupply',
       supplyDetails: {
         productServiceName: 'Custom valve',
         category: 'industrialEquipment',
-        colorFinish: 'Brushed steel',
+        targetPrice: 1250,
+        certificationsRequired: 'ISO 9001',
       },
     },
   });
   assert.equal(parsed.success, true);
+
+  const legacy = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestType: 'inSupply',
+      supplyDetails: {
+        productServiceName: 'Custom valve',
+        category: 'industrialEquipment',
+        targetPriceMin: 1200,
+        certificationsRequired: ['ISO 9001'],
+      },
+    },
+  });
+  assert.equal(legacy.success, false);
 });
 
-test('demand-side payload accepts SRS-required stockDeliveryTime field', () => {
+test('demand-side payload accepts string certificationsHeld and split warranty fields', () => {
   const parsed = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
-      requestKind: 'demand',
+      requestType: 'inDemand',
       demandDetails: {
         productServiceName: 'Pump',
-        stockDeliveryTime: '2 days',
+        certificationsHeld: 'FDA',
+        warrantyPolicy: '1 year warranty',
+        returnPolicy: 'Returns accepted within 15 days',
       },
     },
   });
   assert.equal(parsed.success, true);
+
+  const legacy = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestType: 'inDemand',
+      demandDetails: {
+        productServiceName: 'Pump',
+        certificationsHeld: ['FDA'],
+        warrantyReturnPolicy: 'Legacy combined text',
+      },
+    },
+  });
+  assert.equal(legacy.success, false);
 });
 
-test('demand-side payload accepts SRS-aligned availability and specsMatchRfq values', () => {
+test('demand-side payload accepts camelCase availability and specsMatchRfq values', () => {
   const parsed = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
-      requestKind: 'demand',
+      requestType: 'inDemand',
       demandDetails: {
         productServiceName: 'Pump',
-        availabilityType: 'assemble to order',
+        availabilityType: 'assembleToOrder',
         specsMatchRfq: 'exact',
       },
     },
@@ -112,10 +142,10 @@ test('demand-side payload accepts SRS-aligned availability and specsMatchRfq val
   const legacy = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
-      requestKind: 'demand',
+      requestType: 'inDemand',
       demandDetails: {
         productServiceName: 'Pump',
-        availabilityType: 'inStock',
+        availabilityType: 'assemble to order',
         specsMatchRfq: 'yes',
       },
     },
@@ -123,24 +153,54 @@ test('demand-side payload accepts SRS-aligned availability and specsMatchRfq val
   assert.equal(legacy.success, false);
 });
 
-test('removed backend-only fields are rejected from request detail payloads', () => {
-  const withQualityLevelOtherText = createDealRequestSchema.safeParse({
+test('demand-side payload rejects removed stockDeliveryTime field', () => {
+  const parsed = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
-      requestKind: 'supply',
-      supplyDetails: {
-        productServiceName: 'Pipe',
-        category: 'industrialEquipment',
-        qualityLevelOtherText: 'Special grade',
+      requestType: 'inDemand',
+      demandDetails: {
+        productServiceName: 'Pump',
+        stockDeliveryTime: '2 days',
       },
     },
   });
-  assert.equal(withQualityLevelOtherText.success, false);
+  assert.equal(parsed.success, false);
+});
 
+test('qualityLevel other requires otherQualityLevelDescription', () => {
+  const valid = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestType: 'inSupply',
+      supplyDetails: {
+        productServiceName: 'Pipe',
+        category: 'industrialEquipment',
+        qualityLevel: 'other',
+        otherQualityLevelDescription: 'Special grade',
+      },
+    },
+  });
+  assert.equal(valid.success, true);
+
+  const missingDescription = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestType: 'inSupply',
+      supplyDetails: {
+        productServiceName: 'Pipe',
+        category: 'industrialEquipment',
+        qualityLevel: 'other',
+      },
+    },
+  });
+  assert.equal(missingDescription.success, false);
+});
+
+test('removed backend-only fields are rejected from request detail payloads', () => {
   const withEngineerToOrder = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
-      requestKind: 'rfq',
+      requestType: 'inSupply',
       supplyDetails: {
         productServiceName: 'Pump',
         category: 'industrialEquipment',
@@ -149,6 +209,20 @@ test('removed backend-only fields are rejected from request detail payloads', ()
     },
   });
   assert.equal(withEngineerToOrder.success, false);
+
+  const withRemovedFields = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestType: 'inSupply',
+      supplyDetails: {
+        productServiceName: 'Pump',
+        category: 'industrialEquipment',
+        colorFinish: 'Brushed steel',
+        countryOfOrigin: 'Egypt',
+      },
+    },
+  });
+  assert.equal(withRemovedFields.success, false);
 });
 
 test('listMyRequests accepts requestType filter', () => {
@@ -163,51 +237,61 @@ test('listMyRequests accepts requestType filter', () => {
   assert.equal(parsed.query.requestType, 'inSupply');
 });
 
-test('createDealRequest defaults requestType to inSupply and rejects direct requestType', () => {
-  const defaultParsed = createDealRequestSchema.parse({
+test('createDealRequest requires requestType and routes by detail kind', () => {
+  const validSupply = createDealRequestSchema.parse({
     params: { id: 1 },
     body: {
-      requestKind: 'rfq',
+      requestType: 'inSupply',
       supplyDetails: {
         productServiceName: 'Custom valve',
         category: 'industrialEquipment',
       },
     },
   });
-  assert.equal(defaultParsed.body.requestType, 'inSupply');
+  assert.equal(validSupply.body.requestType, 'inSupply');
 
-  const directParsed = createDealRequestSchema.safeParse({
+  const missingType = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
-      requestKind: 'rfq',
-      requestType: 'direct',
       supplyDetails: {
         productServiceName: 'Custom valve',
         category: 'industrialEquipment',
       },
     },
   });
-  assert.equal(directParsed.success, false);
+  assert.equal(missingType.success, false);
+
+  const invalidMix = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: {
+      requestType: 'inDemand',
+      supplyDetails: {
+        productServiceName: 'Custom valve',
+        category: 'industrialEquipment',
+      },
+    },
+  });
+  assert.equal(invalidMix.success, false);
 });
 
-test('createDirectRequest enforces targetCompanyId and direct requestType', () => {
+test('createDirectRequest enforces targetCompanyId and supply-only payload', () => {
   const parsed = createDirectRequestSchema.parse({
     body: {
       targetCompanyId: 55,
-      requestKind: 'rfq',
-      requestType: 'direct',
       supplyDetails: {
         productServiceName: 'Copper wire',
         category: 'rawMaterial',
       },
     },
   });
-  assert.equal(parsed.body.requestType, 'direct');
+  assert.equal(parsed.body.targetCompanyId, 55);
 
   const invalid = createDirectRequestSchema.safeParse({
     body: {
-      requestKind: 'rfq',
-      requestType: 'inSupply',
+      targetCompanyId: 55,
+      demandDetails: {
+        productServiceName: 'Copper wire',
+      },
       supplyDetails: {
         productServiceName: 'Copper wire',
         category: 'rawMaterial',

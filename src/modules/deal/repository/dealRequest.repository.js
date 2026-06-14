@@ -2,13 +2,17 @@ const { pool } = require('../../../infrastructure/config/db');
 
 const run = (client) => client || pool;
 
+const deriveInternalRequestKind = (request) => {
+  if (request.requestType === 'inDemand') return 'demand';
+  return 'supply';
+};
+
 const appendApplicantRequestFilters = ({
   baseQuery,
   params,
   startParamIndex,
   status,
   keyword,
-  requestKinds,
   requestType,
   includeDirect = false,
 }) => {
@@ -27,15 +31,7 @@ const appendApplicantRequestFilters = ({
     paramIndex += 1;
   }
 
-  if (Array.isArray(requestKinds) && requestKinds.length && includeDirect) {
-    query += ` AND (r.request_kind = ANY($${paramIndex}::text[]) OR r.request_type = 'direct')`;
-    params.push(requestKinds);
-    paramIndex += 1;
-  } else if (Array.isArray(requestKinds) && requestKinds.length) {
-    query += ` AND r.request_kind = ANY($${paramIndex}::text[])`;
-    params.push(requestKinds);
-    paramIndex += 1;
-  } else if (includeDirect === false && !requestType) {
+  if (includeDirect === false && !requestType) {
     query += ` AND r.request_type != 'direct'`;
   }
 
@@ -145,7 +141,7 @@ const createRequest = async (client, request) => {
       request.dealId ?? null,
       request.applicantCompanyId,
       request.targetCompanyId ?? null,
-      request.requestKind,
+      deriveInternalRequestKind(request),
       request.requestType || 'inSupply',
       request.requestDetails || null,
       request.requestOffer || null,
@@ -238,7 +234,7 @@ const findByDealId = async (dealId, { status, keyword, limit = 50, offset = 0 } 
  */
 const findByApplicantCompanyId = async (
   companyId,
-  { status, keyword, requestKinds, requestType, includeDirect = false, limit = 50, offset = 0 } = {}
+  { status, keyword, requestType, includeDirect = false, limit = 50, offset = 0 } = {}
 ) => {
   const params = [companyId];
   const built = appendApplicantRequestFilters({
@@ -264,7 +260,6 @@ const findByApplicantCompanyId = async (
     startParamIndex: 2,
     status,
     keyword,
-    requestKinds,
     requestType,
     includeDirect,
   });
@@ -285,7 +280,7 @@ const findByApplicantCompanyId = async (
 
 const countByApplicantCompanyId = async (
   companyId,
-  { status, keyword, requestKinds, requestType, includeDirect = false } = {}
+  { status, keyword, requestType, includeDirect = false } = {}
 ) => {
   const params = [companyId];
   const built = appendApplicantRequestFilters({
@@ -302,7 +297,6 @@ const countByApplicantCompanyId = async (
     startParamIndex: 2,
     status,
     keyword,
-    requestKinds,
     requestType,
     includeDirect,
   });

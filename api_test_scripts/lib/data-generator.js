@@ -288,8 +288,20 @@ export function generateDealRequest(overrides = {}) {
       category: 'rawMaterial',
       quantityRequired: faker.number.int({ min: 10, max: 1000 }),
       deliveryLocation: faker.helpers.arrayElement(EGYPTIAN_CITIES),
-      supplyType: faker.helpers.arrayElement(['inStock', 'makeToOrder', 'either']),
-      colorFinish: faker.helpers.arrayElement(['Matte black', 'Brushed steel', 'Natural']),
+      supplyType: faker.helpers.arrayElement([
+        'inStock',
+        'assembleToOrder',
+        'makeToOrder',
+        'engineeringToOrder',
+        'mixed',
+      ]),
+      qualityLevel: faker.helpers.arrayElement([
+        'standard',
+        'industrialGuide',
+        'foodGrade',
+        'pharmaceuticalGrade',
+        'exportQuality',
+      ]),
     },
     ...overrides,
   };

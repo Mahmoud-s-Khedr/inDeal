@@ -5,17 +5,18 @@ const { docsDateTime } = require('../docsSchemaHelpers');
 
 const dealTypeEnumValues = ['supply', 'demand'];
 const dealStatusEnumValues = ['open', 'closed', 'archived'];
-const dealRequestKindEnumValues = ['supply', 'demand', 'rfq'];
 const incotermValues = ['EXW', 'CIF', 'FOB', 'DAP', 'DDP'];
 const supplyCategoryValues = [
-  'packingAndContainers',
+  'packing',
+  'containers',
   'rawMaterial',
   'industrialEquipment',
   'foodAndBeverage',
   'chemicals',
   'textileAndApparel',
   'electronicsAndComponents',
-  'constructionMaterialsAndServices',
+  'constructionMaterials',
+  'services',
 ];
 
 const requestAttachmentInputSchema = z.object({
@@ -29,26 +30,31 @@ const supplyDetailsSchema = z.object({
   quantityRequired: z.coerce.number().positive().optional(),
   deliveryLocation: z.string().max(255).optional(),
   deliveryDate: docsDateTime().optional(),
-  targetPriceMin: z.coerce.number().positive().optional(),
-  targetPriceMax: z.coerce.number().positive().optional(),
+  targetPrice: z.coerce.number().positive().optional(),
   currency: z.string().min(1).max(10).optional(),
   paymentTermsPreference: z.string().max(500).optional(),
   incoterm: z.enum(incotermValues).optional(),
   bulkDiscountExpectation: z.string().max(500).optional(),
-  supplyType: z.enum(['in stock', 'make to order', 'either']).optional(),
+  supplyType: z
+    .enum(['inStock', 'assembleToOrder', 'makeToOrder', 'engineeringToOrder', 'mixed'])
+    .optional(),
   keySpecifications: z.string().max(2000).optional(),
   material: z.string().max(200).optional(),
   dimensionsSize: z.string().max(200).optional(),
-  certificationsRequired: z.array(z.string().min(1).max(150)).optional(),
+  certificationsRequired: z.string().min(1).max(1000).optional(),
   qualityLevel: z
-    .enum(['standard', 'industrial guide', 'food grade', 'pharmaceutical grade', 'export quality'])
+    .enum([
+      'standard',
+      'industrialGuide',
+      'foodGrade',
+      'pharmaceuticalGrade',
+      'exportQuality',
+      'other',
+    ])
     .optional(),
-  colorFinish: z.string().max(200).optional(),
-  countryOfOrigin: z.string().max(100).optional(),
+  otherQualityLevelDescription: z.string().min(1).max(255).optional(),
   maxLeadTimeAccepted: z.string().max(100).optional(),
-  deliveryMethodPreference: z
-    .enum(['supplier delivers', 'buyer collects', 'third party'])
-    .optional(),
+  deliveryMethodPreference: z.enum(['supplierDelivers', 'buyerCollects', 'thirdParty']).optional(),
   packagingRequirements: z.string().max(1000).optional(),
   specialConditionsNotes: z.string().max(2000).optional(),
 });
@@ -63,20 +69,20 @@ const demandDetailsSchema = z.object({
   volumeDiscountTiers: z.array(z.string().min(1).max(100)).optional(),
   moq: z.coerce.number().positive().optional(),
   availabilityType: z
-    .enum(['in stock', 'assemble to order', 'make to order', 'engineering to order', 'mixed'])
+    .enum(['inStock', 'assembleToOrder', 'makeToOrder', 'engineeringToOrder', 'mixed'])
     .optional(),
   quantityInStock: z.coerce.number().nonnegative().optional(),
   maxProduceQuantity: z.coerce.number().nonnegative().optional(),
-  stockDeliveryTime: z.string().max(100).optional(),
   productionLeadTime: z.string().max(100).optional(),
   specsMatchRfq: z.enum(['exact', 'partial']).optional(),
   differencesFromRfq: z.string().max(2000).optional(),
   materialOffered: z.string().max(200).optional(),
   dimensions: z.string().max(200).optional(),
-  certificationsHeld: z.array(z.string().min(1).max(150)).optional(),
+  certificationsHeld: z.string().min(1).max(1000).optional(),
   paymentTerms: z.string().max(500).optional(),
   deliveryTerms: z.enum(incotermValues).optional(),
-  warrantyReturnPolicy: z.string().max(1000).optional(),
+  warrantyPolicy: z.string().max(1000).optional(),
+  returnPolicy: z.string().max(1000).optional(),
   exclusivityConfidentiality: z.string().max(1000).optional(),
   additionalNotes: z.string().max(2000).optional(),
 });
@@ -119,8 +125,7 @@ const createDealRequestSchema = z.object({
     id: z.coerce.number().int().positive(),
   }),
   body: z.object({
-    requestKind: z.enum(dealRequestKindEnumValues),
-    requestType: z.literal('inSupply').optional().default('inSupply'),
+    requestType: z.enum(['inSupply', 'inDemand']),
     supplyDetails: supplyDetailsSchema.optional(),
     demandDetails: demandDetailsSchema.optional(),
     attachments: z.array(requestAttachmentInputSchema).max(20).optional().default([]),
@@ -130,10 +135,7 @@ const createDealRequestSchema = z.object({
 const createDirectRequestSchema = z.object({
   body: z.object({
     targetCompanyId: z.coerce.number().int().positive(),
-    requestKind: z.enum(dealRequestKindEnumValues),
-    requestType: z.literal('direct').optional().default('direct'),
-    supplyDetails: supplyDetailsSchema.optional(),
-    demandDetails: demandDetailsSchema.optional(),
+    supplyDetails: supplyDetailsSchema,
     attachments: z.array(requestAttachmentInputSchema).max(20).optional().default([]),
   }),
 });
@@ -144,7 +146,6 @@ const updateDealRequestSchema = z.object({
     requestId: z.coerce.number().int().positive(),
   }),
   body: z.object({
-    requestKind: z.enum(dealRequestKindEnumValues).optional(),
     supplyDetails: supplyDetailsSchema.optional(),
     demandDetails: demandDetailsSchema.optional(),
     attachments: z.array(requestAttachmentInputSchema).max(20).optional(),

@@ -83,7 +83,6 @@ const sanitizeRequest = (request) => {
     id: request.id,
     dealId: request.deal_id,
     applicantCompanyId: request.applicant_company_id,
-    requestKind: request.request_kind,
     requestType: request.request_type,
     requestDetails: request.request_details,
     requestOffer: request.request_offer ? parseFloat(request.request_offer) : null,
@@ -149,8 +148,7 @@ const sanitizeSupplyDetails = (item) => {
     quantityRequired: item.quantity_required ? parseFloat(item.quantity_required) : null,
     deliveryLocation: item.delivery_location,
     deliveryDate: item.delivery_date,
-    targetPriceMin: item.target_price_min ? parseFloat(item.target_price_min) : null,
-    targetPriceMax: item.target_price_max ? parseFloat(item.target_price_max) : null,
+    targetPrice: item.target_price ? parseFloat(item.target_price) : null,
     currency: item.currency,
     paymentTermsPreference: item.payment_terms_preference,
     incoterm: item.incoterm,
@@ -159,10 +157,9 @@ const sanitizeSupplyDetails = (item) => {
     keySpecifications: item.key_specifications,
     material: item.material,
     dimensionsSize: item.dimensions_size,
-    certificationsRequired: item.certifications_required || [],
+    certificationsRequired: item.certifications_required,
     qualityLevel: item.quality_level,
-    colorFinish: item.color_finish,
-    countryOfOrigin: item.country_of_origin,
+    otherQualityLevelDescription: item.other_quality_level_description,
     maxLeadTimeAccepted: item.max_lead_time_accepted,
     deliveryMethodPreference: item.delivery_method_preference,
     packagingRequirements: item.packaging_requirements,
@@ -184,16 +181,16 @@ const sanitizeDemandDetails = (item) => {
     availabilityType: item.availability_type,
     quantityInStock: item.quantity_in_stock ? parseFloat(item.quantity_in_stock) : null,
     maxProduceQuantity: item.max_produce_quantity ? parseFloat(item.max_produce_quantity) : null,
-    stockDeliveryTime: item.stock_delivery_time,
     productionLeadTime: item.production_lead_time,
     specsMatchRfq: item.specs_match_rfq,
     differencesFromRfq: item.differences_from_rfq,
     materialOffered: item.material_offered,
     dimensions: item.dimensions,
-    certificationsHeld: item.certifications_held || [],
+    certificationsHeld: item.certifications_held,
     paymentTerms: item.payment_terms,
     deliveryTerms: item.delivery_terms,
-    warrantyReturnPolicy: item.warranty_return_policy,
+    warrantyPolicy: item.warranty_policy,
+    returnPolicy: item.return_policy,
     exclusivityConfidentiality: item.exclusivity_confidentiality,
     additionalNotes: item.additional_notes,
   };
@@ -282,17 +279,22 @@ const enrichRequests = async (requests) => {
 };
 
 const inferRequestOffer = (payload) => {
-  if (payload.requestKind === 'demand') {
+  if (payload.requestType === 'inDemand') {
     return payload.demandDetails?.unitPrice ?? null;
   }
 
-  return payload.supplyDetails?.targetPriceMax ?? payload.supplyDetails?.targetPriceMin ?? null;
+  return payload.supplyDetails?.targetPrice ?? null;
 };
 
-const inferRequestDetailsSummary = (payload) => {
-  if (payload.requestKind === 'demand') {
+const inferRequestDetailsSummary = (payload, options = {}) => {
+  if (payload.requestType === 'inDemand') {
     const name = payload.demandDetails?.productServiceName;
     return name ? `Demand offer: ${name}` : 'Demand offer';
+  }
+
+  if (options.isDirect) {
+    const name = payload.supplyDetails?.productServiceName;
+    return name ? `Direct request: ${name}` : 'Direct request';
   }
 
   const name = payload.supplyDetails?.productServiceName;
@@ -559,14 +561,13 @@ const createDealRequest = async (dealId, applicantCompanyId, payload) => {
     const request = await dealRequestRepository.createRequest(client, {
       dealId,
       applicantCompanyId,
-      requestKind: payload.requestKind,
-      requestType: 'inSupply',
+      requestType: payload.requestType,
       requestDetails: inferRequestDetailsSummary(payload),
       requestOffer: inferRequestOffer(payload),
       status: 'pending',
     });
 
-    if (payload.requestKind === 'demand') {
+    if (payload.requestType === 'inDemand') {
       await dealRequestDetailsRepository.upsertDemandDetails(
         client,
         request.id,
@@ -588,7 +589,7 @@ const createDealRequest = async (dealId, applicantCompanyId, payload) => {
       requestId: request.id,
       dealId,
       applicantCompanyId,
-      requestKind: payload.requestKind,
+      requestType: payload.requestType,
     });
 
     const [enriched] = await enrichRequests([sanitizeRequest(request)]);
@@ -649,26 +650,17 @@ const createDirectRequest = async (applicantCompanyId, payload) => {
       dealId: null,
       applicantCompanyId,
       targetCompanyId: payload.targetCompanyId,
-      requestKind: payload.requestKind,
       requestType: 'direct',
-      requestDetails: inferRequestDetailsSummary(payload),
+      requestDetails: inferRequestDetailsSummary(payload, { isDirect: true }),
       requestOffer: inferRequestOffer(payload),
       status: 'pending',
     });
 
-    if (payload.requestKind === 'demand') {
-      await dealRequestDetailsRepository.upsertDemandDetails(
-        client,
-        request.id,
-        payload.demandDetails
-      );
-    } else {
-      await dealRequestDetailsRepository.upsertSupplyDetails(
-        client,
-        request.id,
-        payload.supplyDetails
-      );
-    }
+    await dealRequestDetailsRepository.upsertSupplyDetails(
+      client,
+      request.id,
+      payload.supplyDetails
+    );
 
     await dealRequestDetailsRepository.replaceRequestAttachments(client, request.id, attachments);
     await client.query('COMMIT');
@@ -677,7 +669,6 @@ const createDirectRequest = async (applicantCompanyId, payload) => {
       requestId: request.id,
       applicantCompanyId,
       targetCompanyId: payload.targetCompanyId,
-      requestKind: payload.requestKind,
     });
 
     const [enriched] = await enrichRequests([sanitizeRequest(request)]);
@@ -765,7 +756,6 @@ const listOutgoingRequests = async (companyId, filters = {}, overrides = {}) => 
     returnedCount: sanitized.length,
     requestType: mergedFilters.requestType || null,
     includeDirect: mergedFilters.includeDirect,
-    requestKinds: mergedFilters.requestKinds || null,
   });
   return {
     items: sanitized,
@@ -781,8 +771,7 @@ const getMyRequests = async (companyId, filters = {}) => {
 
 const getMyApplications = async (companyId, filters = {}) => {
   return listOutgoingRequests(companyId, filters, {
-    requestType: 'inSupply',
-    requestKinds: ['demand'],
+    requestType: 'inDemand',
     includeDirect: false,
   });
 };

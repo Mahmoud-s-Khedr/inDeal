@@ -13,8 +13,7 @@ const upsertSupplyDetails = async (client, requestId, details) => {
         quantity_required,
         delivery_location,
         delivery_date,
-        target_price_min,
-        target_price_max,
+        target_price,
         currency,
         payment_terms_preference,
         incoterm,
@@ -25,8 +24,7 @@ const upsertSupplyDetails = async (client, requestId, details) => {
         dimensions_size,
         certifications_required,
         quality_level,
-        color_finish,
-        country_of_origin,
+        other_quality_level_description,
         max_lead_time_accepted,
         delivery_method_preference,
         packaging_requirements,
@@ -34,7 +32,7 @@ const upsertSupplyDetails = async (client, requestId, details) => {
       )
       VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-        $13, $14, $15, $16, $17::jsonb, $18, $19, $20, $21, $22, $23, $24
+        $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
       )
       ON CONFLICT (request_id)
       DO UPDATE SET
@@ -43,8 +41,7 @@ const upsertSupplyDetails = async (client, requestId, details) => {
         quantity_required = EXCLUDED.quantity_required,
         delivery_location = EXCLUDED.delivery_location,
         delivery_date = EXCLUDED.delivery_date,
-        target_price_min = EXCLUDED.target_price_min,
-        target_price_max = EXCLUDED.target_price_max,
+        target_price = EXCLUDED.target_price,
         currency = EXCLUDED.currency,
         payment_terms_preference = EXCLUDED.payment_terms_preference,
         incoterm = EXCLUDED.incoterm,
@@ -55,8 +52,7 @@ const upsertSupplyDetails = async (client, requestId, details) => {
         dimensions_size = EXCLUDED.dimensions_size,
         certifications_required = EXCLUDED.certifications_required,
         quality_level = EXCLUDED.quality_level,
-        color_finish = EXCLUDED.color_finish,
-        country_of_origin = EXCLUDED.country_of_origin,
+        other_quality_level_description = EXCLUDED.other_quality_level_description,
         max_lead_time_accepted = EXCLUDED.max_lead_time_accepted,
         delivery_method_preference = EXCLUDED.delivery_method_preference,
         packaging_requirements = EXCLUDED.packaging_requirements,
@@ -71,8 +67,7 @@ const upsertSupplyDetails = async (client, requestId, details) => {
       details.quantityRequired ?? null,
       details.deliveryLocation ?? null,
       details.deliveryDate ?? null,
-      details.targetPriceMin ?? null,
-      details.targetPriceMax ?? null,
+      details.targetPrice ?? null,
       details.currency ?? null,
       details.paymentTermsPreference ?? null,
       details.incoterm ?? null,
@@ -81,10 +76,9 @@ const upsertSupplyDetails = async (client, requestId, details) => {
       details.keySpecifications ?? null,
       details.material ?? null,
       details.dimensionsSize ?? null,
-      JSON.stringify(details.certificationsRequired || []),
+      details.certificationsRequired ?? null,
       details.qualityLevel ?? null,
-      details.colorFinish ?? null,
-      details.countryOfOrigin ?? null,
+      details.otherQualityLevelDescription ?? null,
       details.maxLeadTimeAccepted ?? null,
       details.deliveryMethodPreference ?? null,
       details.packagingRequirements ?? null,
@@ -111,7 +105,6 @@ const upsertDemandDetails = async (client, requestId, details) => {
         availability_type,
         quantity_in_stock,
         max_produce_quantity,
-        stock_delivery_time,
         production_lead_time,
         specs_match_rfq,
         differences_from_rfq,
@@ -120,13 +113,14 @@ const upsertDemandDetails = async (client, requestId, details) => {
         certifications_held,
         payment_terms,
         delivery_terms,
-        warranty_return_policy,
+        warranty_policy,
+        return_policy,
         exclusivity_confidentiality,
         additional_notes
       )
       VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12,
-        $13, $14, $15, $16, $17, $18, $19::jsonb, $20, $21, $22, $23
+        $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
       )
       ON CONFLICT (request_id)
       DO UPDATE SET
@@ -141,7 +135,6 @@ const upsertDemandDetails = async (client, requestId, details) => {
         availability_type = EXCLUDED.availability_type,
         quantity_in_stock = EXCLUDED.quantity_in_stock,
         max_produce_quantity = EXCLUDED.max_produce_quantity,
-        stock_delivery_time = EXCLUDED.stock_delivery_time,
         production_lead_time = EXCLUDED.production_lead_time,
         specs_match_rfq = EXCLUDED.specs_match_rfq,
         differences_from_rfq = EXCLUDED.differences_from_rfq,
@@ -150,7 +143,8 @@ const upsertDemandDetails = async (client, requestId, details) => {
         certifications_held = EXCLUDED.certifications_held,
         payment_terms = EXCLUDED.payment_terms,
         delivery_terms = EXCLUDED.delivery_terms,
-        warranty_return_policy = EXCLUDED.warranty_return_policy,
+        warranty_policy = EXCLUDED.warranty_policy,
+        return_policy = EXCLUDED.return_policy,
         exclusivity_confidentiality = EXCLUDED.exclusivity_confidentiality,
         additional_notes = EXCLUDED.additional_notes,
         updated_at = NOW()
@@ -169,16 +163,16 @@ const upsertDemandDetails = async (client, requestId, details) => {
       details.availabilityType ?? null,
       details.quantityInStock ?? null,
       details.maxProduceQuantity ?? null,
-      details.stockDeliveryTime ?? null,
       details.productionLeadTime ?? null,
       details.specsMatchRfq ?? null,
       details.differencesFromRfq ?? null,
       details.materialOffered ?? null,
       details.dimensions ?? null,
-      JSON.stringify(details.certificationsHeld || []),
+      details.certificationsHeld ?? null,
       details.paymentTerms ?? null,
       details.deliveryTerms ?? null,
-      details.warrantyReturnPolicy ?? null,
+      details.warrantyPolicy ?? null,
+      details.returnPolicy ?? null,
       details.exclusivityConfidentiality ?? null,
       details.additionalNotes ?? null,
     ]
