@@ -1,7 +1,8 @@
 -- Normalize demand request detail storage to the revised API contract.
 ALTER TABLE "deal_request_demand_details"
 ADD COLUMN "warranty_policy" TEXT,
-ADD COLUMN "return_policy" TEXT;
+ADD COLUMN "return_policy" TEXT,
+ADD COLUMN "certifications_held_varchar" VARCHAR(1000);
 
 UPDATE "deal_request_demand_details"
 SET "availability_type" = CASE "availability_type"
@@ -25,19 +26,22 @@ UPDATE "deal_request_demand_details"
 SET "warranty_policy" = "warranty_return_policy"
 WHERE "warranty_return_policy" IS NOT NULL;
 
+UPDATE "deal_request_demand_details"
+SET "certifications_held_varchar" = CASE
+  WHEN "certifications_held" IS NULL THEN NULL
+  WHEN jsonb_typeof("certifications_held") = 'array' THEN (
+    SELECT string_agg(value, ', ' ORDER BY ordinality)
+    FROM jsonb_array_elements_text("certifications_held") WITH ORDINALITY AS elems(value, ordinality)
+  )
+  WHEN jsonb_typeof("certifications_held") = 'string' THEN trim(both '"' from "certifications_held"::text)
+  ELSE "certifications_held"::text
+END;
+
 ALTER TABLE "deal_request_demand_details"
-ALTER COLUMN "certifications_held" TYPE VARCHAR(1000)
-USING (
-  CASE
-    WHEN "certifications_held" IS NULL THEN NULL
-    WHEN jsonb_typeof("certifications_held") = 'array' THEN (
-      SELECT string_agg(value, ', ' ORDER BY ordinality)
-      FROM jsonb_array_elements_text("certifications_held") WITH ORDINALITY AS elems(value, ordinality)
-    )
-    WHEN jsonb_typeof("certifications_held") = 'string' THEN trim(both '"' from "certifications_held"::text)
-    ELSE "certifications_held"::text
-  END
-);
+DROP COLUMN "certifications_held";
+
+ALTER TABLE "deal_request_demand_details"
+RENAME COLUMN "certifications_held_varchar" TO "certifications_held";
 
 ALTER TABLE "deal_request_demand_details"
 DROP COLUMN "stock_delivery_time",

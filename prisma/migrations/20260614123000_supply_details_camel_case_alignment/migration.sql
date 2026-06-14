@@ -1,7 +1,8 @@
 -- Normalize supply request detail storage to the camelCase API contract.
 ALTER TABLE "deal_request_supply_details"
 ADD COLUMN "target_price" DECIMAL(14,2),
-ADD COLUMN "other_quality_level_description" VARCHAR(255);
+ADD COLUMN "other_quality_level_description" VARCHAR(255),
+ADD COLUMN "certifications_required_varchar" VARCHAR(1000);
 
 UPDATE "deal_request_supply_details"
 SET "category" = CASE "category"
@@ -55,19 +56,22 @@ SET "target_price" = COALESCE("target_price_max", "target_price_min")
 WHERE "target_price_min" IS NOT NULL
    OR "target_price_max" IS NOT NULL;
 
+UPDATE "deal_request_supply_details"
+SET "certifications_required_varchar" = CASE
+  WHEN "certifications_required" IS NULL THEN NULL
+  WHEN jsonb_typeof("certifications_required") = 'array' THEN (
+    SELECT string_agg(value, ', ' ORDER BY ordinality)
+    FROM jsonb_array_elements_text("certifications_required") WITH ORDINALITY AS elems(value, ordinality)
+  )
+  WHEN jsonb_typeof("certifications_required") = 'string' THEN trim(both '"' from "certifications_required"::text)
+  ELSE "certifications_required"::text
+END;
+
 ALTER TABLE "deal_request_supply_details"
-ALTER COLUMN "certifications_required" TYPE VARCHAR(1000)
-USING (
-  CASE
-    WHEN "certifications_required" IS NULL THEN NULL
-    WHEN jsonb_typeof("certifications_required") = 'array' THEN (
-      SELECT string_agg(value, ', ' ORDER BY ordinality)
-      FROM jsonb_array_elements_text("certifications_required") WITH ORDINALITY AS elems(value, ordinality)
-    )
-    WHEN jsonb_typeof("certifications_required") = 'string' THEN trim(both '"' from "certifications_required"::text)
-    ELSE "certifications_required"::text
-  END
-);
+DROP COLUMN "certifications_required";
+
+ALTER TABLE "deal_request_supply_details"
+RENAME COLUMN "certifications_required_varchar" TO "certifications_required";
 
 ALTER TABLE "deal_request_supply_details"
 DROP COLUMN "target_price_min",
