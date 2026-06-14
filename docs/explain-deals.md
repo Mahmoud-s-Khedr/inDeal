@@ -14,14 +14,13 @@ It describes the actual backend behavior, even where that behavior is broader or
 - Public user: can browse and search public deals.
 - Authenticated agent with company context: can create/manage owned deals and submit requests.
 - Deal owner company: owns the deal and reviews incoming requests.
-- Applicant company: submits either a deal-scoped request or a direct company-to-company request.
+- Applicant company: submits either a deal-scoped request or a supply-only direct company-to-company request.
 
 ### Core states from the live code
 
 - Deal status: `open | closed | archived`
 - Request status: `pending | paused | accepted | rejected | canceled`
-- Request kind: `supply | demand | rfq`
-- Request type: `inSupply | direct`
+- Request type: `inSupply | inDemand | direct`
 
 ### End-to-end deal lifecycle
 
@@ -34,7 +33,7 @@ It describes the actual backend behavior, even where that behavior is broader or
 7. An active company can also send a direct request not tied to a specific deal through `POST /api/v1/deals/direct-requests`. This also creates a `pending` request.
 8. The applicant can review its own outgoing requests through:
    - `GET /api/v1/deals/me/requests` as the canonical outgoing-history endpoint across deal-scoped and direct requests
-   - `GET /api/v1/deals/me/applications` as a compatibility alias filtered to outgoing `demand` requests
+   - `GET /api/v1/deals/me/applications` as a compatibility alias filtered to deal-scoped `inDemand` requests
 9. The applicant can pause or cancel its own request:
    - `PATCH /api/v1/deals/requests/:requestId/pause`
    - `PATCH /api/v1/deals/requests/:requestId/cancel`
@@ -456,7 +455,7 @@ Lists outgoing requests for the authenticated applicant company across deal-scop
 - Query:
   - `keyword?: string <= 200`
   - `status?: pending | paused | accepted | rejected | canceled`
-  - `requestType?: direct | inSupply`
+  - `requestType?: direct | inSupply | inDemand`
   - `limit?: 1..100` default `50`
   - `offset?: >= 0` default `0`
 
@@ -464,9 +463,10 @@ Lists outgoing requests for the authenticated applicant company across deal-scop
 
 - Controller requires company context.
 - Service maps filters into repository behavior:
-  - no `requestType`: include all outgoing request kinds and direct requests
+  - no `requestType`: include all outgoing deal-scoped requests and direct requests
   - `requestType = direct`: only direct requests
-  - `requestType = inSupply`: only deal-scoped requests
+  - `requestType = inSupply`: only deal-scoped supply requests
+  - `requestType = inDemand`: only deal-scoped demand applications
 - Repository queries `deal_requests` left-joined to `deals`, owner company, and target company.
 - Keyword search includes request summary, cancel reason, deal name, owner company name, and target company name.
 - Service enriches:
@@ -495,7 +495,7 @@ Common errors:
 
 ### Endpoint & purpose
 
-Lists outgoing `demand` requests for the authenticated applicant company as a compatibility alias over the canonical outgoing-history model.
+Lists outgoing deal-scoped `inDemand` requests for the authenticated applicant company as a compatibility alias over the canonical outgoing-history model.
 
 ### Request payload
 
@@ -510,8 +510,7 @@ Lists outgoing `demand` requests for the authenticated applicant company as a co
 
 - Controller requires company context.
 - Service applies compatibility filters:
-  - `requestType = inSupply`
-  - `requestKinds = ['demand']`
+  - `requestType = inDemand`
   - `includeDirect = false`
 - Repository and enrichment path otherwise match `GET /deals/me/requests`.
 
@@ -542,30 +541,24 @@ Creates a direct company-to-company request not tied to a specific deal.
 - Auth: required
 - Body:
   - `targetCompanyId: positive integer`
-  - `requestKind: supply | demand | rfq`
-  - `requestType?: direct` default `direct`
-  - `supplyDetails?` required for `supply | rfq`
-  - `demandDetails?` required for `demand`
+  - `supplyDetails: required`
   - `attachments?: [{ fileId, sortOrder }]` max `20`
 
 Structured detail payloads:
 
 - `supplyDetails` includes:
-  - `category`: `packingAndContainers | rawMaterial | industrialEquipment | foodAndBeverage | chemicals | textileAndApparel | electronicsAndComponents | constructionMaterialsAndServices`
-  - `supplyType`: `in stock | make to order | either`
-  - `qualityLevel`: `standard | industrial guide | food grade | pharmaceutical grade | export quality`
-  - `deliveryMethodPreference`: `supplier delivers | buyer collects | third party`
+  - `category`: `packing | containers | rawMaterial | industrialEquipment | foodAndBeverage | chemicals | textileAndApparel | electronicsAndComponents | constructionMaterials | services`
+  - `supplyType`: `inStock | assembleToOrder | makeToOrder | engineeringToOrder | mixed`
+  - `qualityLevel`: `standard | industrialGuide | foodGrade | pharmaceuticalGrade | exportQuality | other`
+  - `deliveryMethodPreference`: `supplierDelivers | buyerCollects | thirdParty`
   - pricing, logistics, specifications, certification, packaging, and notes fields
-- `demandDetails` includes:
-  - `availabilityType`: `in stock | assemble to order | make to order | engineering to order | mixed`
-  - `specsMatchRfq`: `exact | partial`
-  - product, quantity/price, terms, warranty/confidentiality, and notes fields
 
 Validation rules:
 
-- `supplyDetails` is forbidden for `demand`.
-- `demandDetails` is forbidden for `supply | rfq`.
-- Tests confirm `requestType = inSupply` is rejected here.
+- `requestKind` is not part of the public request body.
+- `requestType` is not part of the public request body.
+- `demandDetails` is not allowed.
+- Direct requests are supply-only.
 
 ### Business logic
 
@@ -585,7 +578,7 @@ Validation rules:
   - summary text in `request_details`
   - inferred numeric offer in `request_offer`
   - `status = pending`
-- Upserts either supply or demand detail row.
+- Upserts supply details only.
 - Replaces request attachments.
 - Commits.
 - If PostgreSQL raises `23505` on `uq_deal_requests_active_direct`, service maps it to a user-friendly duplicate error.
@@ -619,16 +612,18 @@ Creates a deal-scoped request against an `open` deal.
 - Params:
   - `id: deal ID`
 - Body:
-  - `requestKind: supply | demand | rfq`
-  - `requestType?: inSupply` default `inSupply`
-  - `supplyDetails?` required for `supply | rfq`
-  - `demandDetails?` required for `demand`
+  - `requestType: inSupply | inDemand`
+  - `supplyDetails?` required for `inSupply`
+  - `demandDetails?` required for `inDemand`
   - `attachments?: [{ fileId, sortOrder }]` max `20`
 
 Validation rules:
 
+- `requestType` is required.
 - `requestType = direct` is rejected by tests and schema.
-- `supplyDetails` and `demandDetails` are mutually exclusive depending on `requestKind`.
+- `requestType = inSupply` requires `supplyDetails` and forbids `demandDetails`.
+- `requestType = inDemand` requires `demandDetails` and forbids `supplyDetails`.
+- `requestKind` is not part of the public request body.
 
 Structured detail payloads use the same enum/value contract as `POST /api/v1/deals/direct-requests`.
 
@@ -646,11 +641,11 @@ Structured detail payloads use the same enum/value contract as `POST /api/v1/dea
 - Inserts into `deal_requests` with:
   - `deal_id = :id`
   - `target_company_id = null`
-  - `request_type = inSupply`
+  - `request_type = payload.requestType`
   - summary text in `request_details`
   - inferred numeric offer in `request_offer`
   - `status = pending`
-- Upserts either demand or supply details.
+- Upserts demand details for `inDemand`, else supply details for `inSupply`.
 - Replaces request attachments.
 - Commits.
 - If PostgreSQL raises `23505` on `uq_deal_requests_active_in_supply`, service maps it to `You already have a request on this deal`.

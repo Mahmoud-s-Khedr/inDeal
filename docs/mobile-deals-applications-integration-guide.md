@@ -209,7 +209,6 @@ Notes:
   "id": 77,
   "dealId": 10,
   "applicantCompanyId": 8,
-  "requestKind": "rfq",
   "requestType": "inSupply",
   "requestDetails": "Supply request: Steel coils",
   "requestOffer": 1500,
@@ -244,8 +243,7 @@ Notes:
 
 Notes:
 
-- `requestKind`: `supply | demand | rfq`
-- `requestType`: `inSupply | direct`
+- `requestType`: `inSupply | inDemand | direct`
 - `status`: `pending | paused | accepted | rejected | canceled`
 - direct requests may have `dealId`, `dealName`, `dealOwnerCompanyId`, `dealType`, `dealValue`, and `dealStatus` as `null`
 - `supplyDetails`: `SupplyDetailsDto | null`
@@ -737,7 +735,7 @@ Authorization: Bearer <token>
 
 Notes:
 
-- This endpoint is already server-filtered to `requestType=inSupply` and `requestKind=demand`.
+- This endpoint is already server-filtered to deal-scoped `requestType=inDemand`.
 
 ## 4.8 GET `/deals/me/requests`
 
@@ -764,7 +762,7 @@ Optional fields:
 
 - `keyword`: string
 - `status`: `pending | paused | accepted | rejected | canceled`
-- `requestType`: `direct | inSupply`
+- `requestType`: `direct | inSupply | inDemand`
 - `limit`: number, default `50`, max `100`
 - `offset`: number, default `0`
 
@@ -796,7 +794,8 @@ Authorization: Bearer <token>
 Notes:
 
 - Without `requestType`, this endpoint includes deal requests plus direct requests.
-- With `requestType=inSupply`, returned request kinds are restricted to `supply` and `rfq`.
+- With `requestType=inSupply`, this endpoint returns deal-scoped supply requests only.
+- With `requestType=inDemand`, this endpoint returns deal-scoped demand applications only.
 
 ## 4.9 POST `/deals/direct-requests`
 
@@ -816,8 +815,6 @@ None.
 ```json
 {
   "targetCompanyId": 45,
-  "requestKind": "rfq",
-  "requestType": "direct",
   "supplyDetails": {
     "productServiceName": "Steel coils",
     "category": "rawMaterial",
@@ -836,11 +833,15 @@ None.
 Fields:
 
 - `targetCompanyId`: positive number, required
-- `requestKind`: `supply | demand | rfq`
-- `requestType`: literal `direct`, optional in payload but normalized to `direct`
-- `supplyDetails`: required for `supply` and `rfq`
-- `demandDetails`: required for `demand`
+- `supplyDetails`: required
 - `attachments`: optional array, max `20`
+
+Rules:
+
+- `requestType` must not be sent in the request body.
+- `requestKind` must not be sent.
+- `demandDetails` is not allowed.
+- Direct requests are supply-only.
 
 ### Success Response Envelope DTO
 
@@ -867,8 +868,6 @@ Content-Type: application/json
 ```json
 {
   "targetCompanyId": 45,
-  "requestKind": "rfq",
-  "requestType": "direct",
   "supplyDetails": {
     "productServiceName": "Steel coils",
     "category": "rawMaterial",
@@ -889,6 +888,7 @@ Notes:
 - Cannot target own company.
 - Target company must exist and be active.
 - One active direct request per applicant/target pair is enforced.
+- Successful responses still return `requestType: direct`.
 
 ## 4.10 POST `/deals/send-email`
 
@@ -954,7 +954,7 @@ Content-Type: application/json
 
 ## 4.11 POST `/deals/:id/requests`
 
-Purpose: Create a deal-scoped in-supply request.  
+Purpose: Create a deal-scoped request.  
 Auth: Required
 
 ### Path Params DTO
@@ -973,7 +973,6 @@ None.
 
 ```json
 {
-  "requestKind": "rfq",
   "requestType": "inSupply",
   "supplyDetails": {
     "productServiceName": "Steel coils",
@@ -992,11 +991,10 @@ None.
 
 Rules:
 
-- `requestType` must be omitted or `inSupply`
-- `requestKind = supply | rfq` requires `supplyDetails`
-- `requestKind = demand` requires `demandDetails`
-- `supplyDetails` is forbidden for `demand`
-- `demandDetails` is forbidden for `supply | rfq`
+- `requestType` is required.
+- `requestType = inSupply` requires `supplyDetails` and forbids `demandDetails`.
+- `requestType = inDemand` requires `demandDetails` and forbids `supplyDetails`.
+- `requestKind` is not part of the public request body.
 
 ### Success Response Envelope DTO
 
@@ -1022,7 +1020,26 @@ Content-Type: application/json
 
 ```json
 {
-  "requestKind": "rfq",
+  "requestType": "inDemand",
+  "demandDetails": {
+    "productServiceName": "Plastic caps",
+    "availabilityType": "mixed",
+    "unitPrice": 0.18
+  },
+  "attachments": [
+    {
+      "fileId": 321,
+      "sortOrder": 0
+    }
+  ]
+}
+```
+
+Supply alternative:
+
+```json
+{
+  "requestType": "inSupply",
   "supplyDetails": {
     "productServiceName": "Steel coils",
     "category": "rawMaterial",
@@ -1042,7 +1059,7 @@ Notes:
 
 - The target deal must be `open`.
 - The applicant cannot request on its own deal.
-- One active in-supply request per applicant per deal is enforced.
+- One active request per applicant per deal is enforced.
 
 ## 4.12 GET `/deals/:id/requests`
 
@@ -1378,8 +1395,9 @@ Authorization: Bearer <token>
 - Treat `GET /deals` as public, but expect different results for signed-in users because own-company deals are filtered out.
 - Treat `GET /deals/me/deals` as non-archived by default; use explicit `status=archived` when the archived tab needs server-side filtering.
 - For direct requests, several deal-derived fields are `null`; render against `targetCompany*` instead.
-- For request lists, choose rendering from `supplyDetails` or `demandDetails` based on `requestKind`.
+- For request lists, choose rendering from `supplyDetails` or `demandDetails` based on `requestType`.
 - Do not use deprecated assumptions from archived docs:
-  - no `negotiating` deal status
+  - no public `requestKind`
   - no deal-scoped `requestType=direct`
+  - no direct-request demand flow
   - no removed request-detail fields
