@@ -793,6 +793,7 @@ Authorization: Bearer <token>
 Notes:
 
 - This endpoint returns both deal-scoped `inSupply` requests and direct requests.
+- Optional query filter: `requestType=inSupply|direct`.
 - Direct requests are supply-side requests with no linked deal, so their `dealId` is `null`.
 
 ## 4.8.1 GET `/deals/me/direct-requests`

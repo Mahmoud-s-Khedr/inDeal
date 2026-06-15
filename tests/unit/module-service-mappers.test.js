@@ -10,12 +10,12 @@ test('deal mapper infers request offer/details', () => {
   const { inferRequestOffer, inferRequestDetailsSummary } = dealService.__testables;
 
   assert.equal(
-    inferRequestOffer({ requestKind: 'demand', demandDetails: { unitPrice: 120 } }),
+    inferRequestOffer({ requestType: 'inDemand', demandDetails: { unitPrice: 120 } }),
     120
   );
   assert.equal(
     inferRequestDetailsSummary({
-      requestKind: 'supply',
+      requestType: 'inSupply',
       supplyDetails: { productServiceName: 'Steel' },
     }),
     'Supply request: Steel'

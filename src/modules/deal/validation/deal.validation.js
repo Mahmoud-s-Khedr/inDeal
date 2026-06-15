@@ -330,6 +330,7 @@ const listDealRequestsSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
     status: z.enum(dealRequestStatusEnumValues).optional(),
+    requestType: z.enum(['inSupply', 'inDemand']).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
   }),
@@ -340,6 +341,7 @@ const listMyRequestsSchema = z.object({
     .object({
       keyword: z.string().max(200).optional(),
       status: z.enum(dealRequestStatusEnumValues).optional(),
+      requestType: z.enum(['direct', 'inSupply']).optional(),
       limit: z.coerce.number().int().min(1).max(100).default(50),
       offset: z.coerce.number().int().min(0).default(0),
     })

@@ -14,7 +14,7 @@ const appendApplicantRequestFilters = ({
   status,
   keyword,
   requestType,
-  includeDirect = false,
+  requestTypes,
 }) => {
   let query = baseQuery;
   let paramIndex = startParamIndex;
@@ -31,8 +31,10 @@ const appendApplicantRequestFilters = ({
     paramIndex += 1;
   }
 
-  if (includeDirect === false && !requestType) {
-    query += ` AND r.request_type != 'direct'`;
+  if (requestTypes?.length) {
+    query += ` AND r.request_type = ANY($${paramIndex}::text[])`;
+    params.push(requestTypes);
+    paramIndex += 1;
   }
 
   if (keyword) {
@@ -123,13 +125,26 @@ const appendIncomingDirectRequestFilters = ({
   return { query, paramIndex };
 };
 
-const appendDealRequestFilters = ({ baseQuery, params, startParamIndex, status, keyword }) => {
+const appendDealRequestFilters = ({
+  baseQuery,
+  params,
+  startParamIndex,
+  status,
+  keyword,
+  requestType,
+}) => {
   let query = baseQuery;
   let paramIndex = startParamIndex;
 
   if (status) {
     query += ` AND r.status = $${paramIndex}`;
     params.push(status);
+    paramIndex += 1;
+  }
+
+  if (requestType) {
+    query += ` AND r.request_type = $${paramIndex}`;
+    params.push(requestType);
     paramIndex += 1;
   }
 
@@ -233,7 +248,10 @@ const findById = async (requestId) => {
 /**
  * Find requests by deal ID (for deal owner to see all bids)
  */
-const findByDealId = async (dealId, { status, keyword, limit = 50, offset = 0 } = {}) => {
+const findByDealId = async (
+  dealId,
+  { status, keyword, requestType, limit = 50, offset = 0 } = {}
+) => {
   const params = [dealId];
   const built = appendDealRequestFilters({
     baseQuery: `
@@ -251,6 +269,7 @@ const findByDealId = async (dealId, { status, keyword, limit = 50, offset = 0 } 
     startParamIndex: 2,
     status,
     keyword,
+    requestType,
   });
   let query = built.query;
   const paramIndex = built.paramIndex;
@@ -286,7 +305,7 @@ const findByDealId = async (dealId, { status, keyword, limit = 50, offset = 0 } 
  */
 const findByApplicantCompanyId = async (
   companyId,
-  { status, keyword, requestType, includeDirect = false, limit = 50, offset = 0 } = {}
+  { status, keyword, requestType, requestTypes, limit = 50, offset = 0 } = {}
 ) => {
   const params = [companyId];
   const built = appendApplicantRequestFilters({
@@ -313,7 +332,7 @@ const findByApplicantCompanyId = async (
     status,
     keyword,
     requestType,
-    includeDirect,
+    requestTypes,
   });
   let query = built.query;
   const paramIndex = built.paramIndex;
@@ -380,7 +399,7 @@ const findIncomingDirectRequestsByTargetCompanyId = async (
 
 const countByApplicantCompanyId = async (
   companyId,
-  { status, keyword, requestType, includeDirect = false } = {}
+  { status, keyword, requestType, requestTypes } = {}
 ) => {
   const params = [companyId];
   const built = appendApplicantRequestFilters({
@@ -398,7 +417,7 @@ const countByApplicantCompanyId = async (
     status,
     keyword,
     requestType,
-    includeDirect,
+    requestTypes,
   });
 
   const countQuery = built.query.replace(',\n             0::float8 AS search_score', '');
@@ -478,7 +497,7 @@ const findExistingDirectRequest = async (
 /**
  * Count requests for a deal
  */
-const countByDealId = async (dealId, { status, keyword } = {}) => {
+const countByDealId = async (dealId, { status, keyword, requestType } = {}) => {
   const params = [dealId];
   const built = appendDealRequestFilters({
     baseQuery: `
@@ -492,6 +511,7 @@ const countByDealId = async (dealId, { status, keyword } = {}) => {
     startParamIndex: 2,
     status,
     keyword,
+    requestType,
   });
   const countQuery = built.query.replace(',\n             0::float8 AS search_score', '');
   const result = await pool.query(countQuery, params);
@@ -602,9 +622,9 @@ const withdrawRequest = async (requestId, byCompanyId, cancelReason) =>
 /**
  * Get request statistics for a deal
  */
-const getRequestStats = async (dealId) => {
-  const result = await pool.query(
-    `
+const getRequestStats = async (dealId, { requestType } = {}) => {
+  const params = [dealId];
+  let query = `
       SELECT
         COUNT(*) AS total,
         COUNT(*) FILTER (WHERE status = 'pending') AS pending,
@@ -617,9 +637,14 @@ const getRequestStats = async (dealId) => {
         AVG(request_offer) AS average_offer
       FROM deal_requests
       WHERE deal_id = $1
-    `,
-    [dealId]
-  );
+    `;
+
+  if (requestType) {
+    query += ` AND request_type = $2`;
+    params.push(requestType);
+  }
+
+  const result = await pool.query(query, params);
   return result.rows[0];
 };
 

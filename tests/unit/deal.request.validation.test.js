@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const {
   createDealRequestSchema,
   createDirectRequestSchema,
+  listDealRequestsSchema,
   listMyRequestsSchema,
   updateDealRequestSchema,
   sendDealEmailSchema,
@@ -226,7 +227,7 @@ test('removed backend-only fields are rejected from request detail payloads', ()
   assert.equal(withRemovedFields.success, false);
 });
 
-test('listMyRequests accepts base filters and rejects requestType', () => {
+test('listMyRequests accepts base filters and supported requestType values', () => {
   const parsed = listMyRequestsSchema.parse({
     query: {
       status: 'pending',
@@ -237,9 +238,59 @@ test('listMyRequests accepts base filters and rejects requestType', () => {
 
   assert.equal(parsed.query.status, 'pending');
 
-  const invalid = listMyRequestsSchema.safeParse({
+  const direct = listMyRequestsSchema.safeParse({
+    query: {
+      requestType: 'direct',
+      limit: 10,
+      offset: 0,
+    },
+  });
+  assert.equal(direct.success, true);
+
+  const inSupply = listMyRequestsSchema.safeParse({
     query: {
       requestType: 'inSupply',
+      limit: 10,
+      offset: 0,
+    },
+  });
+  assert.equal(inSupply.success, true);
+
+  const invalid = listMyRequestsSchema.safeParse({
+    query: {
+      requestType: 'inDemand',
+      limit: 10,
+      offset: 0,
+    },
+  });
+  assert.equal(invalid.success, false);
+});
+
+test('listDealRequests accepts inSupply and inDemand requestType filters only', () => {
+  const inSupply = listDealRequestsSchema.safeParse({
+    params: { id: 1 },
+    query: {
+      requestType: 'inSupply',
+      limit: 10,
+      offset: 0,
+    },
+  });
+  assert.equal(inSupply.success, true);
+
+  const inDemand = listDealRequestsSchema.safeParse({
+    params: { id: 1 },
+    query: {
+      requestType: 'inDemand',
+      limit: 10,
+      offset: 0,
+    },
+  });
+  assert.equal(inDemand.success, true);
+
+  const invalid = listDealRequestsSchema.safeParse({
+    params: { id: 1 },
+    query: {
+      requestType: 'direct',
       limit: 10,
       offset: 0,
     },

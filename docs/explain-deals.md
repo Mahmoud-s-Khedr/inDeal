@@ -143,7 +143,7 @@ Important DB invariants:
 - `deal_request_supply_details.request_id` is unique.
 - `deal_request_demand_details.request_id` is unique.
 - Partial unique index `uq_deal_requests_active_in_supply` prevents more than one active in-supply request per `(deal_id, applicant_company_id)`.
-- Partial unique index `uq_deal_requests_active_direct` prevents more than one active direct request per `(applicant_company_id, target_company_id)`.
+- Direct requests can coexist between the same two companies; there is no active-request uniqueness rule for `request_type = direct`.
 - The migration also auto-canceled historical duplicate active requests before creating those indexes.
 
 ## 3. Endpoint-by-Endpoint Breakdown
@@ -617,7 +617,7 @@ Validation rules:
 - Upserts supply details only.
 - Replaces request attachments.
 - Commits.
-- If PostgreSQL raises `23505` on `uq_deal_requests_active_direct`, service maps it to a user-friendly duplicate error.
+- Multiple direct requests between the same applicant and target company are allowed.
 
 ### Response payload
 

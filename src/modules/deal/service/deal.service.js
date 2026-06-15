@@ -14,7 +14,6 @@ const { companyRepository } = companyModule.repository;
 const { fileRepository } = fileModule.repository;
 const ACTIVE_REQUEST_STATUSES = ['pending', 'paused', 'accepted'];
 const ACTIVE_IN_SUPPLY_REQUEST_CONSTRAINT = 'uq_deal_requests_active_in_supply';
-const ACTIVE_DIRECT_REQUEST_CONSTRAINT = 'uq_deal_requests_active_direct';
 
 const buildPublicUrl = (filePath) => {
   if (!publicUrl || !filePath) return null;
@@ -661,19 +660,6 @@ const createDirectRequest = async (applicantCompanyId, payload) => {
     throw new AppError('Your company must be active to submit requests', 403);
   }
 
-  const existing = await dealRequestRepository.findExistingDirectRequest(
-    applicantCompanyId,
-    payload.targetCompanyId,
-    ACTIVE_REQUEST_STATUSES
-  );
-  if (existing) {
-    logger.warn(
-      { applicantCompanyId, targetCompanyId: payload.targetCompanyId },
-      'Duplicate active direct request rejected'
-    );
-    throw new AppError('You already have an active direct request for this company', 400);
-  }
-
   const attachments = payload.attachments || [];
   await ensureFilesExist(attachments.map((item) => item.fileId));
 
@@ -710,17 +696,6 @@ const createDirectRequest = async (applicantCompanyId, payload) => {
     return enriched;
   } catch (error) {
     await client.query('ROLLBACK');
-    if (isUniqueConstraintViolation(error, ACTIVE_DIRECT_REQUEST_CONSTRAINT)) {
-      logger.warn(
-        {
-          applicantCompanyId,
-          targetCompanyId: payload.targetCompanyId,
-          constraint: ACTIVE_DIRECT_REQUEST_CONSTRAINT,
-        },
-        'DB unique protection rejected duplicate active direct request'
-      );
-      throw new AppError('You already have an active direct request for this company', 400);
-    }
     throw error;
   } finally {
     client.release();
@@ -741,7 +716,7 @@ const getDealRequests = async (dealId, companyId, filters = {}) => {
   const [requests, total, stats] = await Promise.all([
     dealRequestRepository.findByDealId(dealId, filters),
     dealRequestRepository.countByDealId(dealId, filters),
-    dealRequestRepository.getRequestStats(dealId),
+    dealRequestRepository.getRequestStats(dealId, filters),
   ]);
 
   const sanitizedRequests = requests.map(sanitizeRequest);
@@ -790,7 +765,7 @@ const listOutgoingRequests = async (companyId, filters = {}, overrides = {}) => 
     total,
     returnedCount: sanitized.length,
     requestType: mergedFilters.requestType || null,
-    includeDirect: mergedFilters.includeDirect,
+    requestTypes: mergedFilters.requestTypes || null,
   });
   return {
     items: sanitized,
@@ -800,14 +775,13 @@ const listOutgoingRequests = async (companyId, filters = {}, overrides = {}) => 
 
 const getMyRequests = async (companyId, filters = {}) => {
   return listOutgoingRequests(companyId, filters, {
-    includeDirect: true,
+    requestTypes: ['direct', 'inSupply'],
   });
 };
 
 const getMyApplications = async (companyId, filters = {}) => {
   return listOutgoingRequests(companyId, filters, {
     requestType: 'inDemand',
-    includeDirect: false,
   });
 };
 

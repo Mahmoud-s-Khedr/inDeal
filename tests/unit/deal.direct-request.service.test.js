@@ -54,6 +54,9 @@ const buildHarness = ({
   const state = {
     listFilters: null,
     countFilters: null,
+    dealListFilters: null,
+    dealCountFilters: null,
+    statsFilters: null,
     incomingListFilters: null,
     incomingCountFilters: null,
     createdRequestPayload: null,
@@ -126,6 +129,28 @@ const buildHarness = ({
     countByApplicantCompanyId: async (_companyId, filters) => {
       state.countFilters = filters;
       return 0;
+    },
+    findByDealId: async (_dealId, filters) => {
+      state.dealListFilters = filters;
+      return [];
+    },
+    countByDealId: async (_dealId, filters) => {
+      state.dealCountFilters = filters;
+      return 0;
+    },
+    getRequestStats: async (_dealId, filters) => {
+      state.statsFilters = filters;
+      return {
+        total: '0',
+        pending: '0',
+        paused: '0',
+        accepted: '0',
+        rejected: '0',
+        canceled: '0',
+        lowest_offer: null,
+        highest_offer: null,
+        average_offer: null,
+      };
     },
     findIncomingDirectRequestsByTargetCompanyId: async (_companyId, filters) => {
       state.incomingListFilters = filters;
@@ -322,25 +347,19 @@ test('createDealRequest persists demand details for inDemand requests', async ()
   assert.equal(state.demandUpserts[0].details.productServiceName, 'Industrial resin');
 });
 
-test('createDirectRequest rejects duplicate active direct request', async () => {
-  const { dealService, AppError } = buildHarness({ hasExistingDirect: true });
+test('createDirectRequest allows repeated direct requests between the same companies', async () => {
+  const { dealService, state } = buildHarness({ hasExistingDirect: true });
 
-  await assert.rejects(
-    () =>
-      dealService.createDirectRequest(10, {
-        targetCompanyId: 20,
-        supplyDetails: {
-          productServiceName: 'Copper wire',
-          category: 'rawMaterial',
-        },
-      }),
-    (error) => {
-      assert.ok(error instanceof AppError);
-      assert.equal(error.statusCode, 400);
-      assert.match(error.message, /active direct request/);
-      return true;
-    }
-  );
+  const result = await dealService.createDirectRequest(10, {
+    targetCompanyId: 20,
+    supplyDetails: {
+      productServiceName: 'Copper wire',
+      category: 'rawMaterial',
+    },
+  });
+
+  assert.equal(state.createdRequestPayload.targetCompanyId, 20);
+  assert.equal(result.requestType, 'direct');
 });
 
 test('getMyRequests is canonical outgoing history and getMyApplications remains a filtered alias', async () => {
@@ -350,13 +369,36 @@ test('getMyRequests is canonical outgoing history and getMyApplications remains 
   assert.equal(requests.pagination.total, 0);
   assert.equal(requests.items.length, 0);
   assert.equal(state.listFilters.requestType, undefined);
-  assert.equal(state.listFilters.includeDirect, true);
+  assert.deepEqual(state.listFilters.requestTypes, ['direct', 'inSupply']);
 
   const applications = await dealService.getMyApplications(10, {});
   assert.equal(applications.pagination.total, 0);
   assert.equal(applications.items.length, 0);
   assert.equal(state.listFilters.requestType, 'inDemand');
-  assert.equal(state.listFilters.includeDirect, false);
+  assert.equal(state.listFilters.requestTypes, undefined);
+});
+
+test('getMyRequests accepts narrowing requestType filters', async () => {
+  const { dealService, state } = buildHarness();
+
+  await dealService.getMyRequests(10, { requestType: 'direct' });
+  assert.equal(state.listFilters.requestType, 'direct');
+  assert.deepEqual(state.listFilters.requestTypes, ['direct', 'inSupply']);
+
+  await dealService.getMyRequests(10, { requestType: 'inSupply' });
+  assert.equal(state.listFilters.requestType, 'inSupply');
+  assert.deepEqual(state.listFilters.requestTypes, ['direct', 'inSupply']);
+});
+
+test('getDealRequests applies requestType filter consistently to list, count, and stats', async () => {
+  const { dealService, state } = buildHarness();
+
+  const result = await dealService.getDealRequests(1, 20, { requestType: 'inDemand' });
+
+  assert.equal(result.pagination.total, 0);
+  assert.deepEqual(state.dealListFilters, { requestType: 'inDemand' });
+  assert.deepEqual(state.dealCountFilters, { requestType: 'inDemand' });
+  assert.deepEqual(state.statsFilters, { requestType: 'inDemand' });
 });
 
 test('getMyDirectRequests lists incoming direct requests by target company', async () => {
