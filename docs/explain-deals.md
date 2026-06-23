@@ -277,6 +277,9 @@ Lists deals owned by the authenticated user’s company.
 - Query:
   - `keyword?: string <= 200`
   - `status?: open | closed | archived`
+  - `type?: supply | demand`
+  - `sortBy?: price | date | applications`
+  - `sortOrder?: asc | desc`
   - `limit?: 1..100` default `50`
   - `offset?: >= 0` default `0`
 
@@ -456,6 +459,10 @@ Lists outgoing supply-side requests for the authenticated applicant company, inc
 - Query:
   - `keyword?: string <= 200`
   - `status?: pending | paused | accepted | rejected | canceled`
+  - `type?: supply | direct`
+  - `canceled?: boolean`
+  - `sortBy?: price | date`
+  - `sortOrder?: asc | desc`
   - `limit?: 1..100` default `50`
   - `offset?: >= 0` default `0`
 
@@ -500,6 +507,9 @@ Lists outgoing deal-scoped `inDemand` requests for the authenticated applicant c
 - Query:
   - `keyword?: string <= 200`
   - `status?: pending | paused | accepted | rejected | canceled`
+  - `canceled?: boolean`
+  - `sortBy?: price | date`
+  - `sortOrder?: asc | desc`
   - `limit?: 1..100` default `50`
   - `offset?: >= 0` default `0`
 
@@ -525,6 +535,9 @@ Lists incoming direct requests where the authenticated company is the target com
 - Query:
   - `keyword?: string <= 200`
   - `status?: pending | paused | accepted | rejected | canceled`
+  - `canceled?: boolean`
+  - `sortBy?: price | date`
+  - `sortOrder?: asc | desc`
   - `limit?: 1..100` default `50`
   - `offset?: >= 0` default `0`
 
@@ -718,6 +731,9 @@ Lets the deal owner list requests submitted on one deal, along with request stat
 - Query:
   - `keyword?: string <= 200`
   - `status?: pending | paused | accepted | rejected | canceled`
+  - `canceled?: boolean`
+  - `sortBy?: price | date`
+  - `sortOrder?: asc | desc`
   - `limit?: 1..100` default `50`
   - `offset?: >= 0` default `0`
 

@@ -12,6 +12,7 @@ const appendApplicantRequestFilters = ({
   params,
   startParamIndex,
   status,
+  canceled,
   keyword,
   requestType,
   requestTypes,
@@ -22,6 +23,16 @@ const appendApplicantRequestFilters = ({
   if (status) {
     query += ` AND r.status = $${paramIndex}`;
     params.push(status);
+    paramIndex += 1;
+  }
+
+  if (canceled === true) {
+    query += ` AND r.status = $${paramIndex}`;
+    params.push('canceled');
+    paramIndex += 1;
+  } else if (canceled === false) {
+    query += ` AND r.status != $${paramIndex}`;
+    params.push('canceled');
     paramIndex += 1;
   }
 
@@ -78,6 +89,7 @@ const appendIncomingDirectRequestFilters = ({
   params,
   startParamIndex,
   status,
+  canceled,
   keyword,
 }) => {
   let query = baseQuery;
@@ -86,6 +98,16 @@ const appendIncomingDirectRequestFilters = ({
   if (status) {
     query += ` AND r.status = $${paramIndex}`;
     params.push(status);
+    paramIndex += 1;
+  }
+
+  if (canceled === true) {
+    query += ` AND r.status = $${paramIndex}`;
+    params.push('canceled');
+    paramIndex += 1;
+  } else if (canceled === false) {
+    query += ` AND r.status != $${paramIndex}`;
+    params.push('canceled');
     paramIndex += 1;
   }
 
@@ -130,6 +152,7 @@ const appendDealRequestFilters = ({
   params,
   startParamIndex,
   status,
+  canceled,
   keyword,
   requestType,
 }) => {
@@ -139,6 +162,16 @@ const appendDealRequestFilters = ({
   if (status) {
     query += ` AND r.status = $${paramIndex}`;
     params.push(status);
+    paramIndex += 1;
+  }
+
+  if (canceled === true) {
+    query += ` AND r.status = $${paramIndex}`;
+    params.push('canceled');
+    paramIndex += 1;
+  } else if (canceled === false) {
+    query += ` AND r.status != $${paramIndex}`;
+    params.push('canceled');
     paramIndex += 1;
   }
 
@@ -250,7 +283,16 @@ const findById = async (requestId) => {
  */
 const findByDealId = async (
   dealId,
-  { status, keyword, requestType, limit = 50, offset = 0 } = {}
+  {
+    status,
+    canceled,
+    keyword,
+    requestType,
+    sortBy,
+    sortOrder = 'desc',
+    limit = 50,
+    offset = 0,
+  } = {}
 ) => {
   const params = [dealId];
   const built = appendDealRequestFilters({
@@ -268,6 +310,7 @@ const findByDealId = async (
     params,
     startParamIndex: 2,
     status,
+    canceled,
     keyword,
     requestType,
   });
@@ -280,17 +323,14 @@ const findByDealId = async (
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
   } else {
+    const normalizedSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
+    const sortColumnMap = {
+      price: 'r.request_offer',
+      date: 'r.created_at',
+    };
+    const sortColumn = sortColumnMap[sortBy] || 'r.created_at';
     query += `
-      ORDER BY
-        CASE r.status
-          WHEN 'pending' THEN 1
-          WHEN 'paused' THEN 2
-          WHEN 'accepted' THEN 3
-          WHEN 'rejected' THEN 4
-          WHEN 'canceled' THEN 5
-          ELSE 6
-        END,
-        r.created_at ASC
+      ORDER BY ${sortColumn} ${normalizedSortOrder}, r.id DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
   }
@@ -305,7 +345,17 @@ const findByDealId = async (
  */
 const findByApplicantCompanyId = async (
   companyId,
-  { status, keyword, requestType, requestTypes, limit = 50, offset = 0 } = {}
+  {
+    status,
+    canceled,
+    keyword,
+    requestType,
+    requestTypes,
+    sortBy,
+    sortOrder = 'desc',
+    limit = 50,
+    offset = 0,
+  } = {}
 ) => {
   const params = [companyId];
   const built = appendApplicantRequestFilters({
@@ -330,6 +380,7 @@ const findByApplicantCompanyId = async (
     params,
     startParamIndex: 2,
     status,
+    canceled,
     keyword,
     requestType,
     requestTypes,
@@ -340,7 +391,13 @@ const findByApplicantCompanyId = async (
   if (keyword) {
     query += ` ORDER BY search_score DESC, r.created_at DESC`;
   } else {
-    query += ` ORDER BY r.created_at DESC`;
+    const normalizedSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
+    const sortColumnMap = {
+      price: 'r.request_offer',
+      date: 'r.created_at',
+    };
+    const sortColumn = sortColumnMap[sortBy] || 'r.created_at';
+    query += ` ORDER BY ${sortColumn} ${normalizedSortOrder}, r.id DESC`;
   }
   query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   params.push(limit, offset);
@@ -351,7 +408,7 @@ const findByApplicantCompanyId = async (
 
 const findIncomingDirectRequestsByTargetCompanyId = async (
   companyId,
-  { status, keyword, limit = 50, offset = 0 } = {}
+  { status, canceled, keyword, sortBy, sortOrder = 'desc', limit = 50, offset = 0 } = {}
 ) => {
   const params = [companyId];
   const built = appendIncomingDirectRequestFilters({
@@ -380,6 +437,7 @@ const findIncomingDirectRequestsByTargetCompanyId = async (
     params,
     startParamIndex: 2,
     status,
+    canceled,
     keyword,
   });
   let query = built.query;
@@ -388,7 +446,13 @@ const findIncomingDirectRequestsByTargetCompanyId = async (
   if (keyword) {
     query += ` ORDER BY search_score DESC, r.created_at DESC`;
   } else {
-    query += ` ORDER BY r.created_at DESC`;
+    const normalizedSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
+    const sortColumnMap = {
+      price: 'r.request_offer',
+      date: 'r.created_at',
+    };
+    const sortColumn = sortColumnMap[sortBy] || 'r.created_at';
+    query += ` ORDER BY ${sortColumn} ${normalizedSortOrder}, r.id DESC`;
   }
   query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   params.push(limit, offset);
@@ -399,7 +463,7 @@ const findIncomingDirectRequestsByTargetCompanyId = async (
 
 const countByApplicantCompanyId = async (
   companyId,
-  { status, keyword, requestType, requestTypes } = {}
+  { status, canceled, keyword, requestType, requestTypes } = {}
 ) => {
   const params = [companyId];
   const built = appendApplicantRequestFilters({
@@ -415,6 +479,7 @@ const countByApplicantCompanyId = async (
     params,
     startParamIndex: 2,
     status,
+    canceled,
     keyword,
     requestType,
     requestTypes,
@@ -427,7 +492,7 @@ const countByApplicantCompanyId = async (
 
 const countIncomingDirectRequestsByTargetCompanyId = async (
   companyId,
-  { status, keyword } = {}
+  { status, canceled, keyword } = {}
 ) => {
   const params = [companyId];
   const built = appendIncomingDirectRequestFilters({
@@ -443,6 +508,7 @@ const countIncomingDirectRequestsByTargetCompanyId = async (
     params,
     startParamIndex: 2,
     status,
+    canceled,
     keyword,
   });
 
@@ -497,7 +563,7 @@ const findExistingDirectRequest = async (
 /**
  * Count requests for a deal
  */
-const countByDealId = async (dealId, { status, keyword, requestType } = {}) => {
+const countByDealId = async (dealId, { status, canceled, keyword, requestType } = {}) => {
   const params = [dealId];
   const built = appendDealRequestFilters({
     baseQuery: `
@@ -510,6 +576,7 @@ const countByDealId = async (dealId, { status, keyword, requestType } = {}) => {
     params,
     startParamIndex: 2,
     status,
+    canceled,
     keyword,
     requestType,
   });

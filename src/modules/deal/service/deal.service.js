@@ -774,7 +774,11 @@ const listOutgoingRequests = async (companyId, filters = {}, overrides = {}) => 
 };
 
 const getMyRequests = async (companyId, filters = {}) => {
+  const mappedRequestType =
+    filters.type === 'supply' ? 'inSupply' : filters.type === 'direct' ? 'direct' : undefined;
+
   return listOutgoingRequests(companyId, filters, {
+    requestType: mappedRequestType,
     requestTypes: ['direct', 'inSupply'],
   });
 };

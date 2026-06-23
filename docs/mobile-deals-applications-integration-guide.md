@@ -469,6 +469,7 @@ None.
 
 ```http
 GET /api/v1/deals/me/deals?limit=20&offset=0
+GET /api/v1/deals/me/deals?type=supply&sortBy=applications&sortOrder=desc&limit=20&offset=0
 Authorization: Bearer <token>
 ```
 
@@ -685,6 +686,7 @@ Authorization: Bearer <token>
 ## 4.7 GET `/deals/me/applications`
 
 Purpose: List submitted demand offers only.  
+Query supports `status`, `canceled`, `sortBy=price|date`, and `sortOrder=asc|desc`.
 Auth: Required
 
 ### Path Params DTO
@@ -731,6 +733,7 @@ None.
 
 ```http
 GET /api/v1/deals/me/applications?status=pending&limit=20&offset=0
+GET /api/v1/deals/me/applications?canceled=false&sortBy=price&sortOrder=asc&limit=20&offset=0
 Authorization: Bearer <token>
 ```
 
@@ -785,15 +788,18 @@ None.
 
 ### Sample Request
 
+Query supports `type=supply|direct`, `status`, `canceled`, `sortBy=price|date`, and `sortOrder=asc|desc`.
+
 ```http
 GET /api/v1/deals/me/requests?limit=20&offset=0
+GET /api/v1/deals/me/requests?type=direct&canceled=false&sortBy=date&sortOrder=desc&limit=20&offset=0
 Authorization: Bearer <token>
 ```
 
 Notes:
 
 - This endpoint returns both deal-scoped `inSupply` requests and direct requests.
-- Optional query filter: `requestType=inSupply|direct`.
+- Optional query filter: `type=supply|direct`.
 - Direct requests are supply-side requests with no linked deal, so their `dealId` is `null`.
 
 ## 4.8.1 GET `/deals/me/direct-requests`
@@ -843,8 +849,11 @@ None.
 
 ### Sample Request
 
+Query supports `status`, `canceled`, `sortBy=price|date`, and `sortOrder=asc|desc`.
+
 ```http
 GET /api/v1/deals/me/direct-requests?limit=20&offset=0
+GET /api/v1/deals/me/direct-requests?canceled=true&sortBy=date&sortOrder=desc&limit=20&offset=0
 Authorization: Bearer <token>
 ```
 
@@ -1173,6 +1182,7 @@ None.
 
 ```http
 GET /api/v1/deals/10/requests?status=pending&limit=20&offset=0
+GET /api/v1/deals/10/requests?requestType=inDemand&canceled=false&sortBy=price&sortOrder=asc&limit=20&offset=0
 Authorization: Bearer <token>
 ```
 

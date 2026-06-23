@@ -99,3 +99,53 @@ test('findByDealId and getRequestStats honor optional requestType filters', asyn
   assert.match(state.queries[1].query, /AND request_type = \$2/);
   assert.deepEqual(state.queries[1].params, [55, 'inDemand']);
 });
+
+test('findByApplicantCompanyId applies canceled=false and price sorting', async () => {
+  const { repository, state } = buildHarness();
+
+  await repository.findByApplicantCompanyId(10, {
+    canceled: false,
+    sortBy: 'price',
+    sortOrder: 'asc',
+    limit: 10,
+    offset: 0,
+  });
+
+  assert.match(state.queries[0].query, /r\.status != \$2/);
+  assert.match(state.queries[0].query, /ORDER BY r\.request_offer ASC, r\.id DESC/);
+  assert.deepEqual(state.queries[0].params, [10, 'canceled', 10, 0]);
+});
+
+test('findIncomingDirectRequestsByTargetCompanyId applies canceled=true and date sorting', async () => {
+  const { repository, state } = buildHarness();
+
+  await repository.findIncomingDirectRequestsByTargetCompanyId(10, {
+    canceled: true,
+    sortBy: 'date',
+    sortOrder: 'desc',
+    limit: 10,
+    offset: 0,
+  });
+
+  assert.match(state.queries[0].query, /r\.status = \$2/);
+  assert.match(state.queries[0].query, /ORDER BY r\.created_at DESC, r\.id DESC/);
+  assert.deepEqual(state.queries[0].params, [10, 'canceled', 10, 0]);
+});
+
+test('findByDealId combines status and canceled filters with explicit sorting', async () => {
+  const { repository, state } = buildHarness();
+
+  await repository.findByDealId(55, {
+    status: 'pending',
+    canceled: false,
+    sortBy: 'date',
+    sortOrder: 'asc',
+    limit: 10,
+    offset: 0,
+  });
+
+  assert.match(state.queries[0].query, /r\.status = \$2/);
+  assert.match(state.queries[0].query, /r\.status != \$3/);
+  assert.match(state.queries[0].query, /ORDER BY r\.created_at ASC, r\.id DESC/);
+  assert.deepEqual(state.queries[0].params, [55, 'pending', 'canceled', 10, 0]);
+});

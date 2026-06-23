@@ -5,8 +5,11 @@ const assert = require('node:assert/strict');
 const {
   createDealRequestSchema,
   createDirectRequestSchema,
+  listMyDealsSchema,
   listDealRequestsSchema,
   listMyRequestsSchema,
+  listMyApplicationsSchema,
+  listMyDirectRequestsSchema,
   updateDealRequestSchema,
   sendDealEmailSchema,
 } = require('../../src/modules/deal/validation/deal.validation');
@@ -231,16 +234,20 @@ test('listMyRequests accepts base filters and supported requestType values', () 
   const parsed = listMyRequestsSchema.parse({
     query: {
       status: 'pending',
+      canceled: false,
+      sortBy: 'date',
+      sortOrder: 'desc',
       limit: 10,
       offset: 0,
     },
   });
 
   assert.equal(parsed.query.status, 'pending');
+  assert.equal(parsed.query.canceled, false);
 
   const direct = listMyRequestsSchema.safeParse({
     query: {
-      requestType: 'direct',
+      type: 'direct',
       limit: 10,
       offset: 0,
     },
@@ -249,7 +256,7 @@ test('listMyRequests accepts base filters and supported requestType values', () 
 
   const inSupply = listMyRequestsSchema.safeParse({
     query: {
-      requestType: 'inSupply',
+      type: 'supply',
       limit: 10,
       offset: 0,
     },
@@ -258,7 +265,30 @@ test('listMyRequests accepts base filters and supported requestType values', () 
 
   const invalid = listMyRequestsSchema.safeParse({
     query: {
-      requestType: 'inDemand',
+      type: 'inDemand',
+      limit: 10,
+      offset: 0,
+    },
+  });
+  assert.equal(invalid.success, false);
+});
+
+test('listMyDeals accepts type and search-aligned sorting', () => {
+  const valid = listMyDealsSchema.safeParse({
+    query: {
+      type: 'supply',
+      sortBy: 'applications',
+      sortOrder: 'asc',
+      limit: 10,
+      offset: 0,
+    },
+  });
+  assert.equal(valid.success, true);
+
+  const invalid = listMyDealsSchema.safeParse({
+    query: {
+      type: 'rfq',
+      sortBy: 'offers',
       limit: 10,
       offset: 0,
     },
@@ -271,6 +301,9 @@ test('listDealRequests accepts inSupply and inDemand requestType filters only', 
     params: { id: 1 },
     query: {
       requestType: 'inSupply',
+      canceled: true,
+      sortBy: 'price',
+      sortOrder: 'asc',
       limit: 10,
       offset: 0,
     },
@@ -296,6 +329,34 @@ test('listDealRequests accepts inSupply and inDemand requestType filters only', 
     },
   });
   assert.equal(invalid.success, false);
+});
+
+test('request list schemas accept canceled filter and reject applications sorting', () => {
+  const schemas = [listDealRequestsSchema, listMyApplicationsSchema, listMyDirectRequestsSchema];
+
+  for (const schema of schemas) {
+    const valid = schema.safeParse({
+      ...(schema === listDealRequestsSchema ? { params: { id: 1 } } : {}),
+      query: {
+        canceled: false,
+        sortBy: 'date',
+        sortOrder: 'desc',
+        limit: 10,
+        offset: 0,
+      },
+    });
+    assert.equal(valid.success, true);
+
+    const invalid = schema.safeParse({
+      ...(schema === listDealRequestsSchema ? { params: { id: 1 } } : {}),
+      query: {
+        sortBy: 'applications',
+        limit: 10,
+        offset: 0,
+      },
+    });
+    assert.equal(invalid.success, false);
+  }
 });
 
 test('createDealRequest requires requestType and routes by detail kind', () => {

@@ -2,7 +2,14 @@ const { pool } = require('../../../infrastructure/config/db');
 
 const run = (client) => client || pool;
 
-const appendCompanyDealFilters = ({ baseQuery, params, startParamIndex, status, keyword }) => {
+const appendCompanyDealFilters = ({
+  baseQuery,
+  params,
+  startParamIndex,
+  status,
+  keyword,
+  type,
+}) => {
   let query = baseQuery;
   let paramIndex = startParamIndex;
 
@@ -46,6 +53,12 @@ const appendCompanyDealFilters = ({ baseQuery, params, startParamIndex, status, 
       OR ${normalizedDoc} % ${normalizedKeyword}
     )`;
     params.push(keyword);
+    paramIndex += 1;
+  }
+
+  if (type) {
+    query += ` AND d.deal_type = $${paramIndex}`;
+    params.push(type);
     paramIndex += 1;
   }
 
@@ -114,7 +127,10 @@ const findById = async (dealId) => {
 /**
  * Find deals by company ID (owner's deals)
  */
-const findByCompanyId = async (companyId, { status, keyword, limit = 50, offset = 0 } = {}) => {
+const findByCompanyId = async (
+  companyId,
+  { status, keyword, type, sortBy, sortOrder = 'desc', limit = 50, offset = 0 } = {}
+) => {
   const params = [companyId];
   const built = appendCompanyDealFilters({
     baseQuery: `
@@ -133,6 +149,7 @@ const findByCompanyId = async (companyId, { status, keyword, limit = 50, offset 
     startParamIndex: 2,
     status,
     keyword,
+    type,
   });
 
   let query = built.query;
@@ -141,7 +158,14 @@ const findByCompanyId = async (companyId, { status, keyword, limit = 50, offset 
   if (keyword) {
     query += ` ORDER BY search_score DESC, d.created_at DESC`;
   } else {
-    query += ` ORDER BY d.created_at DESC`;
+    const normalizedSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
+    const sortColumnMap = {
+      price: 'd.deal_value',
+      date: 'd.created_at',
+      applications: 'applications_count',
+    };
+    const sortColumn = sortColumnMap[sortBy] || 'd.created_at';
+    query += ` ORDER BY ${sortColumn} ${normalizedSortOrder}, d.id DESC`;
   }
   query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   params.push(limit, offset);
@@ -150,7 +174,7 @@ const findByCompanyId = async (companyId, { status, keyword, limit = 50, offset 
   return result.rows;
 };
 
-const countByCompanyId = async (companyId, { status, keyword } = {}) => {
+const countByCompanyId = async (companyId, { status, keyword, type } = {}) => {
   const params = [companyId];
   const built = appendCompanyDealFilters({
     baseQuery: `
@@ -163,6 +187,7 @@ const countByCompanyId = async (companyId, { status, keyword } = {}) => {
     startParamIndex: 2,
     status,
     keyword,
+    type,
   });
 
   const countQuery = built.query.replace(',\n             0::float8 AS search_score', '');

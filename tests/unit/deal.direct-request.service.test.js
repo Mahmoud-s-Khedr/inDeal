@@ -381,13 +381,33 @@ test('getMyRequests is canonical outgoing history and getMyApplications remains 
 test('getMyRequests accepts narrowing requestType filters', async () => {
   const { dealService, state } = buildHarness();
 
-  await dealService.getMyRequests(10, { requestType: 'direct' });
+  await dealService.getMyRequests(10, { type: 'direct' });
   assert.equal(state.listFilters.requestType, 'direct');
   assert.deepEqual(state.listFilters.requestTypes, ['direct', 'inSupply']);
 
-  await dealService.getMyRequests(10, { requestType: 'inSupply' });
+  await dealService.getMyRequests(10, { type: 'supply' });
   assert.equal(state.listFilters.requestType, 'inSupply');
   assert.deepEqual(state.listFilters.requestTypes, ['direct', 'inSupply']);
+});
+
+test('getMyRequests forwards canceled and sorting filters while translating public type', async () => {
+  const { dealService, state } = buildHarness();
+
+  await dealService.getMyRequests(10, {
+    type: 'direct',
+    canceled: false,
+    sortBy: 'price',
+    sortOrder: 'asc',
+  });
+
+  assert.deepEqual(state.listFilters, {
+    type: 'direct',
+    canceled: false,
+    sortBy: 'price',
+    sortOrder: 'asc',
+    requestType: 'direct',
+    requestTypes: ['direct', 'inSupply'],
+  });
 });
 
 test('getDealRequests applies requestType filter consistently to list, count, and stats', async () => {

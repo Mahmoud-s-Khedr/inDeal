@@ -189,6 +189,9 @@ const listMyDealsSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
     status: z.enum(dealStatusEnumValues).optional(),
+    type: z.enum(dealTypeEnumValues).optional(),
+    sortBy: z.enum(['price', 'date', 'applications']).optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
   }),
@@ -330,7 +333,10 @@ const listDealRequestsSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
     status: z.enum(dealRequestStatusEnumValues).optional(),
+    canceled: z.coerce.boolean().optional(),
     requestType: z.enum(['inSupply', 'inDemand']).optional(),
+    sortBy: z.enum(['price', 'date']).optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
   }),
@@ -341,7 +347,10 @@ const listMyRequestsSchema = z.object({
     .object({
       keyword: z.string().max(200).optional(),
       status: z.enum(dealRequestStatusEnumValues).optional(),
-      requestType: z.enum(['direct', 'inSupply']).optional(),
+      canceled: z.coerce.boolean().optional(),
+      type: z.enum(['direct', 'supply']).optional(),
+      sortBy: z.enum(['price', 'date']).optional(),
+      sortOrder: z.enum(['asc', 'desc']).optional(),
       limit: z.coerce.number().int().min(1).max(100).default(50),
       offset: z.coerce.number().int().min(0).default(0),
     })
@@ -352,6 +361,9 @@ const listMyApplicationsSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
     status: z.enum(dealRequestStatusEnumValues).optional(),
+    canceled: z.coerce.boolean().optional(),
+    sortBy: z.enum(['price', 'date']).optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
   }),
@@ -361,6 +373,9 @@ const listMyDirectRequestsSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
     status: z.enum(dealRequestStatusEnumValues).optional(),
+    canceled: z.coerce.boolean().optional(),
+    sortBy: z.enum(['price', 'date']).optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
   }),
