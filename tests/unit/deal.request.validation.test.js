@@ -234,7 +234,7 @@ test('listMyRequests accepts base filters and supported requestType values', () 
   const parsed = listMyRequestsSchema.parse({
     query: {
       status: 'pending',
-      canceled: false,
+      canceled: 'false',
       sortBy: 'date',
       sortOrder: 'desc',
       limit: 10,
@@ -338,7 +338,7 @@ test('request list schemas accept canceled filter and reject applications sortin
     const valid = schema.safeParse({
       ...(schema === listDealRequestsSchema ? { params: { id: 1 } } : {}),
       query: {
-        canceled: false,
+        canceled: 'false',
         sortBy: 'date',
         sortOrder: 'desc',
         limit: 10,
@@ -346,6 +346,40 @@ test('request list schemas accept canceled filter and reject applications sortin
       },
     });
     assert.equal(valid.success, true);
+    assert.equal(valid.data.query.canceled, false);
+
+    const truthy = schema.safeParse({
+      ...(schema === listDealRequestsSchema ? { params: { id: 1 } } : {}),
+      query: {
+        canceled: 'true',
+        limit: 10,
+        offset: 0,
+      },
+    });
+    assert.equal(truthy.success, true);
+    assert.equal(truthy.data.query.canceled, true);
+
+    const zero = schema.safeParse({
+      ...(schema === listDealRequestsSchema ? { params: { id: 1 } } : {}),
+      query: {
+        canceled: '0',
+        limit: 10,
+        offset: 0,
+      },
+    });
+    assert.equal(zero.success, true);
+    assert.equal(zero.data.query.canceled, false);
+
+    const one = schema.safeParse({
+      ...(schema === listDealRequestsSchema ? { params: { id: 1 } } : {}),
+      query: {
+        canceled: '1',
+        limit: 10,
+        offset: 0,
+      },
+    });
+    assert.equal(one.success, true);
+    assert.equal(one.data.query.canceled, true);
 
     const invalid = schema.safeParse({
       ...(schema === listDealRequestsSchema ? { params: { id: 1 } } : {}),
@@ -356,6 +390,16 @@ test('request list schemas accept canceled filter and reject applications sortin
       },
     });
     assert.equal(invalid.success, false);
+
+    const invalidBoolean = schema.safeParse({
+      ...(schema === listDealRequestsSchema ? { params: { id: 1 } } : {}),
+      query: {
+        canceled: 'nope',
+        limit: 10,
+        offset: 0,
+      },
+    });
+    assert.equal(invalidBoolean.success, false);
   }
 });
 

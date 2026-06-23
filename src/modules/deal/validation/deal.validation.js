@@ -23,6 +23,13 @@ const industryEnumValues = [
   'other',
 ];
 
+const queryBooleanSchema = z.preprocess((value) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (value === true || value === 'true' || value === 1 || value === '1') return true;
+  if (value === false || value === 'false' || value === 0 || value === '0') return false;
+  return value;
+}, z.boolean());
+
 const incotermValues = ['EXW', 'CIF', 'FOB', 'DAP', 'DDP'];
 const supplyCategoryValues = [
   'packing',
@@ -333,7 +340,7 @@ const listDealRequestsSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
     status: z.enum(dealRequestStatusEnumValues).optional(),
-    canceled: z.coerce.boolean().optional(),
+    canceled: queryBooleanSchema.optional(),
     requestType: z.enum(['inSupply', 'inDemand']).optional(),
     sortBy: z.enum(['price', 'date']).optional(),
     sortOrder: z.enum(['asc', 'desc']).optional(),
@@ -347,7 +354,7 @@ const listMyRequestsSchema = z.object({
     .object({
       keyword: z.string().max(200).optional(),
       status: z.enum(dealRequestStatusEnumValues).optional(),
-      canceled: z.coerce.boolean().optional(),
+      canceled: queryBooleanSchema.optional(),
       type: z.enum(['direct', 'supply']).optional(),
       sortBy: z.enum(['price', 'date']).optional(),
       sortOrder: z.enum(['asc', 'desc']).optional(),
@@ -361,7 +368,7 @@ const listMyApplicationsSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
     status: z.enum(dealRequestStatusEnumValues).optional(),
-    canceled: z.coerce.boolean().optional(),
+    canceled: queryBooleanSchema.optional(),
     sortBy: z.enum(['price', 'date']).optional(),
     sortOrder: z.enum(['asc', 'desc']).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -373,7 +380,7 @@ const listMyDirectRequestsSchema = z.object({
   query: z.object({
     keyword: z.string().max(200).optional(),
     status: z.enum(dealRequestStatusEnumValues).optional(),
-    canceled: z.coerce.boolean().optional(),
+    canceled: queryBooleanSchema.optional(),
     sortBy: z.enum(['price', 'date']).optional(),
     sortOrder: z.enum(['asc', 'desc']).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
