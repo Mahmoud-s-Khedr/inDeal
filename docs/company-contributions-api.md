@@ -23,6 +23,7 @@ All endpoints require a valid `Authorization: Bearer <token>` header (authentica
   "details": {},
   "locations": ["Riyadh", "Dammam"],
   "socialMediaLinks": [{ "platform": "linkedin", "url": "https://linkedin.com/..." }],
+  "partner": null,
   "partnerName": null,
   "contributors": ["Ahmed Al-Farsi"],
   "tags": ["pumps", "oil-gas"],
@@ -104,6 +105,7 @@ Content-Type: application/json
 | `mediaUrl`         | string (URL)          | Max 255 chars. Only allowed when `mediaType` is `url`                                |
 | `locations`        | string[]              | List of location strings                                                             |
 | `socialMediaLinks` | `{ platform, url }[]` | Social links for this contribution                                                   |
+| `partnerId`        | number                | Optional partner company id. Supported for partnership contributions                 |
 | `partnerName`      | string                | Max 100 chars. **Required when `type` is `partnership`**                             |
 | `contributors`     | string[]              | Contributor names                                                                    |
 | `tags`             | string[]              | Arbitrary tags                                                                       |
@@ -111,11 +113,33 @@ Content-Type: application/json
 
 #### Business rules
 
-- `partnerName` **must** be provided when `type === "partnership"`.
+- `partnerId` or `partnerName` **must** be provided when `type === "partnership"`.
 - `mediaUrl` is **only** valid when `mediaType === "url"`.
 - When `mediaType === "url"`: `mediaUrl` is required, `mediaFileId` must **not** be sent.
 - When `mediaType` is `image`, `video`, or `file`: `mediaFileId` is required, `mediaUrl` must **not** be sent.
 - `mediaType` and `mediaFileId`/`mediaUrl` are optional together — omit both to create a text-only contribution.
+
+#### Partnership response shape
+
+When a contribution is a partnership, responses return a canonical nested partner object:
+
+```json
+"partner": {
+  "id": 123,
+  "name": "Saudi Aramco",
+  "logoFileId": 45,
+  "logoUrl": "https://cdn.example.com/aramco.png"
+}
+```
+
+For non-partnership contributions, `partner` is `null`.
+
+For backward compatibility, responses also currently include:
+
+- `partnerId`
+- `partnerName`
+- `partnerLogoFileId`
+- `partnerLogoUrl`
 
 #### Example — text-only product contribution
 
@@ -163,6 +187,17 @@ POST /api/v1/companies/me/contributions
 }
 ```
 
+#### Example — partnership contribution using `partnerId`
+
+```json
+{
+  "type": "partnership",
+  "title": "Joint Venture with Aramco",
+  "partnerId": 123,
+  "description": "Strategic supply agreement signed 2024."
+}
+```
+
 **Response 201**
 
 ```json
@@ -170,7 +205,34 @@ POST /api/v1/companies/me/contributions
   "status": "success",
   "message": "Company contribution created",
   "data": {
-    /* Contribution object */
+    "id": 9,
+    "companyId": 42,
+    "type": "partnership",
+    "title": "Joint Venture with Aramco",
+    "description": "Strategic supply agreement signed 2024.",
+    "mediaFileId": null,
+    "mediaFileUrl": null,
+    "mediaType": null,
+    "media": [],
+    "details": {
+      "partnerId": 123
+    },
+    "locations": [],
+    "socialMediaLinks": [],
+    "partner": {
+      "id": 123,
+      "name": "Saudi Aramco",
+      "logoFileId": 45,
+      "logoUrl": "https://cdn.example.com/aramco.png"
+    },
+    "partnerId": 123,
+    "partnerName": "Saudi Aramco",
+    "partnerLogoFileId": 45,
+    "partnerLogoUrl": "https://cdn.example.com/aramco.png",
+    "contributors": [],
+    "tags": [],
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
   }
 }
 ```

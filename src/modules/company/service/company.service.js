@@ -104,28 +104,43 @@ const sanitizeDocument = (doc, fileUrl = null) => ({
   uploadedAt: doc.uploaded_at,
 });
 
-const sanitizeContribution = (item, mediaFileUrl = null, partner = null) => ({
-  id: item.id,
-  companyId: item.company_id,
-  mediaFileId: item.media_file_id,
-  mediaFileUrl,
-  mediaType: item.media_type,
-  type: item.type,
-  title: item.title,
-  description: item.description,
-  media: item.media || [],
-  details: item.details,
-  locations: item.details?.locations || [],
-  socialMediaLinks: item.details?.socialMediaLinks || [],
-  partnerId: item.details?.partnerId,
-  partnerName: item.details?.partnerName,
-  partnerLogoFileId: partner?.logoFileId || null,
-  partnerLogoUrl: partner?.logoUrl || null,
-  contributors: item.details?.contributors || [],
-  tags: item.details?.tags || [],
-  createdAt: item.created_at,
-  updatedAt: item.updated_at,
-});
+const toPartnerResponse = (partner = null) =>
+  partner
+    ? {
+        id: partner.companyId,
+        name: partner.companyName,
+        logoFileId: partner.logoFileId || null,
+        logoUrl: partner.logoUrl || null,
+      }
+    : null;
+
+const sanitizeContribution = (item, mediaFileUrl = null, partner = null) => {
+  const partnerResponse = toPartnerResponse(partner);
+
+  return {
+    id: item.id,
+    companyId: item.company_id,
+    mediaFileId: item.media_file_id,
+    mediaFileUrl,
+    mediaType: item.media_type,
+    type: item.type,
+    title: item.title,
+    description: item.description,
+    media: item.media || [],
+    details: item.details,
+    locations: item.details?.locations || [],
+    socialMediaLinks: item.details?.socialMediaLinks || [],
+    partner: partnerResponse,
+    partnerId: partnerResponse?.id ?? item.details?.partnerId ?? null,
+    partnerName: partnerResponse?.name ?? item.details?.partnerName ?? null,
+    partnerLogoFileId: partnerResponse?.logoFileId ?? null,
+    partnerLogoUrl: partnerResponse?.logoUrl ?? null,
+    contributors: item.details?.contributors || [],
+    tags: item.details?.tags || [],
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+  };
+};
 
 const sanitizeContributionMedia = (item, fileUrl = null) => ({
   id: item.id,
@@ -1064,6 +1079,7 @@ module.exports = {
     sanitizeReview,
     sanitizeDocument,
     sanitizeContribution,
+    toPartnerResponse,
     toExternalDocType,
   },
 };
