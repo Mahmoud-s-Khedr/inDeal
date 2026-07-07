@@ -97,3 +97,18 @@ docker compose up --build
 ```
 
 - The repository includes a baseline migration at `prisma/migrations/20250101000000_baseline_init`.
+
+## Production Deployment
+
+The recommended production shape is:
+
+- `Nginx` on the host VM
+- `PostgreSQL` on the host VM
+- `api`, `worker`, and `valkey` in Docker
+
+Use:
+
+- [PRODUCTION_DEPLOYMENT.md](./PRODUCTION_DEPLOYMENT.md)
+- `docker-compose.production.yml`
+- `.env.production.example`
+- `deploy/nginx/indeal.conf`

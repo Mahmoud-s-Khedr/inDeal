@@ -4,7 +4,9 @@
   "description": "B2B",
   "main": "src/app/server.js",
   "scripts": {
-    "start": "node scripts/check-db.js && node src/app/server.js",
+    "start": "npm run start:api",
+    "start:api": "node scripts/check-db.js && node src/app/server.js",
+    "start:worker": "node scripts/check-db.js && node src/app/worker.js",
     "dev": "node scripts/check-db.js && nodemon src/app/server.js",
     "test": "npm run test:architecture && npm run test:unit && npm run test:integration",
     "test:unit": "node --test --test-force-exit tests/unit/**/*.test.js",

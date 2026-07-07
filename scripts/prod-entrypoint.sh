@@ -10,4 +10,4 @@ if [ "${AUTO_MIGRATE:-true}" = "true" ]; then
   fi
 fi
 
-exec npm run start
+exec npm run start:api

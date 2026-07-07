@@ -1,0 +1,91 @@
+services:
+  api:
+    build:
+      context: .
+      target: production
+    container_name: indeal_api_prod
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      REDIS_HOST: valkey
+      REDIS_PORT: 6379
+      ENABLE_SOCKETIO: 'true'
+      ENABLE_REDIS_ADAPTER: 'true'
+      AUTO_MIGRATE: 'false'
+    ports:
+      - '127.0.0.1:${API_BIND_PORT:-3000}:3000'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    depends_on:
+      valkey:
+        condition: service_healthy
+    restart: always
+    networks:
+      - indeal_network
+
+  worker:
+    build:
+      context: .
+      target: production
+    container_name: indeal_worker_prod
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      REDIS_HOST: valkey
+      REDIS_PORT: 6379
+      ENABLE_SOCKETIO: 'false'
+    command: sh scripts/prod-worker-entrypoint.sh
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    depends_on:
+      valkey:
+        condition: service_healthy
+    restart: always
+    networks:
+      - indeal_network
+
+  migrate:
+    build:
+      context: .
+      target: production
+    container_name: indeal_migrate_prod
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      REDIS_HOST: valkey
+      REDIS_PORT: 6379
+    command: npm run prisma:migrate:deploy
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    profiles: ['ops']
+    networks:
+      - indeal_network
+
+  valkey:
+    image: valkey/valkey:alpine
+    container_name: indeal_valkey_prod
+    command: valkey-server --appendonly yes --save 900 1 --save 300 10
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ['CMD', 'valkey-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - indeal_network
+
+networks:
+  indeal_network:
+    driver: bridge
+
+volumes:
+  valkey_data:

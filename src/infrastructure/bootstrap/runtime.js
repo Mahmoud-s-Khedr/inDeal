@@ -15,16 +15,20 @@ require('../config/mailer');
 require('../config/queue');
 
 const startWorkers = async (startupLogger) => {
-  startOrphanCleanupWorker();
+  const workers = [];
+
+  workers.push(startOrphanCleanupWorker());
   startupLogger.logWorkerStarted('orphan-cleanup');
 
-  startImageOptimizationWorker();
+  workers.push(startImageOptimizationWorker());
   startupLogger.logWorkerStarted('image-optimization');
 
-  startEmailWorker();
+  workers.push(startEmailWorker());
   startupLogger.logWorkerStarted('email');
 
   await scheduleCleanupJob();
+
+  return workers;
 };
 
 const initializeRealtime = (server) => {

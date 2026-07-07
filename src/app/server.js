@@ -9,7 +9,7 @@ const config = require('../infrastructure/config/env');
 const logger = require('../shared/utils/logger');
 const startupLogger = require('../shared/utils/startupLogger');
 const redis = require('../infrastructure/config/redis');
-const { startWorkers, initializeRealtime } = require('../infrastructure/bootstrap/runtime');
+const { initializeRealtime } = require('../infrastructure/bootstrap/runtime');
 
 const server = http.createServer(app);
 
@@ -26,8 +26,6 @@ const startServer = async () => {
     logger.info(
       `Database connection verified @ ${config.db.host}:${config.db.port}/${config.db.name}`
     );
-
-    await startWorkers(startupLogger);
 
     server.listen(config.app.port, () => {
       startupLogger.logServerListening(config.app.port, config.app.env);
