@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const path = require('path');
 const swaggerUi = require('swagger-ui-express');
 const routes = require('./routing');
 const { swaggerSpec, swaggerUiOptions } = require('../infrastructure/config/swagger');
@@ -21,6 +22,7 @@ app.use(requestLogger);
 // Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/admin-ui', express.static(path.join(__dirname, '../../admin-ui')));
 
 const isSwaggerEnabled =
   process.env.SWAGGER_ENABLED === 'true' || process.env.NODE_ENV !== 'production';

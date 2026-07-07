@@ -63,6 +63,12 @@ const contracts = [
       .passthrough(),
   },
   {
+    event: 'disconnect',
+    direction: 'receive',
+    auth: true,
+    schema: z.object({}).passthrough(),
+  },
+  {
     event: 'chat:ready',
     direction: 'send',
     auth: true,

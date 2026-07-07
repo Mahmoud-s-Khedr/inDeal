@@ -63,6 +63,8 @@ const findById = async (logId) => {
  */
 const listLogs = async (filters = {}) => {
   const { status, template, recipient, limit = 50, offset = 0 } = filters;
+  const safeLimit = Number.isInteger(limit) ? limit : parseInt(limit, 10) || 50;
+  const safeOffset = Number.isInteger(offset) ? offset : parseInt(offset, 10) || 0;
 
   const where = {};
   if (status) where.status = status;
@@ -72,8 +74,8 @@ const listLogs = async (filters = {}) => {
   return await prisma.emailLog.findMany({
     where,
     orderBy: { created_at: 'desc' },
-    take: limit,
-    skip: offset,
+    take: safeLimit,
+    skip: safeOffset,
   });
 };
 

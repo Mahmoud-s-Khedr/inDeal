@@ -29,9 +29,9 @@ test('POST /api/v1/auth/login validates payload', async () => {
   assert.equal(res.status, 400);
 });
 
-test('GET /api/v1/admin/* is removed from v1 runtime', async () => {
-  const res = await request(app).get('/api/v1/admin/company-review-requests');
-  assert.equal(res.status, 404);
+test('GET /api/v1/admin/users requires authentication', async () => {
+  const res = await request(app).get('/api/v1/admin/users');
+  assert.equal(res.status, 401);
 });
 
 test('POST /api/v1/deals/send-email requires authentication', async () => {

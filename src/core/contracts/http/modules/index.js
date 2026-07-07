@@ -8,4 +8,5 @@ module.exports = {
   system: require('./system.contracts'),
   search: require('./search.contracts'),
   health: require('./health.contracts'),
+  admin: require('./admin.contracts'),
 };

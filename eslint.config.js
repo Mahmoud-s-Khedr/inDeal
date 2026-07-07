@@ -4,7 +4,7 @@ const eslintPluginPrettierRecommended = require('eslint-plugin-prettier/recommen
 
 module.exports = [
   {
-    ignores: ['node_modules/', 'api_test_scripts/'],
+    ignores: ['node_modules/', 'api_test_scripts/', 'admin-ui/chart.min.js.js'],
   },
   js.configs.recommended,
   {
