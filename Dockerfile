@@ -39,7 +39,8 @@ CMD ["dumb-init", "npm", "run", "dev"]
 FROM base AS prod-deps
 
 # Install only production dependencies with clean cache
-RUN HUSKY=0 npm ci --omit=dev && npm cache clean --force
+RUN npm pkg delete scripts.prepare && \
+    npm ci --omit=dev && npm cache clean --force
 
 # ============================================
 # Production Stage - Minimal final image
