@@ -38,6 +38,9 @@ CMD ["dumb-init", "npm", "run", "dev"]
 # ============================================
 FROM base AS prod-deps
 
+# Copy Prisma schema so the client can be generated during installation
+COPY prisma ./prisma
+
 # Install only production dependencies with clean cache
 RUN npm pkg delete scripts.prepare && \
     npm ci --omit=dev && npm cache clean --force
