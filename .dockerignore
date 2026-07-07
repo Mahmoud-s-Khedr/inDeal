@@ -55,4 +55,4 @@ tmp/
 temp/
 
 # Scripts (if not needed in production)
-scripts/
+# scripts/
