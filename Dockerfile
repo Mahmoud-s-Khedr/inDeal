@@ -67,6 +67,7 @@ COPY --chown=nodejs:nodejs package*.json ./
 COPY --chown=nodejs:nodejs src ./src
 COPY --chown=nodejs:nodejs scripts ./scripts
 COPY --chown=nodejs:nodejs prisma ./prisma
+COPY --chown=nodejs:nodejs admin-ui ./admin-ui
 
 USER nodejs
 
