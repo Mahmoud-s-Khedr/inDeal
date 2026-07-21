@@ -156,3 +156,78 @@ Minimum production baseline:
 - `worker` handles BullMQ workers and scheduled cleanup jobs
 - do not scale `worker` horizontally without revisiting repeatable-job ownership
 - if you need multiple API replicas later, keep `ENABLE_REDIS_ADAPTER=true`
+
+## 9. Frontend Deployment (Flutter Web)
+
+The frontend is a Flutter Web app built as a static site and served directly by Nginx on the host VM.
+
+### Initial Setup
+
+1. **Extract the Flutter Web Build**
+   Copy your `web.tar.xz` build artifact to the server and extract it:
+
+   ```bash
+   tar -xf web.tar.xz
+   sudo mkdir -p /var/www/indeal-web
+   sudo cp -r web/* /var/www/indeal-web/
+   sudo chown -R www-data:www-data /var/www/indeal-web
+   ```
+
+2. **Configure Nginx**
+   Create a new configuration file:
+
+   ```bash
+   sudo nano /etc/nginx/sites-available/indeal-web.conf
+   ```
+
+   Add the following configuration (replace `indealeg.com` with your domain):
+
+   ```nginx
+   server {
+       listen 80;
+       server_name indealeg.com www.indealeg.com;
+
+       root /var/www/indeal-web;
+       index index.html;
+
+       location / {
+           try_files $uri $uri/ /index.html;
+       }
+
+       location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|wasm)$ {
+           expires 30d;
+           add_header Cache-Control "public, no-transform";
+       }
+   }
+   ```
+
+3. **Enable and Reload Nginx**
+
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/indeal-web.conf /etc/nginx/sites-enabled/
+   sudo nginx -t
+   sudo systemctl reload nginx
+   ```
+
+4. **Secure with HTTPS**
+   ```bash
+   sudo certbot --nginx -d indealeg.com -d www.indealeg.com
+   ```
+
+## 10. Updating the Frontend
+
+To deploy a new version of the frontend cleanly:
+
+1. Upload the new `web.tar.xz` to the server.
+   `scp web.tar.xz ubuntu@57.129.110.63:~`
+2. Extract the files:
+   ```bash
+   tar -xf web.tar.xz
+   ```
+3. Sync the new files to the web directory using `rsync` to cleanly replace old files:
+   ```bash
+   sudo rsync -av --delete web/ /var/www/indeal-web/
+   sudo chown -R www-data:www-data /var/www/indeal-web
+   ```
+   _Note: Using `rsync --delete` ensures that old deleted assets are removed so they don't bloat your server._
+4. Nginx will automatically serve the new files. There is no need to restart Nginx!

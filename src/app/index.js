@@ -5,6 +5,7 @@ const path = require('path');
 const swaggerUi = require('swagger-ui-express');
 const routes = require('./routing');
 const { swaggerSpec, swaggerUiOptions } = require('../infrastructure/config/swagger');
+const config = require('../infrastructure/config/env');
 const { buildAsyncApiSpec } = require('../core/contracts/socket/registry');
 const AppError = require('../core/errors/AppError');
 const errorMiddleware = require('../core/middleware/errorMiddleware');
@@ -14,7 +15,20 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Requests without an Origin header are server-to-server or same-origin requests.
+      if (!origin || config.cors.allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, false);
+    },
+    credentials: true,
+  })
+);
 
 // Request logging (replaces Morgan with Pino-based logger)
 app.use(requestLogger);

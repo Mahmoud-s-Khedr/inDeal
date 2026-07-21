@@ -8,6 +8,7 @@ const { startImageOptimizationWorker } = require('../jobs/imageOptimization.job'
 const { startEmailWorker } = require('../jobs/email.job');
 const { initializeChatSockets } = require('../sockets/chat.handler');
 const socketService = require('../socket.service');
+const config = require('../config/env');
 
 // Eager-load infrastructure modules so configuration issues surface on boot
 require('../config/storage');
@@ -42,8 +43,9 @@ const initializeRealtime = (server) => {
 
   const io = new Server(server, {
     cors: {
-      origin: '*',
+      origin: config.cors.allowedOrigins,
       methods: ['GET', 'POST'],
+      credentials: true,
     },
   });
 

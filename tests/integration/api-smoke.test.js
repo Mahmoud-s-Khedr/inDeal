@@ -10,6 +10,35 @@ test('GET / responds with service banner', async () => {
   assert.match(res.text, /inDeal API is running/i);
 });
 
+test('allows configured browser origins with credentials', async () => {
+  const origin = 'http://localhost:3000';
+  const res = await request(app).get('/').set('Origin', origin);
+
+  assert.equal(res.status, 200);
+  assert.equal(res.headers['access-control-allow-origin'], origin);
+  assert.equal(res.headers['access-control-allow-credentials'], 'true');
+});
+
+test('allows preflight requests from configured browser origins', async () => {
+  const origin = 'https://indealeg.com';
+  const res = await request(app)
+    .options('/api/v1/auth/login')
+    .set('Origin', origin)
+    .set('Access-Control-Request-Method', 'POST');
+
+  assert.equal(res.status, 204);
+  assert.equal(res.headers['access-control-allow-origin'], origin);
+  assert.equal(res.headers['access-control-allow-credentials'], 'true');
+});
+
+test('does not grant CORS access to unconfigured browser origins', async () => {
+  const res = await request(app).get('/').set('Origin', 'https://untrusted.example');
+
+  assert.equal(res.status, 200);
+  assert.equal(res.headers['access-control-allow-origin'], undefined);
+  assert.equal(res.headers['access-control-allow-credentials'], undefined);
+});
+
 test('GET /api/v1/health responds healthy', async () => {
   const res = await request(app).get('/api/v1/health');
   assert.equal(res.status, 200);

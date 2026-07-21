@@ -4,6 +4,26 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const emptyStringToUndefined = (val) => (val === '' ? undefined : val);
+const DEFAULT_CORS_ALLOWED_ORIGINS =
+  'http://localhost:3000,https://indealeg.com,https://indealeg.vercel.app';
+
+const parseCorsAllowedOrigins = (value) => [
+  ...new Set(
+    value
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean)
+  ),
+];
+
+const isValidCorsOrigin = (origin) => {
+  try {
+    const url = new URL(origin);
+    return ['http:', 'https:'].includes(url.protocol) && url.origin === origin;
+  } catch {
+    return false;
+  }
+};
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -73,6 +93,13 @@ const envSchema = z.object({
   RESEND_FROM_NAME: z.string().default('inDeal Support'),
 
   FRONTEND_BASE_URL: z.string().url().default('https://app.indeal.local'),
+  CORS_ALLOWED_ORIGINS: z
+    .string()
+    .default(DEFAULT_CORS_ALLOWED_ORIGINS)
+    .transform(parseCorsAllowedOrigins)
+    .refine((origins) => origins.length > 0 && origins.every(isValidCorsOrigin), {
+      message: 'must be a comma-separated list of HTTP(S) origins without paths',
+    }),
   FORGOT_PASSWORD_ENABLED: z
     .preprocess((val) => val === 'true' || val === true, z.boolean())
     .default(true),
@@ -167,6 +194,9 @@ module.exports = {
     fromEmail: env.RESEND_FROM_EMAIL,
     fromName: env.RESEND_FROM_NAME,
   },
+  cors: {
+    allowedOrigins: env.CORS_ALLOWED_ORIGINS,
+  },
   log: {
     level: env.LOG_LEVEL,
     format: env.LOG_FORMAT,
@@ -204,3 +234,5 @@ module.exports = {
     quality: env.IMAGE_QUALITY,
   },
 };
+
+module.exports.parseCorsAllowedOrigins = parseCorsAllowedOrigins;
