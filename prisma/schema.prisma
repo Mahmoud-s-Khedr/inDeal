@@ -186,7 +186,7 @@ model CompanyContributionMedia {
   caption         String?
   created_at      DateTime @default(now()) @db.Timestamp(6)
 
-  contribution CompanyContribution @relation(fields: [contribution_id], references: [id])
+  contribution CompanyContribution @relation(fields: [contribution_id], references: [id], onDelete: Cascade)
   file         File?               @relation("CompanyContributionMediaFile", fields: [file_id], references: [id])
 
   @@index([contribution_id], map: "idx_ccm_contribution_id")

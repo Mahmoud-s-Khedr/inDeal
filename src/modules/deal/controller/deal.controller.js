@@ -62,22 +62,35 @@ const createDirectRequest = catchAsync(async (req, res) => {
 });
 
 const getDealRequests = catchAsync(async (req, res) => {
-  const result = await dealService.getDealRequests(req.params.id, getCompanyId(req), req.query);
+  const result = await dealService.getDealRequests(
+    req.params.id,
+    getCompanyId(req),
+    req.validated?.query || req.query
+  );
   sendResponse(res, 200, result, 'Deal requests fetched');
 });
 
 const getMyRequests = catchAsync(async (req, res) => {
-  const requests = await dealService.getMyRequests(getCompanyId(req), req.query);
+  const requests = await dealService.getMyRequests(
+    getCompanyId(req),
+    req.validated?.query || req.query
+  );
   sendResponse(res, 200, requests, 'My requests fetched');
 });
 
 const getMyApplications = catchAsync(async (req, res) => {
-  const applications = await dealService.getMyApplications(getCompanyId(req), req.query);
+  const applications = await dealService.getMyApplications(
+    getCompanyId(req),
+    req.validated?.query || req.query
+  );
   sendResponse(res, 200, applications, 'My applications fetched');
 });
 
 const getMyDirectRequests = catchAsync(async (req, res) => {
-  const requests = await dealService.getMyDirectRequests(getCompanyId(req), req.query);
+  const requests = await dealService.getMyDirectRequests(
+    getCompanyId(req),
+    req.validated?.query || req.query
+  );
   sendResponse(res, 200, requests, 'My direct requests fetched');
 });
 
