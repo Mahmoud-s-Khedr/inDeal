@@ -81,7 +81,7 @@ const demandDetailsSchema = z.object({
   specsMatchRfq: z.enum(['exact', 'partial']),
   differencesFromRfq: z.string().max(2000).optional(),
   materialOffered: z.string().min(1).max(200),
-  dimensions: z.string().min(1).max(200),
+  dimensions: z.string().min(1).max(200).optional(),
   certificationsHeld: z.string().min(1).max(1000).optional(),
   paymentTerms: z.string().min(1).max(500),
   deliveryTerms: z.enum(incotermValues),

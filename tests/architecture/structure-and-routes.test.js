@@ -178,7 +178,6 @@ test('swagger request schemas are restored for date-based endpoints', () => {
           'availabilityType',
           'specsMatchRfq',
           'materialOffered',
-          'dimensions',
           'paymentTerms',
           'deliveryTerms',
         ];
@@ -187,7 +186,20 @@ test('swagger request schemas are restored for date-based endpoints', () => {
         for (const field of requiredDemandFields) {
           assert.ok(body.properties.demandDetails.required.includes(field));
         }
+        assert.equal(body.properties.demandDetails.required.includes('dimensions'), false);
         assert.ok(pathParams.some((parameter) => parameter.name === 'id'));
+      },
+    },
+    {
+      method: 'put',
+      path: '/api/v1/deals/requests/{requestId}',
+      assertOperation: (operation) => {
+        const body = operation.requestBody.content['application/json'].schema;
+        const pathParams = (operation.parameters || []).filter(
+          (parameter) => parameter.in === 'path'
+        );
+        assert.equal(body.properties.demandDetails.required.includes('dimensions'), false);
+        assert.ok(pathParams.some((parameter) => parameter.name === 'requestId'));
       },
     },
   ];

@@ -62,7 +62,6 @@ const requiredDemandDetailFields = [
   'availabilityType',
   'specsMatchRfq',
   'materialOffered',
-  'dimensions',
   'paymentTerms',
   'deliveryTerms',
 ];
@@ -89,6 +88,18 @@ test('request detail DTOs require every mandatory supply and demand field', () =
     });
     assert.equal(result.success, false, `demandDetails.${field} must be required`);
   }
+});
+
+test('request detail DTO accepts demand details without optional dimensions', () => {
+  const demandDetails = { ...validDemandDetails };
+  delete demandDetails.dimensions;
+
+  const result = createDealRequestSchema.safeParse({
+    params: { id: 1 },
+    body: { requestType: 'inDemand', demandDetails },
+  });
+
+  assert.equal(result.success, true);
 });
 
 test('createDealRequest accepts camelCase supply enums and rejects removed values', () => {
@@ -571,11 +582,14 @@ test('updateDealRequest accepts supply-side replacement payload', () => {
 });
 
 test('updateDealRequest accepts demand-side replacement payload', () => {
+  const demandDetails = { ...validDemandDetails };
+  delete demandDetails.dimensions;
+
   const parsed = updateDealRequestSchema.safeParse({
     params: { requestId: 55 },
     body: {
       demandDetails: {
-        ...validDemandDetails,
+        ...demandDetails,
         productServiceName: 'Copper wire',
       },
       attachments: [],
