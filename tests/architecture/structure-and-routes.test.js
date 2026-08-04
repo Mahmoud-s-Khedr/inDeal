@@ -144,8 +144,21 @@ test('swagger request schemas are restored for date-based endpoints', () => {
       path: '/api/v1/deals/direct-requests',
       assertOperation: (operation) => {
         const body = operation.requestBody.content['application/json'].schema;
+        const requiredSupplyFields = [
+          'quantityRequired',
+          'deliveryLocation',
+          'deliveryDate',
+          'targetPrice',
+          'currency',
+          'keySpecifications',
+          'maxLeadTimeAccepted',
+          'deliveryMethodPreference',
+        ];
         assert.equal(body.properties.supplyDetails.properties.deliveryDate.type, 'string');
         assert.equal(body.properties.supplyDetails.properties.deliveryDate.format, 'date-time');
+        for (const field of requiredSupplyFields) {
+          assert.ok(body.properties.supplyDetails.required.includes(field));
+        }
       },
     },
     {
@@ -156,8 +169,24 @@ test('swagger request schemas are restored for date-based endpoints', () => {
         const pathParams = (operation.parameters || []).filter(
           (parameter) => parameter.in === 'path'
         );
+        const requiredDemandFields = [
+          'availableQuantity',
+          'offerValidityDays',
+          'unitPrice',
+          'currency',
+          'moq',
+          'availabilityType',
+          'specsMatchRfq',
+          'materialOffered',
+          'dimensions',
+          'paymentTerms',
+          'deliveryTerms',
+        ];
         assert.equal(body.properties.supplyDetails.properties.deliveryDate.type, 'string');
         assert.equal(body.properties.supplyDetails.properties.deliveryDate.format, 'date-time');
+        for (const field of requiredDemandFields) {
+          assert.ok(body.properties.demandDetails.required.includes(field));
+        }
         assert.ok(pathParams.some((parameter) => parameter.name === 'id'));
       },
     },

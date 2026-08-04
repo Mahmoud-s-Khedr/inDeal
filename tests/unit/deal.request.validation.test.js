@@ -14,12 +14,90 @@ const {
   sendDealEmailSchema,
 } = require('../../src/modules/deal/validation/deal.validation');
 
+const validSupplyDetails = {
+  productServiceName: 'Steel bars',
+  category: 'rawMaterial',
+  quantityRequired: 10,
+  deliveryLocation: 'Cairo',
+  deliveryDate: '2026-09-01T00:00:00.000Z',
+  targetPrice: 1250,
+  currency: 'USD',
+  keySpecifications: 'ASTM A36',
+  maxLeadTimeAccepted: '10 days',
+  deliveryMethodPreference: 'supplierDelivers',
+};
+
+const validDemandDetails = {
+  productServiceName: 'Pump',
+  availableQuantity: 10,
+  offerValidityDays: 30,
+  unitPrice: 120,
+  currency: 'USD',
+  moq: 5,
+  availabilityType: 'inStock',
+  specsMatchRfq: 'exact',
+  materialOffered: 'Steel',
+  dimensions: '20x10 cm',
+  paymentTerms: 'Net 30',
+  deliveryTerms: 'FOB',
+};
+
+const requiredSupplyDetailFields = [
+  'quantityRequired',
+  'deliveryLocation',
+  'deliveryDate',
+  'targetPrice',
+  'currency',
+  'keySpecifications',
+  'maxLeadTimeAccepted',
+  'deliveryMethodPreference',
+];
+
+const requiredDemandDetailFields = [
+  'availableQuantity',
+  'offerValidityDays',
+  'unitPrice',
+  'currency',
+  'moq',
+  'availabilityType',
+  'specsMatchRfq',
+  'materialOffered',
+  'dimensions',
+  'paymentTerms',
+  'deliveryTerms',
+];
+
+test('request detail DTOs require every mandatory supply and demand field', () => {
+  for (const field of requiredSupplyDetailFields) {
+    const supplyDetails = { ...validSupplyDetails };
+    delete supplyDetails[field];
+
+    const result = createDealRequestSchema.safeParse({
+      params: { id: 1 },
+      body: { requestType: 'inSupply', supplyDetails },
+    });
+    assert.equal(result.success, false, `supplyDetails.${field} must be required`);
+  }
+
+  for (const field of requiredDemandDetailFields) {
+    const demandDetails = { ...validDemandDetails };
+    delete demandDetails[field];
+
+    const result = createDealRequestSchema.safeParse({
+      params: { id: 1 },
+      body: { requestType: 'inDemand', demandDetails },
+    });
+    assert.equal(result.success, false, `demandDetails.${field} must be required`);
+  }
+});
+
 test('createDealRequest accepts camelCase supply enums and rejects removed values', () => {
   const valid = createDealRequestSchema.safeParse({
     params: { id: 1 },
     body: {
       requestType: 'inSupply',
       supplyDetails: {
+        ...validSupplyDetails,
         productServiceName: 'Steel bars',
         category: 'rawMaterial',
         supplyType: 'assembleToOrder',
@@ -33,6 +111,7 @@ test('createDealRequest accepts camelCase supply enums and rejects removed value
     body: {
       requestType: 'inSupply',
       supplyDetails: {
+        ...validSupplyDetails,
         productServiceName: 'Steel bars',
         category: 'rawMaterial',
         supplyType: 'assemble to order',
@@ -48,6 +127,7 @@ test('createDealRequest accepts camelCase supply delivery and quality enums', ()
     body: {
       requestType: 'inSupply',
       supplyDetails: {
+        ...validSupplyDetails,
         productServiceName: 'Steel bars',
         category: 'rawMaterial',
         deliveryMethodPreference: 'supplierDelivers',
@@ -77,6 +157,7 @@ test('supply-side payload accepts targetPrice and string certificationsRequired'
     body: {
       requestType: 'inSupply',
       supplyDetails: {
+        ...validSupplyDetails,
         productServiceName: 'Custom valve',
         category: 'industrialEquipment',
         targetPrice: 1250,
@@ -107,6 +188,7 @@ test('demand-side payload accepts string certificationsHeld and split warranty f
     body: {
       requestType: 'inDemand',
       demandDetails: {
+        ...validDemandDetails,
         productServiceName: 'Pump',
         certificationsHeld: 'FDA',
         warrantyPolicy: '1 year warranty',
@@ -121,6 +203,7 @@ test('demand-side payload accepts string certificationsHeld and split warranty f
     body: {
       requestType: 'inDemand',
       demandDetails: {
+        ...validDemandDetails,
         productServiceName: 'Pump',
         certificationsHeld: ['FDA'],
         warrantyReturnPolicy: 'Legacy combined text',
@@ -136,6 +219,7 @@ test('demand-side payload accepts camelCase availability and specsMatchRfq value
     body: {
       requestType: 'inDemand',
       demandDetails: {
+        ...validDemandDetails,
         productServiceName: 'Pump',
         availabilityType: 'assembleToOrder',
         specsMatchRfq: 'exact',
@@ -178,6 +262,7 @@ test('qualityLevel other requires otherQualityLevelDescription', () => {
     body: {
       requestType: 'inSupply',
       supplyDetails: {
+        ...validSupplyDetails,
         productServiceName: 'Pipe',
         category: 'industrialEquipment',
         qualityLevel: 'other',
@@ -409,6 +494,7 @@ test('createDealRequest requires requestType and routes by detail kind', () => {
     body: {
       requestType: 'inSupply',
       supplyDetails: {
+        ...validSupplyDetails,
         productServiceName: 'Custom valve',
         category: 'industrialEquipment',
       },
@@ -445,6 +531,7 @@ test('createDirectRequest enforces targetCompanyId and supply-only payload', () 
     body: {
       targetCompanyId: 55,
       supplyDetails: {
+        ...validSupplyDetails,
         productServiceName: 'Copper wire',
         category: 'rawMaterial',
       },
@@ -459,6 +546,7 @@ test('createDirectRequest enforces targetCompanyId and supply-only payload', () 
         productServiceName: 'Copper wire',
       },
       supplyDetails: {
+        ...validSupplyDetails,
         productServiceName: 'Copper wire',
         category: 'rawMaterial',
       },
@@ -472,6 +560,7 @@ test('updateDealRequest accepts supply-side replacement payload', () => {
     params: { requestId: 55 },
     body: {
       supplyDetails: {
+        ...validSupplyDetails,
         productServiceName: 'Copper wire',
         category: 'rawMaterial',
       },
@@ -486,6 +575,7 @@ test('updateDealRequest accepts demand-side replacement payload', () => {
     params: { requestId: 55 },
     body: {
       demandDetails: {
+        ...validDemandDetails,
         productServiceName: 'Copper wire',
       },
       attachments: [],
